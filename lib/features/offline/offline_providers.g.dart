@@ -60,7 +60,7 @@ final offlineCacheManagerProvider = Provider<OfflineCacheManager>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef OfflineCacheManagerRef = ProviderRef<OfflineCacheManager>;
-String _$downloadManagerHash() => r'fb08bd6bc2963fc264d3ea08d1908b58ecbea958';
+String _$downloadManagerHash() => r'74baf8e5581ad3f949c9a81cad92c6ce5a1f192d';
 
 /// See also [downloadManager].
 @ProviderFor(downloadManager)

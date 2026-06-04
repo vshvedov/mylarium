@@ -1,31 +1,33 @@
-import 'dart:async';
-
 import 'package:background_downloader/background_downloader.dart';
 
-/// A download lifecycle event from the [Downloader] seam.
+/// A download lifecycle update for a task, from the [Downloader] seam's global
+/// stream (so updates for tasks that resume after an app restart are handled).
 enum DownloadEventKind { progress, complete, failed }
 
-class DownloadEvent {
-  const DownloadEvent(
+class DownloadUpdate {
+  const DownloadUpdate(
+    this.taskId,
     this.kind, {
     this.progress = 0,
     this.totalBytes,
     this.error,
   });
 
+  final String taskId;
   final DownloadEventKind kind;
-
-  /// 0..1 fraction (when known).
-  final double progress;
+  final double progress; // 0..1 when known
   final int? totalBytes;
   final String? error;
 }
 
-/// Seam over the platform background-download service so [DownloadManager] is
-/// testable without platform channels. Files are written under
-/// applicationSupport at [relativeDirectory]/[filename].
+/// Seam over the platform background-download service. A SINGLE global [updates]
+/// stream carries events for every task (including ones resumed natively after
+/// a restart); [enqueue] starts a task that persists across app launches. Files
+/// are written under applicationSupport at [relativeDirectory]/[filename].
 abstract class Downloader {
-  Stream<DownloadEvent> download({
+  Stream<DownloadUpdate> get updates;
+
+  Future<void> enqueue({
     required String taskId,
     required String url,
     required Map<String, String> headers,
@@ -37,26 +39,53 @@ abstract class Downloader {
   Future<void> cancel(String taskId);
 }
 
-/// Real [Downloader] backed by `background_downloader` (resumable, Wi-Fi-aware,
-/// survives app restarts). Not exercised in tests (platform channels); verified
-/// on device.
+/// Real [Downloader] backed by `background_downloader`. Resumable, Wi-Fi-aware,
+/// survives app restarts: `trackTasks` persists tasks and re-emits their updates
+/// on the global stream after relaunch. Not exercised in tests (platform
+/// channels); verified on device.
 class BackgroundDownloaderAdapter implements Downloader {
   BackgroundDownloaderAdapter() {
-    // Track tasks so they can resume across launches.
+    // Persist tasks and mark fully-downloaded ones complete on resume.
     FileDownloader().trackTasks();
   }
 
   @override
-  Stream<DownloadEvent> download({
+  Stream<DownloadUpdate> get updates =>
+      FileDownloader().updates.map((u) {
+        final taskId = u.task.taskId;
+        if (u is TaskStatusUpdate) {
+          return switch (u.status) {
+            TaskStatus.complete =>
+              DownloadUpdate(taskId, DownloadEventKind.complete),
+            TaskStatus.failed ||
+            TaskStatus.canceled ||
+            TaskStatus.notFound =>
+              DownloadUpdate(taskId, DownloadEventKind.failed,
+                  error: u.status.name),
+            _ => DownloadUpdate(taskId, DownloadEventKind.progress),
+          };
+        }
+        if (u is TaskProgressUpdate) {
+          return DownloadUpdate(
+            taskId,
+            DownloadEventKind.progress,
+            progress: u.progress < 0 ? 0 : u.progress,
+            totalBytes: u.hasExpectedFileSize ? u.expectedFileSize : null,
+          );
+        }
+        return DownloadUpdate(taskId, DownloadEventKind.progress);
+      });
+
+  @override
+  Future<void> enqueue({
     required String taskId,
     required String url,
     required Map<String, String> headers,
     required String relativeDirectory,
     required String filename,
     required bool requiresWifi,
-  }) {
-    final controller = StreamController<DownloadEvent>();
-    final task = DownloadTask(
+  }) async {
+    await FileDownloader().enqueue(DownloadTask(
       taskId: taskId,
       url: url,
       headers: headers,
@@ -67,31 +96,7 @@ class BackgroundDownloaderAdapter implements Downloader {
       requiresWiFi: requiresWifi,
       allowPause: true,
       retries: 3,
-    );
-
-    FileDownloader().download(
-      task,
-      onProgress: (p) => controller.add(
-          DownloadEvent(DownloadEventKind.progress, progress: p)),
-      onStatus: (status) {
-        switch (status) {
-          case TaskStatus.complete:
-            controller.add(const DownloadEvent(DownloadEventKind.complete));
-          case TaskStatus.failed:
-          case TaskStatus.canceled:
-          case TaskStatus.notFound:
-            controller.add(DownloadEvent(DownloadEventKind.failed,
-                error: status.name));
-          case TaskStatus.enqueued:
-          case TaskStatus.running:
-          case TaskStatus.waitingToRetry:
-          case TaskStatus.paused:
-            break;
-        }
-      },
-    ).whenComplete(controller.close);
-
-    return controller.stream;
+    ));
   }
 
   @override

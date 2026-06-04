@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -21,31 +22,37 @@ class _InMemorySecureStore extends SecureStore {
   Future<void> delete(String key) async => _v.remove(key);
 }
 
-/// Fake downloader that writes [bytes] to the destination and completes.
+/// Fake downloader that writes [bytes] to the destination on enqueue and emits
+/// a complete event on the global updates stream.
 class _FakeDownloader implements Downloader {
   _FakeDownloader(this.bytes);
   final List<int> bytes;
   int calls = 0;
+  final _controller = StreamController<DownloadUpdate>.broadcast();
 
   @override
-  Stream<DownloadEvent> download({
+  Stream<DownloadUpdate> get updates => _controller.stream;
+
+  @override
+  Future<void> enqueue({
     required String taskId,
     required String url,
     required Map<String, String> headers,
     required String relativeDirectory,
     required String filename,
     required bool requiresWifi,
-  }) async* {
+  }) async {
     calls++;
     final abs = await AppPaths.resolve(p.join(relativeDirectory, filename));
     await Directory(p.dirname(abs)).create(recursive: true);
     await File(abs).writeAsBytes(bytes);
-    yield const DownloadEvent(DownloadEventKind.progress, progress: 1);
-    yield const DownloadEvent(DownloadEventKind.complete);
+    _controller.add(DownloadUpdate(taskId, DownloadEventKind.complete));
   }
 
   @override
   Future<void> cancel(String taskId) async {}
+
+  void close() => _controller.close();
 }
 
 void main() {
@@ -141,6 +148,34 @@ void main() {
     expect(asset.relativePath, startsWith('media/downloads/'));
     expect(File(await AppPaths.resolve(asset.relativePath)).existsSync(),
         isTrue);
+  });
+
+  test('resumeAll reconciles an already-downloaded file with no CachedAsset',
+      () async {
+    // Simulate: a manual download whose file finished on disk while the app was
+    // dead, so only a stale "running" task row exists (the bug: it showed
+    // "Downloading" forever and never offered Remove).
+    final rel = AppPaths.downloadRelativePath('s1', 'b1');
+    final file = await AppPaths.prepareFile(rel);
+    await file.writeAsBytes([1, 2, 3, 4, 5]);
+    await db.upsertDownloadTask(DownloadTasksCompanion(
+      sourceId: const Value('s1'),
+      bookId: const Value('b1'),
+      taskId: const Value('s1|b1'),
+      state: const Value('running'),
+      permanent: const Value(true),
+      updatedAt: const Value(1),
+    ));
+
+    final dl = _FakeDownloader([9]);
+    await manager(dl).resumeAll();
+
+    final asset = await db.getCachedAsset('s1', 'b1');
+    expect(asset, isNotNull, reason: 'reconciled from the on-disk file');
+    expect(asset!.permanent, isTrue);
+    expect(asset.sizeBytes, 5);
+    expect(dl.calls, 0, reason: 'no re-download needed; file was already there');
+    expect((await db.getDownloadTask('s1', 'b1'))?.state, 'complete');
   });
 
   test('enqueue is idempotent once cached', () async {

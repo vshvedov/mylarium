@@ -351,6 +351,10 @@ class AppDatabase extends _$AppDatabase {
                 t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
           .getSingleOrNull();
 
+  Future<DownloadTask?> getDownloadTaskByTaskId(String taskId) =>
+      (select(downloadTasks)..where((t) => t.taskId.equals(taskId)))
+          .getSingleOrNull();
+
   Future<List<DownloadTask>> unfinishedDownloadTasks() =>
       (select(downloadTasks)..where((t) => t.state.equals('complete').not()))
           .get();

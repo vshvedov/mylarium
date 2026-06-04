@@ -26,7 +26,7 @@ OfflineCacheManager offlineCacheManager(Ref ref) =>
 @Riverpod(keepAlive: true)
 DownloadManager downloadManager(Ref ref) {
   final cache = ref.watch(offlineCacheManagerProvider);
-  return DownloadManager(
+  final manager = DownloadManager(
     db: ref.watch(appDatabaseProvider),
     downloader: ref.watch(downloaderProvider),
     credentialStore: ref.watch(komgaCredentialStoreProvider),
@@ -34,6 +34,8 @@ DownloadManager downloadManager(Ref ref) {
         ref.read(komgaApiForProvider(sourceId).future),
     onAssetAdded: cache.evictToCap,
   );
+  ref.onDispose(manager.dispose);
+  return manager;
 }
 
 /// The cached asset for a book (or null), reactive. Drives the per-book offline
