@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mylarium/app/router.dart';
 import 'package:mylarium/app/theme/theme_controller.dart';
 import 'package:mylarium/core/db/database.dart';
 
@@ -17,6 +18,7 @@ class TestScope {
     return TestScope._(db, [
       appDatabaseProvider.overrideWithValue(db),
       initialSettingsProvider.overrideWithValue(s),
+      initialLocationProvider.overrideWithValue('/'),
     ]);
   }
 }
