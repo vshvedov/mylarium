@@ -6,14 +6,22 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../app/widgets/adaptive_layout.dart';
 import '../../core/db/database.dart';
 import '../../data/source/source_providers.dart';
+import 'series_detail.dart';
 import 'series_grid_controller.dart';
 import 'widgets/library_tiles.dart';
 
+/// The selected series in the two-pane browse shell, keyed per source so a stale
+/// selection never leaks across sources. autoDispose: reset on leaving browse.
+final selectedSeriesProvider = StateProvider.autoDispose
+    .family<String?, String>((ref, sourceId) => null);
+
 /// Virtualized series grid backed by keyset pagination over the local cache
 /// (filled on demand from the network). Handles 50k+ series at a fixed tile
-/// extent.
+/// extent. In a two-pane shell it runs [embedded] (no Scaffold) and reports taps
+/// via [onSelectSeries] instead of pushing a route.
 class SeriesGridScreen extends ConsumerStatefulWidget {
   const SeriesGridScreen({
     super.key,
@@ -21,12 +29,16 @@ class SeriesGridScreen extends ConsumerStatefulWidget {
     this.libraryId,
     this.title = 'Library',
     this.includeRestricted = false,
+    this.onSelectSeries,
+    this.embedded = false,
   });
 
   final String sourceId;
   final String? libraryId;
   final String title;
   final bool includeRestricted;
+  final void Function(String seriesId)? onSelectSeries;
+  final bool embedded;
 
   @override
   ConsumerState<SeriesGridScreen> createState() => _SeriesGridScreenState();
@@ -83,9 +95,25 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
     super.dispose();
   }
 
+  void _onTap(SeriesRow series) {
+    final onSelect = widget.onSelectSeries;
+    if (onSelect != null) {
+      onSelect(series.id);
+    } else {
+      context.push('/series/${series.sourceId}/${series.id}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final gutter = Theme.of(context).extension<DesignTokens>()!.gridGutter;
+    final body = RefreshIndicator(
+      onRefresh: () async {
+        _controller = null;
+        _paging.refresh();
+      },
+      child: SeriesGridBody(paging: _paging, onTap: _onTap),
+    );
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -96,48 +124,127 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          _controller = null;
-          _paging.refresh();
-        },
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.all(gutter),
-              sliver: PagedSliverGrid<SeriesCursor, SeriesRow>(
-                pagingController: _paging,
-                gridDelegate:
-                    const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 160,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.58,
-                ),
-                builderDelegate: PagedChildBuilderDelegate<SeriesRow>(
-                  itemBuilder: (context, series, _) => CoverTile(
-                    sourceId: series.sourceId,
-                    ownerType: 'series',
-                    ownerId: series.id,
-                    title: series.title,
-                    subtitle: series.booksCount == 1
-                        ? '1 book'
-                        : '${series.booksCount} books',
-                    onTap: () => context.push(
-                      '/series/${series.sourceId}/${series.id}',
-                    ),
-                  ),
-                  noItemsFoundIndicatorBuilder: (_) => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(48),
-                      child: Text('No series here yet.'),
-                    ),
-                  ),
+      body: body,
+    );
+  }
+}
+
+/// The grid body (no Scaffold): a paginated sliver grid of [CoverTile]s. Shared
+/// by [SeriesGridScreen] (route and embedded master) so the visual is identical
+/// and golden-testable with a pre-filled controller.
+class SeriesGridBody extends StatelessWidget {
+  const SeriesGridBody({super.key, required this.paging, required this.onTap});
+
+  final PagingController<SeriesCursor, SeriesRow> paging;
+  final void Function(SeriesRow series) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gutter = Theme.of(context).extension<DesignTokens>()!.gridGutter;
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(gutter),
+          sliver: PagedSliverGrid<SeriesCursor, SeriesRow>(
+            pagingController: paging,
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 160,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.58,
+            ),
+            builderDelegate: PagedChildBuilderDelegate<SeriesRow>(
+              itemBuilder: (context, series, _) => CoverTile(
+                sourceId: series.sourceId,
+                ownerType: 'series',
+                ownerId: series.id,
+                title: series.title,
+                subtitle: series.booksCount == 1
+                    ? '1 book'
+                    : '${series.booksCount} books',
+                onTap: () => onTap(series),
+              ),
+              noItemsFoundIndicatorBuilder: (_) => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(48),
+                  child: Text('No series here yet.'),
                 ),
               ),
             ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+}
+
+/// Two-pane browse shell: the series grid (master) beside the selected series'
+/// detail. [AdaptiveLayout] collapses to the grid alone on phone widths, where
+/// taps push the detail route as before. Only the detail [Consumer] rebuilds on
+/// selection, so the master grid's paging and scroll state are preserved.
+class BrowseShell extends ConsumerWidget {
+  const BrowseShell({
+    super.key,
+    required this.sourceId,
+    this.title = 'All series',
+  });
+
+  final String sourceId;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          IconButton(
+            icon: const Icon(AppIcons.search),
+            onPressed: () => context.push('/search'),
+          ),
+        ],
+      ),
+      body: AdaptiveLayout(
+        master: SeriesGridScreen(
+          sourceId: sourceId,
+          embedded: true,
+          onSelectSeries: (id) =>
+              ref.read(selectedSeriesProvider(sourceId).notifier).state = id,
+        ),
+        detail: Consumer(
+          builder: (context, ref, _) {
+            final selected = ref.watch(selectedSeriesProvider(sourceId));
+            return selected == null
+                ? const _SelectSeriesPlaceholder()
+                : SeriesDetailScreen(
+                    sourceId: sourceId,
+                    seriesId: selected,
+                    embedded: true,
+                  );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectSeriesPlaceholder extends StatelessWidget {
+  const _SelectSeriesPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(AppIcons.browse, size: 40, color: scheme.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text(
+            'Select a series',
+            style: TextStyle(color: scheme.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

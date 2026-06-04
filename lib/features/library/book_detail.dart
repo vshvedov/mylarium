@@ -3,13 +3,19 @@ import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/theme/cover_palette.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../app/widgets/app_button.dart';
 import '../../core/db/database.dart';
 import '../offline/offline_providers.dart';
 import 'widgets/cover_image.dart';
 
-/// Book detail: metadata plus a Read action that opens the reader.
+/// Dark cinematic hero band behind the detail header (both themes).
+const _heroBarColor = Color(0xFF1A1820);
+
+/// Book detail: a cover-derived hero, the cover and metadata, then a Read action
+/// that opens the reader.
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({
     super.key,
@@ -27,48 +33,85 @@ class BookDetailScreen extends ConsumerWidget {
     final book = bookAsync.valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: Text(book?.title ?? 'Book')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Center(
-            child: SizedBox(
-              width: 180,
-              height: 270,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(tokens.coverRadius),
-                child: CoverImage(
-                  sourceId: sourceId,
-                  ownerType: 'book',
-                  ownerId: bookId,
-                  title: book?.title ?? '',
-                ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 168,
+            backgroundColor: _heroBarColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsetsDirectional.only(
+                start: 56,
+                bottom: 14,
+              ),
+              title: Text(
+                book?.title ?? 'Book',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              background: CoverBackground(
+                sourceId: sourceId,
+                ownerType: 'book',
+                ownerId: bookId,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(book?.title ?? '',
-              style: Theme.of(context).textTheme.titleLarge),
-          if (book != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              [
-                if (book.number.isNotEmpty) 'No. ${book.number}',
-                if (book.pagesCount > 0) '${book.pagesCount} pages',
-              ].join('  -  '),
-              style: Theme.of(context).textTheme.labelMedium,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 180,
+                      height: 270,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(tokens.coverRadius),
+                        boxShadow: tokens.elevation.hero,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(tokens.coverRadius),
+                        child: CoverImage(
+                          sourceId: sourceId,
+                          ownerType: 'book',
+                          ownerId: bookId,
+                          title: book?.title ?? '',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    book?.title ?? '',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  if (book != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      [
+                        if (book.number.isNotEmpty) 'No. ${book.number}',
+                        if (book.pagesCount > 0) '${book.pagesCount} pages',
+                      ].join('  -  '),
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  AppButton(
+                    label: (book?.readPage ?? 0) > 0
+                        ? 'Continue reading'
+                        : 'Read',
+                    icon: AppIcons.read,
+                    onPressed: () => context.push('/reader/$sourceId/$bookId'),
+                  ),
+                  const SizedBox(height: 8),
+                  _DownloadControl(sourceId: sourceId, bookId: bookId),
+                ],
+              ),
             ),
-          ],
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            icon: const Icon(AppIcons.read),
-            label: Text(
-              (book?.readPage ?? 0) > 0 ? 'Continue reading' : 'Read',
-            ),
-            onPressed: () => context.push('/reader/$sourceId/$bookId'),
           ),
-          const SizedBox(height: 8),
-          _DownloadControl(sourceId: sourceId, bookId: bookId),
         ],
       ),
     );
@@ -113,7 +156,8 @@ class _DownloadControl extends ConsumerWidget {
           TextButton.icon(
             icon: const Icon(AppIcons.download),
             label: const Text('Keep'),
-            onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
+            onPressed: () =>
+                manager.enqueueBook(sourceId, bookId, manual: true),
           ),
         ],
       );
@@ -144,7 +188,9 @@ class _DownloadControl extends ConsumerWidget {
 }
 
 /// A cached book row (the series grid refreshed it on the way in).
-final _bookProvider =
-    FutureProvider.family<Book?, (String, String)>((ref, key) {
+final _bookProvider = FutureProvider.family<Book?, (String, String)>((
+  ref,
+  key,
+) {
   return ref.watch(appDatabaseProvider).getBook(key.$1, key.$2);
 });

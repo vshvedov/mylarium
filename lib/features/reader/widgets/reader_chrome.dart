@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../../app/theme/app_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme/app_icons.dart';
+import '../../../app/theme/cover_palette.dart';
 import '../reader_models.dart';
 
 /// Immersive reader chrome: a top bar (back, title, mode/fit/options menus, and
 /// a double-page nudge) plus a bottom thumbnail scrubber. The scrubber works in
 /// page space, is RTL-aware (page 1 sits on the right in right-to-left modes),
 /// and shows a live page-thumbnail preview while dragging.
-class ReaderChrome extends StatefulWidget {
+class ReaderChrome extends ConsumerStatefulWidget {
   const ReaderChrome({
     super.key,
     required this.visible,
     required this.title,
+    required this.sourceId,
+    required this.bookId,
     required this.offline,
     required this.settings,
     required this.pageCount,
@@ -27,6 +31,10 @@ class ReaderChrome extends StatefulWidget {
 
   final bool visible;
   final String title;
+
+  /// Cover identity, used to tint the chrome with the book's cover palette.
+  final String sourceId;
+  final String bookId;
 
   /// True when reading from the on-device cache (vs streaming from the server).
   final bool offline;
@@ -51,14 +59,26 @@ class ReaderChrome extends StatefulWidget {
   final bool nudged;
 
   @override
-  State<ReaderChrome> createState() => _ReaderChromeState();
+  ConsumerState<ReaderChrome> createState() => _ReaderChromeState();
 }
 
-class _ReaderChromeState extends State<ReaderChrome> {
+class _ReaderChromeState extends ConsumerState<ReaderChrome> {
   int? _dragPage;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final palette = ref
+        .watch(coverPaletteProvider(widget.sourceId, 'book', widget.bookId))
+        .valueOrNull;
+    // Tint the chrome bars with the book's cover palette; fall back to the plain
+    // translucent surface when there is no cover.
+    final barColor = palette == null
+        ? scheme.surface.withValues(alpha: 0.92)
+        : Color.alphaBlend(
+            palette.muted.withValues(alpha: 0.32),
+            scheme.surface,
+          ).withValues(alpha: 0.92);
     return IgnorePointer(
       ignoring: !widget.visible,
       child: AnimatedOpacity(
@@ -68,6 +88,7 @@ class _ReaderChromeState extends State<ReaderChrome> {
           children: [
             _TopBar(
               title: widget.title,
+              color: barColor,
               offline: widget.offline,
               settings: widget.settings,
               onClose: widget.onClose,
@@ -81,20 +102,19 @@ class _ReaderChromeState extends State<ReaderChrome> {
               image: widget.previewImage(_dragPage!),
               label: '${_dragPage! + 1}',
             ),
-            _scrubber(context),
+            _scrubber(context, barColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _scrubber(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget _scrubber(BuildContext context, Color barColor) {
     final rtl = widget.settings.mode.isRtl;
     final count = widget.pageCount;
     final value = (_dragPage ?? widget.currentPage).clamp(0, count - 1);
     return Material(
-      color: scheme.surface.withValues(alpha: 0.92),
+      color: barColor,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -183,6 +203,7 @@ class _PreviewThumb extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.title,
+    required this.color,
     required this.offline,
     required this.settings,
     required this.onClose,
@@ -193,6 +214,7 @@ class _TopBar extends StatelessWidget {
   });
 
   final String title;
+  final Color color;
   final bool offline;
   final ReaderSettings settings;
   final VoidCallback onClose;
@@ -203,9 +225,8 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surface.withValues(alpha: 0.92),
+      color: color,
       child: SafeArea(
         bottom: false,
         child: Padding(

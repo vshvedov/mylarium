@@ -68,7 +68,10 @@ class HomeScreen extends ConsumerWidget {
                 ref.invalidate(recentlyAddedSeriesProvider);
                 ref.invalidate(recentlyUpdatedSeriesProvider);
               },
-              child: ListView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 820),
+                  child: ListView(
                 children: [
                   Rail(
                     title: 'Keep reading',
@@ -98,6 +101,8 @@ class HomeScreen extends ConsumerWidget {
                       (updated.valueOrNull ?? const []).isEmpty)
                     const _EmptyHome(),
                 ],
+                  ),
+                ),
               ),
             ),
     );

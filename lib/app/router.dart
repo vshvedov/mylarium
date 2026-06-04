@@ -35,10 +35,8 @@ final appRouterProvider = Provider<GoRouter>(
       ),
       GoRoute(
         path: '/browse/:sourceId',
-        builder: (_, state) => SeriesGridScreen(
-          sourceId: state.pathParameters['sourceId']!,
-          title: 'All series',
-        ),
+        builder: (_, state) =>
+            BrowseShell(sourceId: state.pathParameters['sourceId']!),
       ),
       GoRoute(
         path: '/libraries/:sourceId',
@@ -107,8 +105,7 @@ final appRouterProvider = Provider<GoRouter>(
         builder: (_, _) => const DebugSourcesScreen(),
       ),
     ],
-    errorBuilder: (_, state) => Scaffold(
-      body: Center(child: Text('Route not found: ${state.uri}')),
-    ),
+    errorBuilder: (_, state) =>
+        Scaffold(body: Center(child: Text('Route not found: ${state.uri}'))),
   ),
 );

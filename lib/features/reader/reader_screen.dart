@@ -9,6 +9,7 @@ import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../core/network/komga_exception.dart';
 import '../offline/offline_providers.dart';
+import '../sync/sync_engine.dart';
 import '../sync/sync_models.dart';
 import '../sync/sync_providers.dart';
 import 'double_page_layout.dart';
@@ -94,6 +95,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// State (a stable lifetime) so orientation rebuilds do not reset it.
   final _recorder = ReadingSessionRecorder();
 
+  /// The app-lifetime sync engine future, captured once in [initState] so the
+  /// teardown write-back (in [dispose]) never touches `ref` after the element is
+  /// disposed (which throws "Cannot use ref after the widget was disposed").
+  late final Future<SyncEngine> _syncEngine;
+
   /// Debounces per-turn progress write-back (BookState + Komga queue).
   Timer? _progressDebounce;
 
@@ -114,6 +120,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   @override
   void initState() {
     super.initState();
+    _syncEngine = ref.read(syncEngineProvider.future);
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
@@ -151,8 +158,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _pushProgress(int page, {required bool completed}) {
     final sourceId = widget.sourceId;
     final bookId = widget.bookId;
-    ref
-        .read(syncEngineProvider.future)
+    _syncEngine
         .then((e) => e.recordProgress(sourceId, bookId, page, completed))
         .catchError((Object _) {});
   }
@@ -168,8 +174,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _recorder.reset();
     if (span == null) return;
     final isCompletion = _isLastPage(span.endPage);
-    ref
-        .read(syncEngineProvider.future)
+    _syncEngine
         .then((e) => e.recordSession(span, isCompletion: isCompletion))
         .catchError((Object _) {});
   }
@@ -450,6 +455,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           child: ReaderChrome(
             visible: _chrome,
             title: 'Page ${_page + 1} of ${source.pageCount}',
+            sourceId: widget.sourceId,
+            bookId: widget.bookId,
             offline: widget.data.source is OfflinePages,
             settings: s,
             pageCount: source.pageCount,
