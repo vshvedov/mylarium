@@ -34,10 +34,13 @@ void main() {
 
     var cursor = const SeriesCursor.start();
     var pages = 0;
-    var maxMs = 0;
     var seen = 0;
+    // Total wall time across the full paginate-through. Index-backed keyset
+    // pages are each near-constant, so the whole sweep is fast; a MISSING index
+    // would sort 50k rows on every page and blow far past this budget. Using
+    // the total (not a per-page max) keeps the proxy robust to CI jitter.
+    final sw = Stopwatch()..start();
     while (true) {
-      final sw = Stopwatch()..start();
       final rows = await db.seriesPage(
         sourceId: 's1',
         afterTitleSort: cursor.titleSort,
@@ -45,18 +48,18 @@ void main() {
         limit: pageSize,
         includeRestricted: false,
       );
-      sw.stop();
-      maxMs = sw.elapsedMilliseconds > maxMs ? sw.elapsedMilliseconds : maxMs;
       if (rows.isEmpty) break;
       seen += rows.length;
       cursor = SeriesCursor.after(rows.last);
       pages++;
       if (rows.length < pageSize) break;
     }
+    sw.stop();
 
     expect(seen, total);
     expect(pages, (total / pageSize).ceil());
-    expect(maxMs, lessThan(50),
-        reason: 'slowest keyset page took ${maxMs}ms (index-backed expected)');
+    expect(sw.elapsedMilliseconds, lessThan(2000),
+        reason: 'full keyset sweep took ${sw.elapsedMilliseconds}ms '
+            '(index-backed expected; a missing index would be far slower)');
   });
 }

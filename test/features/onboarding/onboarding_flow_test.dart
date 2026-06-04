@@ -23,7 +23,7 @@ class _InMemorySecureStore extends SecureStore {
 }
 
 void main() {
-  testWidgets('boots to onboarding, connects, lands on the debug source list',
+  testWidgets('boots to onboarding, connects, lands on the library home',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     final settings = await db.getOrCreateSettings();
@@ -54,6 +54,25 @@ void main() {
       }),
       queryParameters: {'page': 0, 'size': 50},
     );
+    // Home rails fetch these on landing.
+    Map<String, Object?> page(List<Map<String, Object?>> content) => {
+          'content': content,
+          'totalElements': content.length,
+          'number': 0,
+          'last': true,
+        };
+    const akira = {
+      'id': 's1',
+      'libraryId': 'lib1',
+      'name': 'Akira',
+      'metadata': {'title': 'Akira', 'titleSort': 'Akira'},
+    };
+    adapter.onGet('/api/v1/books/ondeck', (s) => s.reply(200, page(const [])),
+        queryParameters: {'page': 0, 'size': 20});
+    adapter.onGet('/api/v1/series/new', (s) => s.reply(200, page(const [akira])),
+        queryParameters: {'page': 0, 'size': 20});
+    adapter.onGet('/api/v1/series/updated', (s) => s.reply(200, page(const [])),
+        queryParameters: {'page': 0, 'size': 20});
 
     await tester.pumpWidget(ProviderScope(
       overrides: [
@@ -81,10 +100,11 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Connect'));
     await tester.pumpAndSettle();
 
-    // Navigated to the debug source list, which shows the refreshed series.
-    expect(find.text('Sources (debug)'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.refresh).first);
-    await tester.pumpAndSettle();
+    // Navigated to the library home (NOT the debug source list), with the
+    // recently-added rail showing the fetched series.
+    expect(find.text('Mylarium'), findsOneWidget);
+    expect(find.text('Sources (debug)'), findsNothing);
+    expect(find.text('Recently added'), findsOneWidget);
     expect(find.text('Akira'), findsOneWidget);
 
     // Tear down the widget tree inside the test so stream subscriptions and any

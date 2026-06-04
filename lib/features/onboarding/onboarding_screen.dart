@@ -70,7 +70,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ref.listen(onboardingControllerProvider, (_, next) {
       final result = next.valueOrNull;
       if (result is ConnSuccess) {
-        context.go('/debug/sources');
+        // Land on the library home after connecting (the debug sources screen
+        // is reachable from home -> settings).
+        context.go('/');
       }
     });
 
