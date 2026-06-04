@@ -134,17 +134,34 @@ class HomeScreen extends ConsumerWidget {
               builder: (context, ref, _) {
                 final sourceId =
                     ref.watch(activeSourceIdProvider).valueOrNull;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.collections_bookmark_outlined),
-                  title: const Text('Libraries'),
-                  enabled: sourceId != null,
-                  onTap: sourceId == null
-                      ? null
-                      : () {
-                          Navigator.of(sheetContext).pop();
-                          context.push('/libraries/$sourceId');
-                        },
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const Icon(Icons.collections_bookmark_outlined),
+                      title: const Text('Libraries'),
+                      enabled: sourceId != null,
+                      onTap: sourceId == null
+                          ? null
+                          : () {
+                              Navigator.of(sheetContext).pop();
+                              context.push('/libraries/$sourceId');
+                            },
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.bookmarks_outlined),
+                      title: const Text('Collections & read lists'),
+                      enabled: sourceId != null,
+                      onTap: sourceId == null
+                          ? null
+                          : () {
+                              Navigator.of(sheetContext).pop();
+                              context.push('/collections/$sourceId');
+                            },
+                    ),
+                  ],
                 );
               },
             ),

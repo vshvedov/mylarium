@@ -105,6 +105,299 @@ final readListsProvider = AutoDisposeFutureProvider<List<ReadListDto>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ReadListsRef = AutoDisposeFutureProviderRef<List<ReadListDto>>;
+String _$collectionSeriesHash() => r'3d72a68b8a5afa5a450efe9d6a86d5b77be402d0';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+/// Series in a collection, age-gated like the rails (by each series' own
+/// ageRating + its library prefs).
+///
+/// Copied from [collectionSeries].
+@ProviderFor(collectionSeries)
+const collectionSeriesProvider = CollectionSeriesFamily();
+
+/// Series in a collection, age-gated like the rails (by each series' own
+/// ageRating + its library prefs).
+///
+/// Copied from [collectionSeries].
+class CollectionSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
+  /// Series in a collection, age-gated like the rails (by each series' own
+  /// ageRating + its library prefs).
+  ///
+  /// Copied from [collectionSeries].
+  const CollectionSeriesFamily();
+
+  /// Series in a collection, age-gated like the rails (by each series' own
+  /// ageRating + its library prefs).
+  ///
+  /// Copied from [collectionSeries].
+  CollectionSeriesProvider call(String collectionId) {
+    return CollectionSeriesProvider(collectionId);
+  }
+
+  @override
+  CollectionSeriesProvider getProviderOverride(
+    covariant CollectionSeriesProvider provider,
+  ) {
+    return call(provider.collectionId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'collectionSeriesProvider';
+}
+
+/// Series in a collection, age-gated like the rails (by each series' own
+/// ageRating + its library prefs).
+///
+/// Copied from [collectionSeries].
+class CollectionSeriesProvider
+    extends AutoDisposeFutureProvider<List<SeriesDto>> {
+  /// Series in a collection, age-gated like the rails (by each series' own
+  /// ageRating + its library prefs).
+  ///
+  /// Copied from [collectionSeries].
+  CollectionSeriesProvider(String collectionId)
+    : this._internal(
+        (ref) => collectionSeries(ref as CollectionSeriesRef, collectionId),
+        from: collectionSeriesProvider,
+        name: r'collectionSeriesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$collectionSeriesHash,
+        dependencies: CollectionSeriesFamily._dependencies,
+        allTransitiveDependencies:
+            CollectionSeriesFamily._allTransitiveDependencies,
+        collectionId: collectionId,
+      );
+
+  CollectionSeriesProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.collectionId,
+  }) : super.internal();
+
+  final String collectionId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<SeriesDto>> Function(CollectionSeriesRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: CollectionSeriesProvider._internal(
+        (ref) => create(ref as CollectionSeriesRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        collectionId: collectionId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<SeriesDto>> createElement() {
+    return _CollectionSeriesProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CollectionSeriesProvider &&
+        other.collectionId == collectionId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, collectionId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin CollectionSeriesRef on AutoDisposeFutureProviderRef<List<SeriesDto>> {
+  /// The parameter `collectionId` of this provider.
+  String get collectionId;
+}
+
+class _CollectionSeriesProviderElement
+    extends AutoDisposeFutureProviderElement<List<SeriesDto>>
+    with CollectionSeriesRef {
+  _CollectionSeriesProviderElement(super.provider);
+
+  @override
+  String get collectionId => (origin as CollectionSeriesProvider).collectionId;
+}
+
+String _$readListBooksHash() => r'26456e5b2ea4e6a793f06f2252920239c7c47704';
+
+/// Books in a read list (not age-gated; a curated reading order).
+///
+/// Copied from [readListBooks].
+@ProviderFor(readListBooks)
+const readListBooksProvider = ReadListBooksFamily();
+
+/// Books in a read list (not age-gated; a curated reading order).
+///
+/// Copied from [readListBooks].
+class ReadListBooksFamily extends Family<AsyncValue<List<BookDto>>> {
+  /// Books in a read list (not age-gated; a curated reading order).
+  ///
+  /// Copied from [readListBooks].
+  const ReadListBooksFamily();
+
+  /// Books in a read list (not age-gated; a curated reading order).
+  ///
+  /// Copied from [readListBooks].
+  ReadListBooksProvider call(String readListId) {
+    return ReadListBooksProvider(readListId);
+  }
+
+  @override
+  ReadListBooksProvider getProviderOverride(
+    covariant ReadListBooksProvider provider,
+  ) {
+    return call(provider.readListId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'readListBooksProvider';
+}
+
+/// Books in a read list (not age-gated; a curated reading order).
+///
+/// Copied from [readListBooks].
+class ReadListBooksProvider extends AutoDisposeFutureProvider<List<BookDto>> {
+  /// Books in a read list (not age-gated; a curated reading order).
+  ///
+  /// Copied from [readListBooks].
+  ReadListBooksProvider(String readListId)
+    : this._internal(
+        (ref) => readListBooks(ref as ReadListBooksRef, readListId),
+        from: readListBooksProvider,
+        name: r'readListBooksProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$readListBooksHash,
+        dependencies: ReadListBooksFamily._dependencies,
+        allTransitiveDependencies:
+            ReadListBooksFamily._allTransitiveDependencies,
+        readListId: readListId,
+      );
+
+  ReadListBooksProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.readListId,
+  }) : super.internal();
+
+  final String readListId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<BookDto>> Function(ReadListBooksRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: ReadListBooksProvider._internal(
+        (ref) => create(ref as ReadListBooksRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        readListId: readListId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<BookDto>> createElement() {
+    return _ReadListBooksProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ReadListBooksProvider && other.readListId == readListId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, readListId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin ReadListBooksRef on AutoDisposeFutureProviderRef<List<BookDto>> {
+  /// The parameter `readListId` of this provider.
+  String get readListId;
+}
+
+class _ReadListBooksProviderElement
+    extends AutoDisposeFutureProviderElement<List<BookDto>>
+    with ReadListBooksRef {
+  _ReadListBooksProviderElement(super.provider);
+
+  @override
+  String get readListId => (origin as ReadListBooksProvider).readListId;
+}
+
 String _$librariesHash() => r'7b0ea1124dfdda79391603f4c6a79cd13aa623b1';
 
 /// Libraries for the active source (drives the lock-settings screen and library
@@ -127,27 +420,6 @@ final librariesProvider = AutoDisposeStreamProvider<List<Library>>.internal(
 // ignore: unused_element
 typedef LibrariesRef = AutoDisposeStreamProviderRef<List<Library>>;
 String _$seriesBooksHash() => r'a580c2d86698e42c42172dbb6c8ec7ad11a37abe';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
 
 /// A series' books, streamed from the cache. Kicks an online refresh first.
 ///

@@ -98,6 +98,34 @@ class KomgaApi {
             res.data! as Map<String, Object?>, ReadListDto.fromJson);
       });
 
+  /// Series belonging to a collection (in the collection's order).
+  Future<Page<SeriesDto>> collectionSeries(
+    String collectionId, {
+    int page = 0,
+    int size = 100,
+  }) =>
+      _guard(() async {
+        final res = await _dio.get<Object?>(
+            '$_v1/collections/$collectionId/series',
+            queryParameters: {'page': page, 'size': size});
+        return Page.fromJson(
+            res.data! as Map<String, Object?>, SeriesDto.fromJson);
+      });
+
+  /// Books belonging to a read list (in the read list's order).
+  Future<Page<BookDto>> readListBooks(
+    String readListId, {
+    int page = 0,
+    int size = 100,
+  }) =>
+      _guard(() async {
+        final res = await _dio.get<Object?>(
+            '$_v1/readlists/$readListId/books',
+            queryParameters: {'page': page, 'size': size});
+        return Page.fromJson(
+            res.data! as Map<String, Object?>, BookDto.fromJson);
+      });
+
   Future<Page<SeriesDto>> listSeries({
     required int page,
     int size = 50,

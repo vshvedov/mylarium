@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/home/home_screen.dart';
 import '../features/library/book_detail.dart';
+import '../features/library/collections_screen.dart';
 import '../features/library/libraries_screen.dart';
 import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
@@ -64,6 +65,25 @@ final appRouterProvider = Provider<GoRouter>(
         ),
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
+      GoRoute(
+        path: '/collections/:sourceId',
+        builder: (_, state) =>
+            CollectionsScreen(sourceId: state.pathParameters['sourceId']!),
+      ),
+      GoRoute(
+        path: '/collection/:sourceId/:collectionId',
+        builder: (_, state) => CollectionDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          collectionId: state.pathParameters['collectionId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/readlist/:sourceId/:readListId',
+        builder: (_, state) => ReadListDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          readListId: state.pathParameters['readListId']!,
+        ),
+      ),
       GoRoute(
         path: '/settings/library-lock',
         builder: (_, _) => const LibraryLockScreen(),

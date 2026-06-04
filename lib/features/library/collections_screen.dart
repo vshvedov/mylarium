@@ -1,0 +1,186 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import 'library_browse_controllers.dart';
+import 'widgets/library_tiles.dart';
+
+/// Browses the active source's collections and read lists. Tapping one opens a
+/// grid of its series (collection) or books (read list).
+class CollectionsScreen extends ConsumerWidget {
+  const CollectionsScreen({super.key, required this.sourceId});
+
+  final String sourceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final collections = ref.watch(collectionsProvider);
+    final readLists = ref.watch(readListsProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Collections & read lists')),
+      body: ListView(
+        children: [
+          _Header(label: 'Collections'),
+          ...switch (collections) {
+            AsyncData(:final value) when value.isEmpty => [
+                const _Empty(label: 'No collections.'),
+              ],
+            AsyncData(:final value) => [
+                for (final c in value)
+                  ListTile(
+                    leading: const Icon(Icons.collections_bookmark_outlined),
+                    title: Text(c.name),
+                    subtitle: Text('${c.seriesIds.length} series'),
+                    onTap: () =>
+                        context.push('/collection/$sourceId/${c.id}'),
+                  ),
+              ],
+            AsyncError() => [const _Empty(label: 'Could not load collections.')],
+            _ => [const _Loading()],
+          },
+          const Divider(),
+          _Header(label: 'Read lists'),
+          ...switch (readLists) {
+            AsyncData(:final value) when value.isEmpty => [
+                const _Empty(label: 'No read lists.'),
+              ],
+            AsyncData(:final value) => [
+                for (final r in value)
+                  ListTile(
+                    leading: const Icon(Icons.playlist_play),
+                    title: Text(r.name),
+                    subtitle: Text('${r.bookIds.length} books'),
+                    onTap: () => context.push('/readlist/$sourceId/${r.id}'),
+                  ),
+              ],
+            AsyncError() => [const _Empty(label: 'Could not load read lists.')],
+            _ => [const _Loading()],
+          },
+        ],
+      ),
+    );
+  }
+}
+
+/// A collection's series as a grid.
+class CollectionDetailScreen extends ConsumerWidget {
+  const CollectionDetailScreen({
+    super.key,
+    required this.sourceId,
+    required this.collectionId,
+  });
+
+  final String sourceId;
+  final String collectionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final series = ref.watch(collectionSeriesProvider(collectionId));
+    return Scaffold(
+      appBar: AppBar(title: const Text('Collection')),
+      body: series.when(
+        loading: () => const _Loading(),
+        error: (e, _) => _Empty(label: 'Could not load: $e'),
+        data: (list) => list.isEmpty
+            ? const _Empty(label: 'Empty collection.')
+            : GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 160,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.58,
+                ),
+                itemCount: list.length,
+                itemBuilder: (context, i) {
+                  final s = list[i];
+                  return CoverTile(
+                    sourceId: sourceId,
+                    ownerType: 'series',
+                    ownerId: s.id,
+                    title: s.title,
+                    onTap: () => context.push('/series/$sourceId/${s.id}'),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+/// A read list's books as a grid.
+class ReadListDetailScreen extends ConsumerWidget {
+  const ReadListDetailScreen({
+    super.key,
+    required this.sourceId,
+    required this.readListId,
+  });
+
+  final String sourceId;
+  final String readListId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final books = ref.watch(readListBooksProvider(readListId));
+    return Scaffold(
+      appBar: AppBar(title: const Text('Read list')),
+      body: books.when(
+        loading: () => const _Loading(),
+        error: (e, _) => _Empty(label: 'Could not load: $e'),
+        data: (list) => list.isEmpty
+            ? const _Empty(label: 'Empty read list.')
+            : GridView.builder(
+                padding: const EdgeInsets.all(12),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 160,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.58,
+                ),
+                itemCount: list.length,
+                itemBuilder: (context, i) {
+                  final b = list[i];
+                  return CoverTile(
+                    sourceId: sourceId,
+                    ownerType: 'book',
+                    ownerId: b.id,
+                    title: b.title,
+                    subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                    onTap: () => context.push('/book/$sourceId/${b.id}'),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+      );
+}
+
+class _Empty extends StatelessWidget {
+  const _Empty({required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(child: Text(label)),
+      );
+}
+
+class _Loading extends StatelessWidget {
+  const _Loading();
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+}

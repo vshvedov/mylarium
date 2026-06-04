@@ -11,6 +11,7 @@ import 'paged_view.dart';
 import 'page_prefetcher.dart';
 import 'reader_controller.dart';
 import 'reader_models.dart';
+import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
 import 'widgets/reader_chrome.dart';
 
@@ -66,6 +67,10 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
   bool _chrome = true;
   int? _cacheWidth;
 
+  /// Double-page "single-page nudge": shifts the spread pairing by one page
+  /// (in-session; a transient alignment correction).
+  bool _nudge = false;
+
   /// Canonical current page index (0-based).
   int _page = 0;
 
@@ -77,6 +82,27 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
+    _scrollController.addListener(_onWebtoonScroll);
+  }
+
+  void _onWebtoonScroll() {
+    if (!_mode.isWebtoon || _source == null) return;
+    final offsets = _webtoonOffsets();
+    final page = webtoonPageAt(offsets, _scrollController.offset);
+    if (page != _page) {
+      setState(() => _page = page);
+      _prefetcher?.onPage(page);
+    }
+  }
+
+  List<double> _webtoonOffsets() {
+    final source = _source!;
+    final gap = _mode == ReadingMode.webtoonGaps ? 12.0 : 0.0;
+    return webtoonOffsets(
+      (_cacheWidth ?? 1) / MediaQuery.devicePixelRatioOf(context),
+      [for (var i = 0; i < source.pageCount; i++) source.aspectRatio(i)],
+      gap,
+    );
   }
 
   @override
@@ -109,10 +135,31 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
       cacheWidth: cacheWidth,
     );
     _source = source;
-    _pairs = const DoublePageLayout()
-        .pairs(source.pageCount, coverSolo: true, widePages: source.widePages);
+    _recomputePairs();
     _prefetcher = PagePrefetcher.forContext(source, context);
     _pageController ??= PageController(initialPage: _controllerIndexFor(_page));
+  }
+
+  void _recomputePairs() {
+    final source = _source;
+    if (source == null) return;
+    // Nudge toggles the cover-solo offset, shifting the spread pairing by one.
+    _pairs = const DoublePageLayout().pairs(
+      source.pageCount,
+      coverSolo: !_nudge,
+      widePages: source.widePages,
+    );
+  }
+
+  void _toggleNudge() {
+    setState(() {
+      _nudge = !_nudge;
+      _recomputePairs();
+    });
+    final controller = _pageController;
+    if (controller != null && controller.hasClients) {
+      controller.jumpToPage(_controllerIndexFor(_page));
+    }
   }
 
   void _resetControllerForMode() {
@@ -187,10 +234,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     }
   }
 
-  void _seek(int controllerIndex) {
+  void _seekPage(int page) {
+    _page = page;
+    if (_mode.isWebtoon) {
+      if (_scrollController.hasClients) {
+        final offsets = _webtoonOffsets();
+        final max = _scrollController.position.maxScrollExtent;
+        _scrollController.jumpTo(offsets[page].clamp(0.0, max));
+      }
+      setState(() {});
+      return;
+    }
     final controller = _pageController;
     if (controller != null && controller.hasClients) {
-      controller.jumpToPage(controllerIndex);
+      controller.jumpToPage(_controllerIndexFor(page));
     }
   }
 
@@ -198,11 +255,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
   Widget build(BuildContext context) {
     final source = _source!;
     final s = widget.data.settings;
+    final size = MediaQuery.sizeOf(context);
+    final viewportAspect = size.height == 0 ? 0.7 : size.width / size.height;
     final view = switch (s.mode) {
       ReadingMode.pagedLtr || ReadingMode.pagedRtl => PagedView(
           pageController: _pageController!,
           pageCount: source.pageCount,
           imageBuilder: source.imageProvider,
+          aspectRatioOf: source.aspectRatio,
+          fit: s.fit,
+          viewportAspect: viewportAspect,
           rtl: s.mode.isRtl,
           doubleTapZoom: s.doubleTapZoom,
           zoomed: _zoomed,
@@ -216,6 +278,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
           pageController: _pageController!,
           pairs: _pairs,
           imageBuilder: source.imageProvider,
+          fit: s.fit,
           rtl: false,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
@@ -230,11 +293,6 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
         ),
     };
 
-    final count = s.mode == ReadingMode.doublePage
-        ? _pairs.length
-        : source.pageCount;
-    final position = _controllerIndexFor(_page);
-
     return Stack(
       children: [
         Positioned.fill(child: view),
@@ -243,14 +301,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
             visible: _chrome,
             title: 'Page ${_page + 1} of ${source.pageCount}',
             settings: s,
-            pageLabel: '${_page + 1}/${source.pageCount}',
-            position: position,
-            count: count,
+            pageCount: source.pageCount,
+            currentPage: _page,
+            previewImage: source.imageProvider,
             onClose: () => context.pop(),
             onSettings: (next) =>
                 ref.read(readerControllerProvider(widget.sourceId, widget.bookId)
                     .notifier).updateSettings(next),
-            onSeek: _seek,
+            onSeekPage: _seekPage,
+            onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
+            nudged: _nudge,
           ),
         ),
       ],

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/features/reader/paged_view.dart';
+import 'package:mylarium/features/reader/reader_models.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 class _StubProvider extends ImageProvider<_StubProvider> {
@@ -39,6 +40,9 @@ void main() {
         pageController: controller,
         pageCount: 3,
         imageBuilder: (i) => _StubProvider(i),
+        aspectRatioOf: (_) => 0.66,
+        fit: FitMode.screen,
+        viewportAspect: 0.7,
         rtl: false,
         doubleTapZoom: true,
         zoomed: zoomed,

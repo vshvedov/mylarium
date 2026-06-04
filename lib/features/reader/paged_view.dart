@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
+import 'gestures/fit_scale.dart';
+import 'reader_models.dart';
 import 'widgets/page_error.dart';
 
 /// Paged reader (LTR / RTL). Uses [PhotoViewGallery] so pinch-zoom/pan work and
@@ -15,6 +17,9 @@ class PagedView extends StatelessWidget {
     required this.pageController,
     required this.pageCount,
     required this.imageBuilder,
+    required this.aspectRatioOf,
+    required this.fit,
+    required this.viewportAspect,
     required this.rtl,
     required this.doubleTapZoom,
     required this.zoomed,
@@ -25,6 +30,9 @@ class PagedView extends StatelessWidget {
   final PageController pageController;
   final int pageCount;
   final ImageProvider Function(int index) imageBuilder;
+  final double? Function(int index) aspectRatioOf;
+  final FitMode fit;
+  final double viewportAspect;
   final bool rtl;
   final bool doubleTapZoom;
 
@@ -53,8 +61,9 @@ class PagedView extends StatelessWidget {
         builder: (context, index) => PhotoViewGalleryPageOptions(
           imageProvider: imageBuilder(index),
           minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 3,
-          initialScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 4,
+          initialScale:
+              fitInitialScale(fit, aspectRatioOf(index), viewportAspect),
           errorBuilder: (context, _, _) => const PageError(),
           // Identity cycle = double-tap does not change scale (zoom disabled).
           scaleStateCycle: doubleTapZoom ? defaultScaleStateCycle : (s) => s,

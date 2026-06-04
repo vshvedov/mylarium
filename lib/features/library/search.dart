@@ -34,7 +34,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _controller = TextEditingController();
   String _query = '';
   final Set<String> _libraryIds = {};
+  final Set<String> _status = {};
+  final Set<String> _readStatus = {};
   SeriesSort _sort = SeriesSort.relevance;
+
+  // Komga series and read statuses.
+  static const _statusOptions = {
+    'ONGOING': 'Ongoing',
+    'ENDED': 'Ended',
+    'HIATUS': 'Hiatus',
+    'ABANDONED': 'Abandoned',
+  };
+  static const _readStatusOptions = {
+    'UNREAD': 'Unread',
+    'IN_PROGRESS': 'In progress',
+    'READ': 'Read',
+  };
 
   AsyncValue<List<SeriesDto>> _results = const AsyncData([]);
 
@@ -55,6 +70,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final search = SeriesSearch(
         fullText: _query.isEmpty ? null : _query,
         libraryIds: _libraryIds.isEmpty ? null : _libraryIds.toList(),
+        status: _status.isEmpty ? null : _status.toList(),
+        readStatus: _readStatus.isEmpty ? null : _readStatus.toList(),
       );
       final page = await repo.searchSeriesWith(
         search,
@@ -107,28 +124,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                for (final lib in libraries)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: FilterChip(
-                      label: Text(lib.name),
-                      selected: _libraryIds.contains(lib.id),
-                      onSelected: (sel) {
-                        setState(() => sel
-                            ? _libraryIds.add(lib.id)
-                            : _libraryIds.remove(lib.id));
-                        _run();
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          _filterRow([
+            for (final lib in libraries)
+              _chip(lib.name, _libraryIds.contains(lib.id), (sel) {
+                setState(() => sel
+                    ? _libraryIds.add(lib.id)
+                    : _libraryIds.remove(lib.id));
+                _run();
+              }),
+          ]),
+          _filterRow([
+            for (final e in _statusOptions.entries)
+              _chip(e.value, _status.contains(e.key), (sel) {
+                setState(() =>
+                    sel ? _status.add(e.key) : _status.remove(e.key));
+                _run();
+              }),
+            for (final e in _readStatusOptions.entries)
+              _chip(e.value, _readStatus.contains(e.key), (sel) {
+                setState(() => sel
+                    ? _readStatus.add(e.key)
+                    : _readStatus.remove(e.key));
+                _run();
+              }),
+          ]),
           Expanded(
             child: _results.when(
               loading: () =>
@@ -163,6 +182,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
     );
   }
+
+  Widget _filterRow(List<Widget> chips) {
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(children: chips),
+    );
+  }
+
+  Widget _chip(String label, bool selected, ValueChanged<bool> onSelected) =>
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: FilterChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: onSelected,
+        ),
+      );
 
   Future<void> _openSeries(BuildContext context, SeriesDto s) async {
     final sourceId = await ref.read(activeSourceIdProvider.future);

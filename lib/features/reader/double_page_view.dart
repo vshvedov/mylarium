@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'gestures/fit_scale.dart';
+import 'reader_models.dart';
 import 'widgets/page_error.dart';
 
 /// Double-page (spread) reader. Renders precomputed [pairs] (each `[i]` solo or
@@ -12,6 +14,7 @@ class DoublePageView extends StatelessWidget {
     required this.pageController,
     required this.pairs,
     required this.imageBuilder,
+    required this.fit,
     required this.rtl,
     required this.onPageChanged,
     required this.onTap,
@@ -20,6 +23,7 @@ class DoublePageView extends StatelessWidget {
   final PageController pageController;
   final List<List<int>> pairs;
   final ImageProvider Function(int index) imageBuilder;
+  final FitMode fit;
   final bool rtl;
   final void Function(int spreadIndex) onPageChanged;
   final void Function(Offset normalized) onTap;
@@ -54,7 +58,7 @@ class DoublePageView extends StatelessWidget {
                     Flexible(
                       child: Image(
                         image: imageBuilder(p),
-                        fit: BoxFit.contain,
+                        fit: boxFitFor(fit),
                         gaplessPlayback: true,
                         errorBuilder: (_, _, _) => const PageError(),
                       ),

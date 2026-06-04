@@ -77,6 +77,34 @@ Future<List<ReadListDto>> readLists(Ref ref) async {
   return repo.list();
 }
 
+/// Series in a collection, age-gated like the rails (by each series' own
+/// ageRating + its library prefs).
+@riverpod
+Future<List<SeriesDto>> collectionSeries(Ref ref, String collectionId) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  final lock = await ref.watch(appLockProvider.future);
+  try {
+    final page = await api.collectionSeries(collectionId);
+    return _gate(page.content, lock);
+  } on KomgaException {
+    return const [];
+  }
+}
+
+/// Books in a read list (not age-gated; a curated reading order).
+@riverpod
+Future<List<BookDto>> readListBooks(Ref ref, String readListId) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  try {
+    final page = await api.readListBooks(readListId);
+    return page.content;
+  } on KomgaException {
+    return const [];
+  }
+}
+
 /// Libraries for the active source (drives the lock-settings screen and library
 /// grid entry). Refreshes from the server on first watch, then streams the
 /// cache.
