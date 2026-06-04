@@ -24,6 +24,13 @@ import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
 import 'widgets/reader_chrome.dart';
 
+/// Upper bound on the per-page decode width (physical px). Caps bitmap size on
+/// large hi-DPI screens so the prefetch window fits the image-cache budget and
+/// GPU uploads stay cheap. Tunable: raise for sharper full-screen pages on big
+/// tablets, lower for smoother turning on weak GPUs. Pages are also never
+/// upscaled past their intrinsic width.
+const int kMaxDecodeWidth = 2048;
+
 /// The reader. Loads the book online, then renders the current mode's view with
 /// immersive chrome, tap-zone gestures, and a precache-ahead pipeline.
 class ReaderScreen extends ConsumerWidget {
@@ -223,7 +230,14 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _rebuildSource() {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
-    final cacheWidth = (width * dpr).round();
+    // Decode to the viewport's physical width, but cap it: on a large hi-DPI
+    // tablet the raw value (e.g. ~2560px) yields ~40 MB bitmaps that blow the
+    // image-cache budget and hitch the GPU upload on every page. Capping bounds
+    // per-page memory so the prefetch window fits with headroom; pinch-zoom
+    // past this is a deliberate, rare path, not the per-turn cost. The decode
+    // is additionally clamped to each page's intrinsic width (never upscaled)
+    // inside the page sources.
+    final cacheWidth = (width * dpr).round().clamp(1, kMaxDecodeWidth);
     // Only rebuild when the decode sizing actually changes (e.g. rotation), so
     // a metrics/theme dependency change does not reset the prefetch window.
     if (_source != null && _cacheWidth == cacheWidth) return;

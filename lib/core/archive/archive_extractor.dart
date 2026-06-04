@@ -57,9 +57,16 @@ List<String> _entries(String path) {
   final names = <String>[];
   switch (_sniff(path)) {
     case ArchiveFormat.zip:
-      final archive = ZipDecoder().decodeBytes(File(path).readAsBytesSync());
-      for (final f in archive.files) {
-        if (f.isFile && isImageEntry(f.name)) names.add(f.name);
+      // Random-access: decode only the central directory (read from the end of
+      // the file) rather than loading the whole archive into memory.
+      final input = InputFileStream(path);
+      try {
+        final archive = ZipDecoder().decodeStream(input);
+        for (final f in archive.files) {
+          if (f.isFile && isImageEntry(f.name)) names.add(f.name);
+        }
+      } finally {
+        input.closeSync();
       }
     case ArchiveFormat.rar:
       for (final e in UnrarExtractor().listFiles(path)) {
@@ -78,16 +85,25 @@ List<String> _entries(String path) {
 Uint8List _page(String path, String entry) {
   switch (_sniff(path)) {
     case ArchiveFormat.zip:
-      final archive = ZipDecoder().decodeBytes(File(path).readAsBytesSync());
-      final file = archive.findFile(entry);
-      if (file == null) {
-        throw ArchiveException('Entry not found: $entry', path: path);
+      // Random-access read of a single entry: decode the central directory,
+      // then inflate ONLY the requested entry by seeking to its local header.
+      // Avoids reading and re-parsing the whole archive on every page turn (the
+      // previous `decodeBytes(readAsBytesSync())` was O(archive size) per page).
+      final input = InputFileStream(path);
+      try {
+        final archive = ZipDecoder().decodeStream(input);
+        final file = archive.findFile(entry);
+        if (file == null) {
+          throw ArchiveException('Entry not found: $entry', path: path);
+        }
+        final bytes = file.readBytes();
+        if (bytes == null) {
+          throw ArchiveException('Could not read entry: $entry', path: path);
+        }
+        return bytes;
+      } finally {
+        input.closeSync();
       }
-      final bytes = file.readBytes();
-      if (bytes == null) {
-        throw ArchiveException('Could not read entry: $entry', path: path);
-      }
-      return bytes;
     case ArchiveFormat.rar:
       return UnrarExtractor().extractFile(path, entry);
     case ArchiveFormat.unknown:

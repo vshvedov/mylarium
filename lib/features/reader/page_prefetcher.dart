@@ -39,8 +39,15 @@ class PagePrefetcher {
   @visibleForTesting
   Set<int> get live => _live;
 
+  /// Max pages decoded concurrently while warming the window. Two is fast
+  /// enough to stay ahead of reading without a decode/isolate burst on weak
+  /// devices after a seek (where the whole window is cold at once).
+  static const int _concurrency = 2;
+
   /// Precache the window `[index, index+ahead]` (plus one behind) and evict
-  /// everything outside it.
+  /// everything outside it. The keep-set's iteration order prioritizes the
+  /// current page, then the pages ahead, then the one behind, so the immediate
+  /// next page warms first.
   Future<void> onPage(int index) async {
     final keep = <int>{};
     for (var i = index; i <= index + ahead && i < source.pageCount; i++) {
@@ -48,19 +55,25 @@ class PagePrefetcher {
     }
     if (index - 1 >= 0) keep.add(index - 1);
 
-    for (final i in keep) {
-      if (!_live.contains(i)) {
-        final provider = await source.page(i);
-        await precache(provider);
-      }
+    final toLoad = [
+      for (final i in keep)
+        if (!_live.contains(i)) i,
+    ];
+    for (var start = 0; start < toLoad.length; start += _concurrency) {
+      await Future.wait([
+        for (final i in toLoad.skip(start).take(_concurrency))
+          source.page(i).then((p) async {
+            await precache(p);
+            _live.add(i);
+          }),
+      ]);
     }
+
     for (final i in _live.toList()) {
       if (!keep.contains(i)) {
-        final provider = await source.page(i);
-        evict(provider);
+        evict(await source.page(i));
         _live.remove(i);
       }
     }
-    _live.addAll(keep);
   }
 }

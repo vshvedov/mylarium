@@ -110,10 +110,14 @@ class KomgaPageImageProvider extends ImageProvider<KomgaPageImageProvider> {
     final width = cacheWidth;
     return decode(
       buffer,
+      // Size the decode to the viewport, but never UPSCALE: clamp to the
+      // source's intrinsic width so a small scan is not blown up into a huge
+      // (and softer) bitmap.
       getTargetSize: width == null
           ? null
-          : (intrinsicWidth, intrinsicHeight) =>
-              ui.TargetImageSize(width: width),
+          : (intrinsicWidth, intrinsicHeight) => ui.TargetImageSize(
+                width: width < intrinsicWidth ? width : intrinsicWidth,
+              ),
     );
   }
 
