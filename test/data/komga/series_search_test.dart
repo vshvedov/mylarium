@@ -2,15 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/data/komga/models/series_search.dart';
 
 void main() {
-  test('full text is carried as the query value, not the body', () {
-    const search = SeriesSearch(fullText: 'akira');
-    expect(search.fullTextSearch, 'akira');
-    expect(search.toRequestBody(), isEmpty);
+  test('full text goes into the body as fullTextSearch', () {
+    const search = SeriesSearch(fullText: 'batman');
+    expect(search.toRequestBody(), {'fullTextSearch': 'batman'});
   });
 
-  test('empty full text yields a null query value', () {
+  test('empty full text is omitted from the body', () {
     expect(const SeriesSearch(fullText: '').fullTextSearch, isNull);
-    expect(const SeriesSearch().fullTextSearch, isNull);
+    expect(const SeriesSearch(fullText: '').toRequestBody(), isEmpty);
+    expect(const SeriesSearch().toRequestBody(), isEmpty);
+  });
+
+  test('full text and filters combine in one body', () {
+    const search = SeriesSearch(fullText: 'batman', readStatus: ['UNREAD']);
+    final body = search.toRequestBody();
+    expect(body['fullTextSearch'], 'batman');
+    expect(body['condition'], isNotNull);
   });
 
   test('filters serialize into an allOf of anyOf condition groups', () {

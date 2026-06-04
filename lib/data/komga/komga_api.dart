@@ -143,13 +143,11 @@ class KomgaApi {
           // Fast path: legacy GET listing.
           res = await _dio.get('$_v1/series', queryParameters: query);
         } else {
-          final fts = search.fullTextSearch;
+          // Komga reads fullTextSearch + condition from the POST body, not from
+          // query params.
           res = await _dio.post(
             '$_v1/series/list',
-            queryParameters: {
-              ...query,
-              'full_text_search': ?fts,
-            },
+            queryParameters: query,
             data: search.toRequestBody(),
           );
         }
@@ -177,13 +175,10 @@ class KomgaApi {
               seriesId == null ? '$_v1/books' : '$_v1/series/$seriesId/books';
           res = await _dio.get(path, queryParameters: query);
         } else {
-          final fts = search.fullTextSearch;
+          // fullTextSearch + condition go in the POST body, not query params.
           res = await _dio.post(
             '$_v1/books/list',
-            queryParameters: {
-              ...query,
-              'full_text_search': ?fts,
-            },
+            queryParameters: query,
             data: search.toRequestBody(),
           );
         }

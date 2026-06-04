@@ -24,12 +24,13 @@ class SeriesSearch {
   final List<String>? publishers;
   final List<int>? ageRatings;
 
-  /// `?full_text_search=` value, or null when no text term is set.
+  /// The full-text term, or null when none is set.
   String? get fullTextSearch =>
       (fullText == null || fullText!.isEmpty) ? null : fullText;
 
-  /// POST `/list` body. Returns `{}` when there are no structured filters (the
-  /// caller may still pass `fullTextSearch` as a query param).
+  /// POST `/list` body for Komga. Carries `fullTextSearch` (the Lucene text
+  /// query) and a structured `condition`, both in the BODY (Komga ignores a
+  /// `full_text_search` query parameter). Returns `{}` when neither is set.
   Map<String, Object?> toRequestBody() {
     final groups = <Map<String, Object?>>[];
 
@@ -62,9 +63,11 @@ class SeriesSearch {
       });
     }
 
-    if (groups.isEmpty) return const {};
-    return {
-      'condition': {'allOf': groups}
-    };
+    final body = <String, Object?>{};
+    if (fullTextSearch != null) body['fullTextSearch'] = fullTextSearch;
+    if (groups.isNotEmpty) {
+      body['condition'] = {'allOf': groups};
+    }
+    return body;
   }
 }
