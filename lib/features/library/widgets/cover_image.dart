@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../app/theme/design_tokens.dart';
+import '../../../app/theme/app_icons.dart';
 import '../thumbnail_cache.dart';
 
 /// A cover image for a series/book. Resolves through the thumbnail cache and
-/// falls back to a tinted placeholder with initials when no image is available.
+/// falls back to a clean tinted placeholder (cover icon + title) when no image
+/// is available; a bare tint while loading.
 class CoverImage extends ConsumerWidget {
   const CoverImage({
     super.key,
@@ -29,36 +30,37 @@ class CoverImage extends ConsumerWidget {
     );
     return async.maybeWhen(
       data: (provider) => provider == null
-          ? _Placeholder(title: title)
-          : Image(image: provider, fit: fit, gaplessPlayback: true),
-      orElse: () => _Placeholder(title: title, shimmer: true),
+          ? const _Placeholder()
+          : Image(
+              image: provider,
+              fit: fit,
+              gaplessPlayback: true,
+              semanticLabel: title,
+            ),
+      orElse: () => const _Placeholder(shimmer: true),
     );
   }
 }
 
 class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.title, this.shimmer = false});
+  const _Placeholder({this.shimmer = false});
 
-  final String title;
+  /// True while the cover is still loading (bare tint, no icon).
   final bool shimmer;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final tokens = Theme.of(context).extension<DesignTokens>()!;
-    final initials = title.trim().isEmpty
-        ? '?'
-        : title.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0]).join();
+    if (shimmer) {
+      return ColoredBox(color: scheme.surfaceContainerHighest);
+    }
+    // Just a muted cover icon: the title is already shown beneath cover tiles,
+    // so repeating it here would be redundant (and clutters small tiles).
     return Container(
       color: scheme.surfaceContainerHighest,
       alignment: Alignment.center,
-      child: Text(
-        initials.toUpperCase(),
-        style: tokens.coverTitleStyle.copyWith(
-          color: scheme.onSurfaceVariant,
-          fontSize: 22,
-        ),
-      ),
+      child: Icon(AppIcons.coverPlaceholder,
+          size: 28, color: scheme.onSurfaceVariant.withValues(alpha: 0.6)),
     );
   }
 }

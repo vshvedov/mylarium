@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/security/app_lock.dart';
@@ -28,8 +29,8 @@ class LibraryLockScreen extends ConsumerWidget {
                     ExpansionTile(
                       leading: Icon(
                         (lock.locked[lib.id] ?? false)
-                            ? Icons.lock
-                            : Icons.lock_open,
+                            ? AppIcons.lock
+                            : AppIcons.lockOpen,
                       ),
                       title: Text(lib.name),
                       children: [

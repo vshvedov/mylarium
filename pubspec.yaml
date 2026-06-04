@@ -50,6 +50,7 @@ dependencies:
   archive: ^4.0.9
   background_downloader: ^9.5.5
   unrar: ^0.1.2
+  phosphor_flutter: ^2.1.0
 
 dev_dependencies:
   flutter_test:

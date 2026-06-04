@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -38,18 +39,18 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('Mylarium'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
           IconButton(
-            icon: const Icon(Icons.grid_view),
+            icon: const Icon(AppIcons.browse),
             tooltip: 'Browse all',
             onPressed: sourceId == null
                 ? null
                 : () => context.push('/browse/$sourceId'),
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(AppIcons.settings),
             onPressed: () => _openSettings(context, ref),
           ),
         ],
@@ -139,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading:
-                          const Icon(Icons.collections_bookmark_outlined),
+                          const Icon(AppIcons.libraries),
                       title: const Text('Libraries'),
                       enabled: sourceId != null,
                       onTap: sourceId == null
@@ -151,7 +152,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.bookmarks_outlined),
+                      leading: const Icon(AppIcons.collections),
                       title: const Text('Collections & read lists'),
                       enabled: sourceId != null,
                       onTap: sourceId == null
@@ -167,7 +168,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.sd_storage_outlined),
+              leading: const Icon(AppIcons.storage),
               title: const Text('Storage'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -176,7 +177,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.lock_outline),
+              leading: const Icon(AppIcons.lock),
               title: const Text('Library locks'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -185,7 +186,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.dns_outlined),
+              leading: const Icon(AppIcons.sources),
               title: const Text('Sources (debug)'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -209,7 +210,7 @@ class _NoSource extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off, size: 48),
+              const Icon(AppIcons.noSource, size: 48),
               const SizedBox(height: 12),
               const Text('No source connected.'),
               const SizedBox(height: 12),

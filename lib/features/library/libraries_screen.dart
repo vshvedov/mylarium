@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,8 +29,8 @@ class LibrariesScreen extends ConsumerWidget {
             for (final lib in libs)
               ListTile(
                 leading: Icon(lock.isLocked(lib.id)
-                    ? Icons.lock
-                    : Icons.collections_bookmark_outlined),
+                    ? AppIcons.lock
+                    : AppIcons.libraries),
                 title: Text(lib.name),
                 onTap: () => _open(context, ref, lib.id),
               ),
@@ -90,7 +91,7 @@ class LibraryGridScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock, size: 48),
+              const Icon(AppIcons.lock, size: 48),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () =>

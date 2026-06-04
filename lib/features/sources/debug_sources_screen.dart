@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -67,7 +68,7 @@ class _DebugSourcesScreenState extends ConsumerState<DebugSourcesScreen> {
         title: const Text('Sources (debug)'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(AppIcons.add),
             onPressed: () => context.go('/onboarding'),
             tooltip: 'Add source',
           ),
@@ -93,7 +94,7 @@ class _DebugSourcesScreenState extends ConsumerState<DebugSourcesScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh),
+                      : const Icon(AppIcons.refresh),
                   onTap: _loading ? null : () => _refresh(source),
                 ),
               const Divider(height: 1),

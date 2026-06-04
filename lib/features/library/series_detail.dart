@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -127,7 +128,7 @@ class _CheckBadge extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         padding: const EdgeInsets.all(2),
-        child: Icon(Icons.check,
+        child: Icon(AppIcons.check,
             size: 14, color: Theme.of(context).colorScheme.onPrimary),
       );
 }

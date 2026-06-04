@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/theme/app_icons.dart';
 
 import '../reader_models.dart';
 
@@ -205,11 +206,11 @@ class _TopBar extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(AppIcons.back),
                 onPressed: onClose,
               ),
               Icon(
-                offline ? Icons.cloud_done_outlined : Icons.cloud_outlined,
+                offline ? AppIcons.offline : AppIcons.streaming,
                 size: 18,
                 semanticLabel: offline ? 'Reading offline' : 'Streaming',
               ),
@@ -224,13 +225,13 @@ class _TopBar extends StatelessWidget {
               ),
               if (onNudge != null)
                 IconButton(
-                  icon: const Icon(Icons.exposure_plus_1),
+                  icon: const Icon(AppIcons.nudge),
                   tooltip: 'Nudge spread',
                   isSelected: nudged,
                   onPressed: onNudge,
                 ),
               PopupMenuButton<ReadingMode>(
-                icon: const Icon(Icons.view_carousel),
+                icon: const Icon(AppIcons.readingMode),
                 initialValue: settings.mode,
                 onSelected: (m) => onSettings(settings.copyWith(mode: m)),
                 itemBuilder: (_) => [
@@ -239,7 +240,7 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
               PopupMenuButton<FitMode>(
-                icon: const Icon(Icons.fit_screen),
+                icon: const Icon(AppIcons.fit),
                 initialValue: settings.fit,
                 onSelected: (f) => onSettings(settings.copyWith(fit: f)),
                 itemBuilder: (_) => [
@@ -248,7 +249,7 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.tune),
+                icon: const Icon(AppIcons.options),
                 onSelected: (key) {
                   switch (key) {
                     case 'invert':
@@ -281,7 +282,7 @@ class _TopBar extends StatelessWidget {
         value: value,
         child: Row(
           children: [
-            Icon(on ? Icons.check_box : Icons.check_box_outline_blank, size: 18),
+            Icon(on ? AppIcons.checkboxOn : AppIcons.checkboxOff, size: 18),
             const SizedBox(width: 8),
             Text(label),
           ],

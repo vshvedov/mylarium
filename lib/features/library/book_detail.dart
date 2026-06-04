@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -60,7 +61,7 @@ class BookDetailScreen extends ConsumerWidget {
           ],
           const SizedBox(height: 16),
           FilledButton.icon(
-            icon: const Icon(Icons.menu_book),
+            icon: const Icon(AppIcons.read),
             label: Text(
               (book?.readPage ?? 0) > 0 ? 'Continue reading' : 'Read',
             ),
@@ -93,11 +94,11 @@ class _DownloadControl extends ConsumerWidget {
       if (asset.permanent) {
         return Row(
           children: [
-            const Icon(Icons.download_done, size: 20),
+            const Icon(AppIcons.downloaded, size: 20),
             const SizedBox(width: 8),
             const Expanded(child: Text('Downloaded')),
             TextButton.icon(
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(AppIcons.delete),
               label: const Text('Remove'),
               onPressed: () => cache.delete(sourceId, bookId),
             ),
@@ -106,11 +107,11 @@ class _DownloadControl extends ConsumerWidget {
       }
       return Row(
         children: [
-          const Icon(Icons.offline_pin_outlined, size: 20),
+          const Icon(AppIcons.savedOffline, size: 20),
           const SizedBox(width: 8),
           const Expanded(child: Text('Saved offline (auto-cache)')),
           TextButton.icon(
-            icon: const Icon(Icons.download),
+            icon: const Icon(AppIcons.download),
             label: const Text('Keep'),
             onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
           ),
@@ -135,7 +136,7 @@ class _DownloadControl extends ConsumerWidget {
     }
 
     return OutlinedButton.icon(
-      icon: const Icon(Icons.download_outlined),
+      icon: const Icon(AppIcons.download),
       label: Text(state == 'failed' ? 'Retry download' : 'Download'),
       onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
     );

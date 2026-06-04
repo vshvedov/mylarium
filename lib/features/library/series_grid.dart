@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
@@ -90,7 +91,7 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
         title: Text(widget.title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
         ],

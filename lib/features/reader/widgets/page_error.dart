@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app/theme/app_icons.dart';
 
 /// Shown in place of a page that failed to load. The rest of the book stays
 /// readable (graceful degradation; the page is retried on the next decode when
@@ -11,7 +12,7 @@ class PageError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.broken_image_outlined,
+            Icon(AppIcons.brokenImage,
                 color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 8),
             Text('Could not load this page',

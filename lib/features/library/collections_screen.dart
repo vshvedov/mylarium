@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,7 +30,7 @@ class CollectionsScreen extends ConsumerWidget {
             AsyncData(:final value) => [
                 for (final c in value)
                   ListTile(
-                    leading: const Icon(Icons.collections_bookmark_outlined),
+                    leading: const Icon(AppIcons.libraries),
                     title: Text(c.name),
                     subtitle: Text('${c.seriesIds.length} series'),
                     onTap: () =>
@@ -48,7 +49,7 @@ class CollectionsScreen extends ConsumerWidget {
             AsyncData(:final value) => [
                 for (final r in value)
                   ListTile(
-                    leading: const Icon(Icons.playlist_play),
+                    leading: const Icon(AppIcons.readList),
                     title: Text(r.name),
                     subtitle: Text('${r.bookIds.length} books'),
                     onTap: () => context.push('/readlist/$sourceId/${r.id}'),

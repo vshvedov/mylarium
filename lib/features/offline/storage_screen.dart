@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
@@ -84,12 +85,12 @@ class StorageScreen extends ConsumerWidget {
                       ListTile(
                         title: Text(a.bookId),
                         subtitle: Text(_fmtBytes(a.sizeBytes)),
-                        leading: const Icon(Icons.offline_pin_outlined),
+                        leading: const Icon(AppIcons.savedOffline),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.download),
+                              icon: const Icon(AppIcons.download),
                               tooltip: 'Keep (move to Downloads)',
                               onPressed: () => ref
                                   .read(downloadManagerProvider)
@@ -97,7 +98,7 @@ class StorageScreen extends ConsumerWidget {
                                       manual: true),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline),
+                              icon: const Icon(AppIcons.delete),
                               onPressed: () =>
                                   cache.delete(a.sourceId, a.bookId),
                             ),
@@ -119,9 +120,9 @@ class StorageScreen extends ConsumerWidget {
                       ListTile(
                         title: Text(a.bookId),
                         subtitle: Text(_fmtBytes(a.sizeBytes)),
-                        leading: const Icon(Icons.download_done),
+                        leading: const Icon(AppIcons.downloaded),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
+                          icon: const Icon(AppIcons.delete),
                           onPressed: () => cache.delete(a.sourceId, a.bookId),
                         ),
                       ),

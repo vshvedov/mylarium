@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
+import '../../core/network/komga_exception.dart';
 import '../offline/offline_providers.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
@@ -34,9 +36,14 @@ class ReaderScreen extends ConsumerWidget {
       backgroundColor: tokens.readerBackground,
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _ErrorState(message: '$e'),
+        error: (e, _) => _ErrorState(
+          title: 'Could not open this book',
+          detail: friendlyError(e),
+          onRetry: () =>
+              ref.invalidate(readerControllerProvider(sourceId, bookId)),
+        ),
         data: (data) => _readerPageCount(data) == 0
-            ? const _ErrorState(message: 'This book has no pages.')
+            ? const _ErrorState(title: 'This book has no pages')
             : _ReaderBody(sourceId: sourceId, bookId: bookId, data: data),
       ),
     );
@@ -338,34 +345,58 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message});
-  final String message;
+  const _ErrorState({required this.title, this.detail, this.onRetry});
+
+  final String title;
+  final String? detail;
+  final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.topLeft,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.pop(),
-              ),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SafeArea(
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.topLeft,
+            child: IconButton(
+              icon: const Icon(AppIcons.back),
+              onPressed: () => context.pop(),
             ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.broken_image_outlined, size: 48),
-                    const SizedBox(height: 12),
-                    Text(message, textAlign: TextAlign.center),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(AppIcons.brokenImage,
+                      size: 44, color: scheme.onSurfaceVariant),
+                  const SizedBox(height: 14),
+                  Text(title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  if (detail != null) ...[
+                    const SizedBox(height: 6),
+                    Text(detail!,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant)),
                   ],
-                ),
+                  if (onRetry != null) ...[
+                    const SizedBox(height: 20),
+                    FilledButton.tonalIcon(
+                      icon: const Icon(AppIcons.refresh, size: 18),
+                      label: const Text('Try again'),
+                      onPressed: onRetry,
+                    ),
+                  ],
+                ],
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }

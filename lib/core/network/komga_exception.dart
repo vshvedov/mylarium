@@ -71,3 +71,22 @@ class KomgaException implements Exception {
   @override
   String toString() => 'KomgaException($kind, status=$statusCode): $message';
 }
+
+/// A short, human-friendly hint for an error, for display in the UI. Never
+/// surfaces raw exception text or secrets.
+String friendlyError(Object error) {
+  if (error is KomgaException) {
+    return switch (error.kind) {
+      KomgaErrorKind.notFound =>
+        'The server could not find this item. It may have been removed.',
+      KomgaErrorKind.unauthorized ||
+      KomgaErrorKind.forbidden =>
+        'Your session may have expired. Reconnect the source in Settings.',
+      KomgaErrorKind.unreachable =>
+        'Can not reach the server. Check your connection and try again.',
+      KomgaErrorKind.tls => 'The secure connection to the server failed.',
+      _ => 'Something went wrong talking to the server.',
+    };
+  }
+  return 'Something went wrong. Please try again.';
+}

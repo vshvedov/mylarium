@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -109,7 +110,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
         actions: [
           PopupMenuButton<SeriesSort>(
-            icon: const Icon(Icons.sort),
+            icon: const Icon(AppIcons.sort),
             initialValue: _sort,
             onSelected: (s) {
               setState(() => _sort = s);
