@@ -19,7 +19,9 @@ android {
         applicationId = "com.example.mylarium"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // API 26+: the unrar native source uses lutimes(), declared only at
+        // API >= 26; the native-assets build targets this minSdk.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
