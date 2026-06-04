@@ -245,6 +245,13 @@ class KomgaApi {
         return BookDto.fromJson(res.data! as Map<String, Object?>);
       });
 
+  /// One series by id (used by the reader to seed the default reading
+  /// direction from `metadata.readingDirection`).
+  Future<SeriesDto> getSeries(String seriesId) => _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/series/$seriesId');
+        return SeriesDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
   /// Recently added series (Komga `series/new`). Returns the same `Page<Series>`
   /// envelope as the list endpoints; consumed online by the home rails.
   Future<Page<SeriesDto>> listSeriesNew({int page = 0, int size = 20}) =>

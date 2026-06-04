@@ -21,9 +21,21 @@ void main() {
     expect(s.doubleTapZoom, isTrue);
   });
 
-  test('seeds RTL from a manga direction hint', () async {
-    final s = await repo.load('s1', 'ser1', mangaDirection: 'RIGHT_TO_LEFT');
-    expect(s.mode, ReadingMode.pagedRtl);
+  test('seeds the mode from the reading-direction hint', () async {
+    expect((await repo.load('s1', 'a', mangaDirection: 'RIGHT_TO_LEFT')).mode,
+        ReadingMode.pagedRtl);
+    expect((await repo.load('s1', 'b', mangaDirection: 'WEBTOON')).mode,
+        ReadingMode.webtoon);
+    expect((await repo.load('s1', 'c', mangaDirection: 'VERTICAL')).mode,
+        ReadingMode.webtoon);
+    expect((await repo.load('s1', 'd', mangaDirection: 'LEFT_TO_RIGHT')).mode,
+        ReadingMode.pagedLtr);
+  });
+
+  test('has() reflects persisted settings', () async {
+    expect(await repo.has('s1', 'ser1'), isFalse);
+    await repo.save('s1', 'ser1', const ReaderSettings());
+    expect(await repo.has('s1', 'ser1'), isTrue);
   });
 
   test('round-trips all fields', () async {

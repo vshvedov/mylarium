@@ -9,6 +9,10 @@ class ReaderSettingsRepository {
 
   final AppDatabase _db;
 
+  /// Whether persisted settings exist for this series.
+  Future<bool> has(String sourceId, String seriesId) async =>
+      (await _db.getReaderSettings(sourceId, seriesId)) != null;
+
   /// Loads settings for a series, or defaults when none are persisted.
   /// [mangaDirection] seeds the default reading direction (null in T4 until
   /// ComicInfo parsing lands in T7).

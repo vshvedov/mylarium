@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../core/network/komga_exception.dart';
 import '../../data/komga/komga_api.dart';
 import '../../data/komga/models/mappers.dart';
 import '../../data/komga/models/page_dto.dart';
@@ -65,7 +66,20 @@ class ReaderController extends _$ReaderController {
     }
 
     final pages = await api.bookPages(bookId);
-    final settings = await ReaderSettingsRepository(db).load(sourceId, seriesId);
+
+    // Seed the default reading direction from the series' readingDirection, but
+    // only when the user has no persisted settings yet (avoids an extra fetch).
+    final settingsRepo = ReaderSettingsRepository(db);
+    String? direction;
+    if (!await settingsRepo.has(sourceId, seriesId)) {
+      try {
+        direction = (await api.getSeries(seriesId)).readingDirection;
+      } on KomgaException {
+        // Fall back to LTR defaults.
+      }
+    }
+    final settings =
+        await settingsRepo.load(sourceId, seriesId, mangaDirection: direction);
 
     return ReaderData(
       sourceId: sourceId,

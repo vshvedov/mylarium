@@ -9,6 +9,7 @@ class SeriesDto {
     this.ageRating,
     this.status,
     this.summary,
+    this.readingDirection,
     this.booksCount = 0,
   });
 
@@ -23,6 +24,10 @@ class SeriesDto {
   final int? ageRating;
   final String? status;
   final String? summary;
+
+  /// Komga reading direction (LEFT_TO_RIGHT / RIGHT_TO_LEFT / VERTICAL /
+  /// WEBTOON), used to seed the reader's default mode. Null when unset.
+  final String? readingDirection;
   final int booksCount;
 
   factory SeriesDto.fromJson(Map<String, Object?> json) {
@@ -37,6 +42,7 @@ class SeriesDto {
       ageRating: (meta['ageRating'] as num?)?.toInt(),
       status: meta['status'] as String?,
       summary: meta['summary'] as String?,
+      readingDirection: meta['readingDirection'] as String?,
       booksCount: (json['booksCount'] as num?)?.toInt() ?? 0,
     );
   }

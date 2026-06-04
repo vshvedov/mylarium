@@ -64,15 +64,16 @@ class ReaderSettings {
         animatePageTurn: animatePageTurn ?? this.animatePageTurn,
       );
 
-  /// Defaults for a series. [mangaDirection] is the ComicInfo `Manga` /
-  /// Komga `readingDirection` hint when known (seeds RTL); null in T4 until
-  /// ComicInfo parsing lands (T7), so this currently always returns LTR
-  /// defaults unless a hint is supplied.
+  /// Defaults for a series. [mangaDirection] is the source's reading-direction
+  /// hint when known: Komga `metadata.readingDirection` (phase 1) or, later,
+  /// the ComicInfo `Manga` flag for local files (T7). Null falls back to LTR.
   factory ReaderSettings.defaults({String? mangaDirection}) {
-    final rtl = mangaDirection == 'RIGHT_TO_LEFT';
-    return ReaderSettings(
-      mode: rtl ? ReadingMode.pagedRtl : ReadingMode.pagedLtr,
-    );
+    final mode = switch (mangaDirection) {
+      'RIGHT_TO_LEFT' => ReadingMode.pagedRtl,
+      'VERTICAL' || 'WEBTOON' => ReadingMode.webtoon,
+      _ => ReadingMode.pagedLtr,
+    };
+    return ReaderSettings(mode: mode);
   }
 
   static ReaderSettings fromColumns({
