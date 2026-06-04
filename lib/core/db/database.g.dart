@@ -3969,6 +3969,1097 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
   }
 }
 
+class $CachedAssetsTable extends CachedAssets
+    with TableInfo<$CachedAssetsTable, CachedAsset> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedAssetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('archive'),
+  );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _shaMeta = const VerificationMeta('sha');
+  @override
+  late final GeneratedColumn<String> sha = GeneratedColumn<String>(
+    'sha',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastAccessedAtMeta = const VerificationMeta(
+    'lastAccessedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastAccessedAt = GeneratedColumn<int>(
+    'last_accessed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
+  @override
+  late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
+    'pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _permanentMeta = const VerificationMeta(
+    'permanent',
+  );
+  @override
+  late final GeneratedColumn<bool> permanent = GeneratedColumn<bool>(
+    'permanent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("permanent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    bookId,
+    kind,
+    relativePath,
+    sizeBytes,
+    sha,
+    lastAccessedAt,
+    pinned,
+    permanent,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_assets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedAsset> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    }
+    if (data.containsKey('sha')) {
+      context.handle(
+        _shaMeta,
+        sha.isAcceptableOrUnknown(data['sha']!, _shaMeta),
+      );
+    }
+    if (data.containsKey('last_accessed_at')) {
+      context.handle(
+        _lastAccessedAtMeta,
+        lastAccessedAt.isAcceptableOrUnknown(
+          data['last_accessed_at']!,
+          _lastAccessedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastAccessedAtMeta);
+    }
+    if (data.containsKey('pinned')) {
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
+    }
+    if (data.containsKey('permanent')) {
+      context.handle(
+        _permanentMeta,
+        permanent.isAcceptableOrUnknown(data['permanent']!, _permanentMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, bookId};
+  @override
+  CachedAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedAsset(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      )!,
+      sha: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sha'],
+      ),
+      lastAccessedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_accessed_at'],
+      )!,
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
+      permanent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}permanent'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedAssetsTable createAlias(String alias) {
+    return $CachedAssetsTable(attachedDatabase, alias);
+  }
+}
+
+class CachedAsset extends DataClass implements Insertable<CachedAsset> {
+  final String sourceId;
+  final String bookId;
+
+  /// Asset kind; `archive` for the downloaded CBZ/CBR.
+  final String kind;
+
+  /// Path relative to applicationSupport.
+  final String relativePath;
+  final int sizeBytes;
+
+  /// Reserved for an integrity hash; unused in T5.
+  final String? sha;
+  final int lastAccessedAt;
+  final bool pinned;
+  final bool permanent;
+  const CachedAsset({
+    required this.sourceId,
+    required this.bookId,
+    required this.kind,
+    required this.relativePath,
+    required this.sizeBytes,
+    this.sha,
+    required this.lastAccessedAt,
+    required this.pinned,
+    required this.permanent,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['book_id'] = Variable<String>(bookId);
+    map['kind'] = Variable<String>(kind);
+    map['relative_path'] = Variable<String>(relativePath);
+    map['size_bytes'] = Variable<int>(sizeBytes);
+    if (!nullToAbsent || sha != null) {
+      map['sha'] = Variable<String>(sha);
+    }
+    map['last_accessed_at'] = Variable<int>(lastAccessedAt);
+    map['pinned'] = Variable<bool>(pinned);
+    map['permanent'] = Variable<bool>(permanent);
+    return map;
+  }
+
+  CachedAssetsCompanion toCompanion(bool nullToAbsent) {
+    return CachedAssetsCompanion(
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      kind: Value(kind),
+      relativePath: Value(relativePath),
+      sizeBytes: Value(sizeBytes),
+      sha: sha == null && nullToAbsent ? const Value.absent() : Value(sha),
+      lastAccessedAt: Value(lastAccessedAt),
+      pinned: Value(pinned),
+      permanent: Value(permanent),
+    );
+  }
+
+  factory CachedAsset.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedAsset(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      sizeBytes: serializer.fromJson<int>(json['sizeBytes']),
+      sha: serializer.fromJson<String?>(json['sha']),
+      lastAccessedAt: serializer.fromJson<int>(json['lastAccessedAt']),
+      pinned: serializer.fromJson<bool>(json['pinned']),
+      permanent: serializer.fromJson<bool>(json['permanent']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'bookId': serializer.toJson<String>(bookId),
+      'kind': serializer.toJson<String>(kind),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'sizeBytes': serializer.toJson<int>(sizeBytes),
+      'sha': serializer.toJson<String?>(sha),
+      'lastAccessedAt': serializer.toJson<int>(lastAccessedAt),
+      'pinned': serializer.toJson<bool>(pinned),
+      'permanent': serializer.toJson<bool>(permanent),
+    };
+  }
+
+  CachedAsset copyWith({
+    String? sourceId,
+    String? bookId,
+    String? kind,
+    String? relativePath,
+    int? sizeBytes,
+    Value<String?> sha = const Value.absent(),
+    int? lastAccessedAt,
+    bool? pinned,
+    bool? permanent,
+  }) => CachedAsset(
+    sourceId: sourceId ?? this.sourceId,
+    bookId: bookId ?? this.bookId,
+    kind: kind ?? this.kind,
+    relativePath: relativePath ?? this.relativePath,
+    sizeBytes: sizeBytes ?? this.sizeBytes,
+    sha: sha.present ? sha.value : this.sha,
+    lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
+    pinned: pinned ?? this.pinned,
+    permanent: permanent ?? this.permanent,
+  );
+  CachedAsset copyWithCompanion(CachedAssetsCompanion data) {
+    return CachedAsset(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      sha: data.sha.present ? data.sha.value : this.sha,
+      lastAccessedAt: data.lastAccessedAt.present
+          ? data.lastAccessedAt.value
+          : this.lastAccessedAt,
+      pinned: data.pinned.present ? data.pinned.value : this.pinned,
+      permanent: data.permanent.present ? data.permanent.value : this.permanent,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedAsset(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('kind: $kind, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('sha: $sha, ')
+          ..write('lastAccessedAt: $lastAccessedAt, ')
+          ..write('pinned: $pinned, ')
+          ..write('permanent: $permanent')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    bookId,
+    kind,
+    relativePath,
+    sizeBytes,
+    sha,
+    lastAccessedAt,
+    pinned,
+    permanent,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedAsset &&
+          other.sourceId == this.sourceId &&
+          other.bookId == this.bookId &&
+          other.kind == this.kind &&
+          other.relativePath == this.relativePath &&
+          other.sizeBytes == this.sizeBytes &&
+          other.sha == this.sha &&
+          other.lastAccessedAt == this.lastAccessedAt &&
+          other.pinned == this.pinned &&
+          other.permanent == this.permanent);
+}
+
+class CachedAssetsCompanion extends UpdateCompanion<CachedAsset> {
+  final Value<String> sourceId;
+  final Value<String> bookId;
+  final Value<String> kind;
+  final Value<String> relativePath;
+  final Value<int> sizeBytes;
+  final Value<String?> sha;
+  final Value<int> lastAccessedAt;
+  final Value<bool> pinned;
+  final Value<bool> permanent;
+  final Value<int> rowid;
+  const CachedAssetsCompanion({
+    this.sourceId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.sha = const Value.absent(),
+    this.lastAccessedAt = const Value.absent(),
+    this.pinned = const Value.absent(),
+    this.permanent = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedAssetsCompanion.insert({
+    required String sourceId,
+    required String bookId,
+    this.kind = const Value.absent(),
+    required String relativePath,
+    this.sizeBytes = const Value.absent(),
+    this.sha = const Value.absent(),
+    required int lastAccessedAt,
+    this.pinned = const Value.absent(),
+    this.permanent = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       bookId = Value(bookId),
+       relativePath = Value(relativePath),
+       lastAccessedAt = Value(lastAccessedAt);
+  static Insertable<CachedAsset> custom({
+    Expression<String>? sourceId,
+    Expression<String>? bookId,
+    Expression<String>? kind,
+    Expression<String>? relativePath,
+    Expression<int>? sizeBytes,
+    Expression<String>? sha,
+    Expression<int>? lastAccessedAt,
+    Expression<bool>? pinned,
+    Expression<bool>? permanent,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (bookId != null) 'book_id': bookId,
+      if (kind != null) 'kind': kind,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (sha != null) 'sha': sha,
+      if (lastAccessedAt != null) 'last_accessed_at': lastAccessedAt,
+      if (pinned != null) 'pinned': pinned,
+      if (permanent != null) 'permanent': permanent,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedAssetsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? bookId,
+    Value<String>? kind,
+    Value<String>? relativePath,
+    Value<int>? sizeBytes,
+    Value<String?>? sha,
+    Value<int>? lastAccessedAt,
+    Value<bool>? pinned,
+    Value<bool>? permanent,
+    Value<int>? rowid,
+  }) {
+    return CachedAssetsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      bookId: bookId ?? this.bookId,
+      kind: kind ?? this.kind,
+      relativePath: relativePath ?? this.relativePath,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      sha: sha ?? this.sha,
+      lastAccessedAt: lastAccessedAt ?? this.lastAccessedAt,
+      pinned: pinned ?? this.pinned,
+      permanent: permanent ?? this.permanent,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (sha.present) {
+      map['sha'] = Variable<String>(sha.value);
+    }
+    if (lastAccessedAt.present) {
+      map['last_accessed_at'] = Variable<int>(lastAccessedAt.value);
+    }
+    if (pinned.present) {
+      map['pinned'] = Variable<bool>(pinned.value);
+    }
+    if (permanent.present) {
+      map['permanent'] = Variable<bool>(permanent.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedAssetsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('kind: $kind, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('sha: $sha, ')
+          ..write('lastAccessedAt: $lastAccessedAt, ')
+          ..write('pinned: $pinned, ')
+          ..write('permanent: $permanent, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DownloadTasksTable extends DownloadTasks
+    with TableInfo<$DownloadTasksTable, DownloadTask> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DownloadTasksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('enqueued'),
+  );
+  static const VerificationMeta _bytesDownloadedMeta = const VerificationMeta(
+    'bytesDownloaded',
+  );
+  @override
+  late final GeneratedColumn<int> bytesDownloaded = GeneratedColumn<int>(
+    'bytes_downloaded',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalBytesMeta = const VerificationMeta(
+    'totalBytes',
+  );
+  @override
+  late final GeneratedColumn<int> totalBytes = GeneratedColumn<int>(
+    'total_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requiresWifiMeta = const VerificationMeta(
+    'requiresWifi',
+  );
+  @override
+  late final GeneratedColumn<bool> requiresWifi = GeneratedColumn<bool>(
+    'requires_wifi',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("requires_wifi" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    bookId,
+    taskId,
+    state,
+    bytesDownloaded,
+    totalBytes,
+    requiresWifi,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'download_tasks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DownloadTask> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    }
+    if (data.containsKey('bytes_downloaded')) {
+      context.handle(
+        _bytesDownloadedMeta,
+        bytesDownloaded.isAcceptableOrUnknown(
+          data['bytes_downloaded']!,
+          _bytesDownloadedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_bytes')) {
+      context.handle(
+        _totalBytesMeta,
+        totalBytes.isAcceptableOrUnknown(data['total_bytes']!, _totalBytesMeta),
+      );
+    }
+    if (data.containsKey('requires_wifi')) {
+      context.handle(
+        _requiresWifiMeta,
+        requiresWifi.isAcceptableOrUnknown(
+          data['requires_wifi']!,
+          _requiresWifiMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, bookId};
+  @override
+  DownloadTask map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DownloadTask(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      bytesDownloaded: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bytes_downloaded'],
+      )!,
+      totalBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_bytes'],
+      ),
+      requiresWifi: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}requires_wifi'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DownloadTasksTable createAlias(String alias) {
+    return $DownloadTasksTable(attachedDatabase, alias);
+  }
+}
+
+class DownloadTask extends DataClass implements Insertable<DownloadTask> {
+  final String sourceId;
+  final String bookId;
+  final String taskId;
+  final String state;
+  final int bytesDownloaded;
+  final int? totalBytes;
+  final bool requiresWifi;
+  final int updatedAt;
+  const DownloadTask({
+    required this.sourceId,
+    required this.bookId,
+    required this.taskId,
+    required this.state,
+    required this.bytesDownloaded,
+    this.totalBytes,
+    required this.requiresWifi,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['book_id'] = Variable<String>(bookId);
+    map['task_id'] = Variable<String>(taskId);
+    map['state'] = Variable<String>(state);
+    map['bytes_downloaded'] = Variable<int>(bytesDownloaded);
+    if (!nullToAbsent || totalBytes != null) {
+      map['total_bytes'] = Variable<int>(totalBytes);
+    }
+    map['requires_wifi'] = Variable<bool>(requiresWifi);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  DownloadTasksCompanion toCompanion(bool nullToAbsent) {
+    return DownloadTasksCompanion(
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      taskId: Value(taskId),
+      state: Value(state),
+      bytesDownloaded: Value(bytesDownloaded),
+      totalBytes: totalBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalBytes),
+      requiresWifi: Value(requiresWifi),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DownloadTask.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DownloadTask(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      state: serializer.fromJson<String>(json['state']),
+      bytesDownloaded: serializer.fromJson<int>(json['bytesDownloaded']),
+      totalBytes: serializer.fromJson<int?>(json['totalBytes']),
+      requiresWifi: serializer.fromJson<bool>(json['requiresWifi']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'bookId': serializer.toJson<String>(bookId),
+      'taskId': serializer.toJson<String>(taskId),
+      'state': serializer.toJson<String>(state),
+      'bytesDownloaded': serializer.toJson<int>(bytesDownloaded),
+      'totalBytes': serializer.toJson<int?>(totalBytes),
+      'requiresWifi': serializer.toJson<bool>(requiresWifi),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  DownloadTask copyWith({
+    String? sourceId,
+    String? bookId,
+    String? taskId,
+    String? state,
+    int? bytesDownloaded,
+    Value<int?> totalBytes = const Value.absent(),
+    bool? requiresWifi,
+    int? updatedAt,
+  }) => DownloadTask(
+    sourceId: sourceId ?? this.sourceId,
+    bookId: bookId ?? this.bookId,
+    taskId: taskId ?? this.taskId,
+    state: state ?? this.state,
+    bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
+    totalBytes: totalBytes.present ? totalBytes.value : this.totalBytes,
+    requiresWifi: requiresWifi ?? this.requiresWifi,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  DownloadTask copyWithCompanion(DownloadTasksCompanion data) {
+    return DownloadTask(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      state: data.state.present ? data.state.value : this.state,
+      bytesDownloaded: data.bytesDownloaded.present
+          ? data.bytesDownloaded.value
+          : this.bytesDownloaded,
+      totalBytes: data.totalBytes.present
+          ? data.totalBytes.value
+          : this.totalBytes,
+      requiresWifi: data.requiresWifi.present
+          ? data.requiresWifi.value
+          : this.requiresWifi,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadTask(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('taskId: $taskId, ')
+          ..write('state: $state, ')
+          ..write('bytesDownloaded: $bytesDownloaded, ')
+          ..write('totalBytes: $totalBytes, ')
+          ..write('requiresWifi: $requiresWifi, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    bookId,
+    taskId,
+    state,
+    bytesDownloaded,
+    totalBytes,
+    requiresWifi,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DownloadTask &&
+          other.sourceId == this.sourceId &&
+          other.bookId == this.bookId &&
+          other.taskId == this.taskId &&
+          other.state == this.state &&
+          other.bytesDownloaded == this.bytesDownloaded &&
+          other.totalBytes == this.totalBytes &&
+          other.requiresWifi == this.requiresWifi &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
+  final Value<String> sourceId;
+  final Value<String> bookId;
+  final Value<String> taskId;
+  final Value<String> state;
+  final Value<int> bytesDownloaded;
+  final Value<int?> totalBytes;
+  final Value<bool> requiresWifi;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const DownloadTasksCompanion({
+    this.sourceId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.state = const Value.absent(),
+    this.bytesDownloaded = const Value.absent(),
+    this.totalBytes = const Value.absent(),
+    this.requiresWifi = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DownloadTasksCompanion.insert({
+    required String sourceId,
+    required String bookId,
+    required String taskId,
+    this.state = const Value.absent(),
+    this.bytesDownloaded = const Value.absent(),
+    this.totalBytes = const Value.absent(),
+    this.requiresWifi = const Value.absent(),
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       bookId = Value(bookId),
+       taskId = Value(taskId),
+       updatedAt = Value(updatedAt);
+  static Insertable<DownloadTask> custom({
+    Expression<String>? sourceId,
+    Expression<String>? bookId,
+    Expression<String>? taskId,
+    Expression<String>? state,
+    Expression<int>? bytesDownloaded,
+    Expression<int>? totalBytes,
+    Expression<bool>? requiresWifi,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (bookId != null) 'book_id': bookId,
+      if (taskId != null) 'task_id': taskId,
+      if (state != null) 'state': state,
+      if (bytesDownloaded != null) 'bytes_downloaded': bytesDownloaded,
+      if (totalBytes != null) 'total_bytes': totalBytes,
+      if (requiresWifi != null) 'requires_wifi': requiresWifi,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DownloadTasksCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? bookId,
+    Value<String>? taskId,
+    Value<String>? state,
+    Value<int>? bytesDownloaded,
+    Value<int?>? totalBytes,
+    Value<bool>? requiresWifi,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DownloadTasksCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      bookId: bookId ?? this.bookId,
+      taskId: taskId ?? this.taskId,
+      state: state ?? this.state,
+      bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
+      totalBytes: totalBytes ?? this.totalBytes,
+      requiresWifi: requiresWifi ?? this.requiresWifi,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (bytesDownloaded.present) {
+      map['bytes_downloaded'] = Variable<int>(bytesDownloaded.value);
+    }
+    if (totalBytes.present) {
+      map['total_bytes'] = Variable<int>(totalBytes.value);
+    }
+    if (requiresWifi.present) {
+      map['requires_wifi'] = Variable<bool>(requiresWifi.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadTasksCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('taskId: $taskId, ')
+          ..write('state: $state, ')
+          ..write('bytesDownloaded: $bytesDownloaded, ')
+          ..write('totalBytes: $totalBytes, ')
+          ..write('requiresWifi: $requiresWifi, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3981,6 +5072,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CachedMetadataTable cachedMetadata = $CachedMetadataTable(this);
   late final $LibraryPrefsTable libraryPrefs = $LibraryPrefsTable(this);
   late final $ReaderSettingsTable readerSettings = $ReaderSettingsTable(this);
+  late final $CachedAssetsTable cachedAssets = $CachedAssetsTable(this);
+  late final $DownloadTasksTable downloadTasks = $DownloadTasksTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -3988,6 +5081,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index seriesKeysetLib = Index(
     'series_keyset_lib',
     'CREATE INDEX series_keyset_lib ON series (source_id, library_id, title_sort, id)',
+  );
+  late final Index cachedAssetsLru = Index(
+    'cached_assets_lru',
+    'CREATE INDEX cached_assets_lru ON cached_assets (last_accessed_at)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -4003,8 +5100,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cachedMetadata,
     libraryPrefs,
     readerSettings,
+    cachedAssets,
+    downloadTasks,
     seriesKeyset,
     seriesKeysetLib,
+    cachedAssetsLru,
   ];
 }
 
@@ -6051,6 +7151,549 @@ typedef $$ReaderSettingsTableProcessedTableManager =
       ReaderSettingsRow,
       PrefetchHooks Function()
     >;
+typedef $$CachedAssetsTableCreateCompanionBuilder =
+    CachedAssetsCompanion Function({
+      required String sourceId,
+      required String bookId,
+      Value<String> kind,
+      required String relativePath,
+      Value<int> sizeBytes,
+      Value<String?> sha,
+      required int lastAccessedAt,
+      Value<bool> pinned,
+      Value<bool> permanent,
+      Value<int> rowid,
+    });
+typedef $$CachedAssetsTableUpdateCompanionBuilder =
+    CachedAssetsCompanion Function({
+      Value<String> sourceId,
+      Value<String> bookId,
+      Value<String> kind,
+      Value<String> relativePath,
+      Value<int> sizeBytes,
+      Value<String?> sha,
+      Value<int> lastAccessedAt,
+      Value<bool> pinned,
+      Value<bool> permanent,
+      Value<int> rowid,
+    });
+
+class $$CachedAssetsTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedAssetsTable> {
+  $$CachedAssetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sha => $composableBuilder(
+    column: $table.sha,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAccessedAt => $composableBuilder(
+    column: $table.lastAccessedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get permanent => $composableBuilder(
+    column: $table.permanent,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedAssetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedAssetsTable> {
+  $$CachedAssetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sha => $composableBuilder(
+    column: $table.sha,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAccessedAt => $composableBuilder(
+    column: $table.lastAccessedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get permanent => $composableBuilder(
+    column: $table.permanent,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedAssetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedAssetsTable> {
+  $$CachedAssetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<String> get sha =>
+      $composableBuilder(column: $table.sha, builder: (column) => column);
+
+  GeneratedColumn<int> get lastAccessedAt => $composableBuilder(
+    column: $table.lastAccessedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
+
+  GeneratedColumn<bool> get permanent =>
+      $composableBuilder(column: $table.permanent, builder: (column) => column);
+}
+
+class $$CachedAssetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedAssetsTable,
+          CachedAsset,
+          $$CachedAssetsTableFilterComposer,
+          $$CachedAssetsTableOrderingComposer,
+          $$CachedAssetsTableAnnotationComposer,
+          $$CachedAssetsTableCreateCompanionBuilder,
+          $$CachedAssetsTableUpdateCompanionBuilder,
+          (
+            CachedAsset,
+            BaseReferences<_$AppDatabase, $CachedAssetsTable, CachedAsset>,
+          ),
+          CachedAsset,
+          PrefetchHooks Function()
+        > {
+  $$CachedAssetsTableTableManager(_$AppDatabase db, $CachedAssetsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedAssetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedAssetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedAssetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<int> sizeBytes = const Value.absent(),
+                Value<String?> sha = const Value.absent(),
+                Value<int> lastAccessedAt = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
+                Value<bool> permanent = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedAssetsCompanion(
+                sourceId: sourceId,
+                bookId: bookId,
+                kind: kind,
+                relativePath: relativePath,
+                sizeBytes: sizeBytes,
+                sha: sha,
+                lastAccessedAt: lastAccessedAt,
+                pinned: pinned,
+                permanent: permanent,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String bookId,
+                Value<String> kind = const Value.absent(),
+                required String relativePath,
+                Value<int> sizeBytes = const Value.absent(),
+                Value<String?> sha = const Value.absent(),
+                required int lastAccessedAt,
+                Value<bool> pinned = const Value.absent(),
+                Value<bool> permanent = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedAssetsCompanion.insert(
+                sourceId: sourceId,
+                bookId: bookId,
+                kind: kind,
+                relativePath: relativePath,
+                sizeBytes: sizeBytes,
+                sha: sha,
+                lastAccessedAt: lastAccessedAt,
+                pinned: pinned,
+                permanent: permanent,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedAssetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedAssetsTable,
+      CachedAsset,
+      $$CachedAssetsTableFilterComposer,
+      $$CachedAssetsTableOrderingComposer,
+      $$CachedAssetsTableAnnotationComposer,
+      $$CachedAssetsTableCreateCompanionBuilder,
+      $$CachedAssetsTableUpdateCompanionBuilder,
+      (
+        CachedAsset,
+        BaseReferences<_$AppDatabase, $CachedAssetsTable, CachedAsset>,
+      ),
+      CachedAsset,
+      PrefetchHooks Function()
+    >;
+typedef $$DownloadTasksTableCreateCompanionBuilder =
+    DownloadTasksCompanion Function({
+      required String sourceId,
+      required String bookId,
+      required String taskId,
+      Value<String> state,
+      Value<int> bytesDownloaded,
+      Value<int?> totalBytes,
+      Value<bool> requiresWifi,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DownloadTasksTableUpdateCompanionBuilder =
+    DownloadTasksCompanion Function({
+      Value<String> sourceId,
+      Value<String> bookId,
+      Value<String> taskId,
+      Value<String> state,
+      Value<int> bytesDownloaded,
+      Value<int?> totalBytes,
+      Value<bool> requiresWifi,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DownloadTasksTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadTasksTable> {
+  $$DownloadTasksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bytesDownloaded => $composableBuilder(
+    column: $table.bytesDownloaded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get requiresWifi => $composableBuilder(
+    column: $table.requiresWifi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DownloadTasksTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadTasksTable> {
+  $$DownloadTasksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bytesDownloaded => $composableBuilder(
+    column: $table.bytesDownloaded,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get requiresWifi => $composableBuilder(
+    column: $table.requiresWifi,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DownloadTasksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadTasksTable> {
+  $$DownloadTasksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<int> get bytesDownloaded => $composableBuilder(
+    column: $table.bytesDownloaded,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get requiresWifi => $composableBuilder(
+    column: $table.requiresWifi,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DownloadTasksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DownloadTasksTable,
+          DownloadTask,
+          $$DownloadTasksTableFilterComposer,
+          $$DownloadTasksTableOrderingComposer,
+          $$DownloadTasksTableAnnotationComposer,
+          $$DownloadTasksTableCreateCompanionBuilder,
+          $$DownloadTasksTableUpdateCompanionBuilder,
+          (
+            DownloadTask,
+            BaseReferences<_$AppDatabase, $DownloadTasksTable, DownloadTask>,
+          ),
+          DownloadTask,
+          PrefetchHooks Function()
+        > {
+  $$DownloadTasksTableTableManager(_$AppDatabase db, $DownloadTasksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DownloadTasksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DownloadTasksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DownloadTasksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> taskId = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<int> bytesDownloaded = const Value.absent(),
+                Value<int?> totalBytes = const Value.absent(),
+                Value<bool> requiresWifi = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadTasksCompanion(
+                sourceId: sourceId,
+                bookId: bookId,
+                taskId: taskId,
+                state: state,
+                bytesDownloaded: bytesDownloaded,
+                totalBytes: totalBytes,
+                requiresWifi: requiresWifi,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String bookId,
+                required String taskId,
+                Value<String> state = const Value.absent(),
+                Value<int> bytesDownloaded = const Value.absent(),
+                Value<int?> totalBytes = const Value.absent(),
+                Value<bool> requiresWifi = const Value.absent(),
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadTasksCompanion.insert(
+                sourceId: sourceId,
+                bookId: bookId,
+                taskId: taskId,
+                state: state,
+                bytesDownloaded: bytesDownloaded,
+                totalBytes: totalBytes,
+                requiresWifi: requiresWifi,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DownloadTasksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DownloadTasksTable,
+      DownloadTask,
+      $$DownloadTasksTableFilterComposer,
+      $$DownloadTasksTableOrderingComposer,
+      $$DownloadTasksTableAnnotationComposer,
+      $$DownloadTasksTableCreateCompanionBuilder,
+      $$DownloadTasksTableUpdateCompanionBuilder,
+      (
+        DownloadTask,
+        BaseReferences<_$AppDatabase, $DownloadTasksTable, DownloadTask>,
+      ),
+      DownloadTask,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6073,4 +7716,8 @@ class $AppDatabaseManager {
       $$LibraryPrefsTableTableManager(_db, _db.libraryPrefs);
   $$ReaderSettingsTableTableManager get readerSettings =>
       $$ReaderSettingsTableTableManager(_db, _db.readerSettings);
+  $$CachedAssetsTableTableManager get cachedAssets =>
+      $$CachedAssetsTableTableManager(_db, _db.cachedAssets);
+  $$DownloadTasksTableTableManager get downloadTasks =>
+      $$DownloadTasksTableTableManager(_db, _db.downloadTasks);
 }

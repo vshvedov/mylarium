@@ -6,7 +6,7 @@ part of 'reader_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$readerControllerHash() => r'11e5562f3abb2a7d3aef86c86c413e955871cdbe';
+String _$readerControllerHash() => r'52a47a04c69588c734293289ac1169ec016e3325';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -37,26 +37,30 @@ abstract class _$ReaderController
   FutureOr<ReaderData> build(String sourceId, String bookId);
 }
 
-/// Loads a book for reading (online-first). Throws when there is no source/api
-/// or the page list cannot be fetched; the screen renders an error state.
+/// Loads a book for reading, offline-first: a cached archive is read from disk
+/// (no network); otherwise pages stream online and a background download is
+/// enqueued. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 @ProviderFor(ReaderController)
 const readerControllerProvider = ReaderControllerFamily();
 
-/// Loads a book for reading (online-first). Throws when there is no source/api
-/// or the page list cannot be fetched; the screen renders an error state.
+/// Loads a book for reading, offline-first: a cached archive is read from disk
+/// (no network); otherwise pages stream online and a background download is
+/// enqueued. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
-  /// Loads a book for reading (online-first). Throws when there is no source/api
-  /// or the page list cannot be fetched; the screen renders an error state.
+  /// Loads a book for reading, offline-first: a cached archive is read from disk
+  /// (no network); otherwise pages stream online and a background download is
+  /// enqueued. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   const ReaderControllerFamily();
 
-  /// Loads a book for reading (online-first). Throws when there is no source/api
-  /// or the page list cannot be fetched; the screen renders an error state.
+  /// Loads a book for reading, offline-first: a cached archive is read from disk
+  /// (no network); otherwise pages stream online and a background download is
+  /// enqueued. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider call(String sourceId, String bookId) {
@@ -85,14 +89,16 @@ class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
   String? get name => r'readerControllerProvider';
 }
 
-/// Loads a book for reading (online-first). Throws when there is no source/api
-/// or the page list cannot be fetched; the screen renders an error state.
+/// Loads a book for reading, offline-first: a cached archive is read from disk
+/// (no network); otherwise pages stream online and a background download is
+/// enqueued. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerProvider
     extends AutoDisposeAsyncNotifierProviderImpl<ReaderController, ReaderData> {
-  /// Loads a book for reading (online-first). Throws when there is no source/api
-  /// or the page list cannot be fetched; the screen renders an error state.
+  /// Loads a book for reading, offline-first: a cached archive is read from disk
+  /// (no network); otherwise pages stream online and a background download is
+  /// enqueued. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider(String sourceId, String bookId)

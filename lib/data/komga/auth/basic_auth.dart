@@ -14,8 +14,13 @@ class BasicAuth implements KomgaAuth {
 
   @override
   void apply(RequestOptions options) {
+    options.headers['Authorization'] = headers()['Authorization'];
+  }
+
+  @override
+  Map<String, String> headers() {
     final token = base64Encode(utf8.encode('$username:$password'));
-    options.headers['Authorization'] = 'Basic $token';
+    return {'Authorization': 'Basic $token'};
   }
 
   /// Never reveals the credential (CLAUDE.md: secrets never logged).

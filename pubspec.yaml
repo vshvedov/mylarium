@@ -47,6 +47,9 @@ dependencies:
   infinite_scroll_pagination: ^4.1.0
   local_auth: ^2.3.0
   photo_view: ^0.15.0
+  archive: ^4.0.9
+  background_downloader: ^9.5.5
+  unrar: ^0.1.2
 
 dev_dependencies:
   flutter_test:

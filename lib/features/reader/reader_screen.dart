@@ -3,10 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/design_tokens.dart';
+import '../offline/offline_providers.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
 import 'gestures/tap_zones.dart';
 import 'komga_page_source.dart';
+import 'offline_page_source.dart';
+import 'page_source.dart';
 import 'paged_view.dart';
 import 'page_prefetcher.dart';
 import 'reader_controller.dart';
@@ -32,13 +35,18 @@ class ReaderScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorState(message: '$e'),
-        data: (data) => data.pages.isEmpty
+        data: (data) => _readerPageCount(data) == 0
             ? const _ErrorState(message: 'This book has no pages.')
             : _ReaderBody(sourceId: sourceId, bookId: bookId, data: data),
       ),
     );
   }
 }
+
+int _readerPageCount(ReaderData data) => switch (data.source) {
+      OnlinePages(:final pages) => pages.length,
+      OfflinePages(:final entries) => entries.length,
+    };
 
 class _ReaderBody extends ConsumerStatefulWidget {
   const _ReaderBody({
@@ -60,7 +68,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
   final _scrollController = ScrollController();
   PageController? _pageController;
 
-  KomgaPageSource? _source;
+  PageSource? _source;
   List<List<int>> _pairs = const [];
   PagePrefetcher? _prefetcher;
 
@@ -127,13 +135,23 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     // a metrics/theme dependency change does not reset the prefetch window.
     if (_source != null && _cacheWidth == cacheWidth) return;
     _cacheWidth = cacheWidth;
-    final source = KomgaPageSource(
-      api: widget.data.api,
-      sourceId: widget.sourceId,
-      bookId: widget.bookId,
-      pages: widget.data.pages,
-      cacheWidth: cacheWidth,
-    );
+    final source = switch (widget.data.source) {
+      OnlinePages(:final api, :final pages) => KomgaPageSource(
+          api: api,
+          sourceId: widget.sourceId,
+          bookId: widget.bookId,
+          pages: pages,
+          cacheWidth: cacheWidth,
+        ),
+      OfflinePages(:final archivePath, :final entries) => OfflinePageSource(
+          extractor: ref.read(archiveExtractorProvider),
+          sourceId: widget.sourceId,
+          bookId: widget.bookId,
+          archivePath: archivePath,
+          entries: entries,
+          cacheWidth: cacheWidth,
+        ),
+    };
     _source = source;
     _recomputePairs();
     _prefetcher = PagePrefetcher.forContext(source, context);
@@ -206,7 +224,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     if (controller == null || !controller.hasClients) return;
     final next = (controller.page?.round() ?? 0) + delta;
     final maxIndex =
-        (_mode == ReadingMode.doublePage ? _pairs.length : widget.data.pages.length) - 1;
+        (_mode == ReadingMode.doublePage ? _pairs.length : _source!.pageCount) - 1;
     if (next < 0 || next > maxIndex) return;
     if (widget.data.settings.animatePageTurn) {
       controller.animateToPage(next,

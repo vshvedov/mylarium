@@ -11,6 +11,9 @@ class ApiKeyAuth implements KomgaAuth {
   @override
   void apply(RequestOptions options) => options.headers['X-API-Key'] = key;
 
+  @override
+  Map<String, String> headers() => {'X-API-Key': key};
+
   /// Never reveals the key (CLAUDE.md: secrets never logged).
   @override
   String toString() => 'ApiKeyAuth(***)';

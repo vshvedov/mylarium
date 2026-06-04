@@ -33,6 +33,7 @@ class KomgaPageSource implements PageSource {
 
   /// Synchronous provider for the views (the provider itself defers the byte
   /// load to the image pipeline).
+  @override
   ImageProvider imageProvider(int i) => KomgaPageImageProvider(
         api: api,
         sourceId: sourceId,
@@ -50,6 +51,7 @@ class KomgaPageSource implements PageSource {
   }
 
   /// Landscape pages (width > height), shown solo in double-page mode.
+  @override
   Set<int> get widePages => {
         for (var i = 0; i < pages.length; i++)
           if (_isWide(i)) i,

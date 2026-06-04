@@ -1,60 +1,101 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../core/archive/archive_extractor.dart';
 import '../../core/network/komga_exception.dart';
 import '../../data/komga/komga_api.dart';
 import '../../data/komga/models/mappers.dart';
 import '../../data/komga/models/page_dto.dart';
 import '../../data/source/source_providers.dart';
+import '../offline/offline_providers.dart';
 import 'reader_models.dart';
 import 'reader_settings_repository.dart';
 
 part 'reader_controller.g.dart';
 
-/// Everything the reader needs for one book: the transport, the page list, the
-/// resolved series id, and the per-series settings. The current page index is
-/// view state (read-position write-back is T6), not held here.
+/// Where the reader's pages come from. The screen turns this into a `PageSource`.
+sealed class ReaderPages {
+  const ReaderPages();
+}
+
+class OnlinePages extends ReaderPages {
+  const OnlinePages(this.api, this.pages);
+  final KomgaApi api;
+  final List<PageDto> pages;
+}
+
+class OfflinePages extends ReaderPages {
+  const OfflinePages(this.archivePath, this.entries);
+  final String archivePath;
+  final List<String> entries;
+}
+
+/// Everything the reader needs for one book. The current page index is view
+/// state (read-position write-back is T6), not held here.
 class ReaderData {
   const ReaderData({
     required this.sourceId,
     required this.bookId,
     required this.seriesId,
-    required this.api,
-    required this.pages,
     required this.settings,
+    required this.source,
   });
 
   final String sourceId;
   final String bookId;
   final String seriesId;
-  final KomgaApi api;
-  final List<PageDto> pages;
   final ReaderSettings settings;
+  final ReaderPages source;
 
   ReaderData copyWith({ReaderSettings? settings}) => ReaderData(
         sourceId: sourceId,
         bookId: bookId,
         seriesId: seriesId,
-        api: api,
-        pages: pages,
         settings: settings ?? this.settings,
+        source: source,
       );
 }
 
-/// Loads a book for reading (online-first). Throws when there is no source/api
-/// or the page list cannot be fetched; the screen renders an error state.
+/// Loads a book for reading, offline-first: a cached archive is read from disk
+/// (no network); otherwise pages stream online and a background download is
+/// enqueued. Throws only when neither a cache nor a reachable source exists.
 @riverpod
 class ReaderController extends _$ReaderController {
   @override
   Future<ReaderData> build(String sourceId, String bookId) async {
+    final db = ref.watch(appDatabaseProvider);
+    final settingsRepo = ReaderSettingsRepository(db);
+
+    // Offline-first: read a cached archive if available.
+    final cache = ref.watch(offlineCacheManagerProvider);
+    final archivePath = await cache.archivePath(sourceId, bookId);
+    if (archivePath != null) {
+      try {
+        final entries =
+            await ref.watch(archiveExtractorProvider).entries(archivePath);
+        final seriesId = (await db.getBook(sourceId, bookId))?.seriesId ?? '';
+        final settings = await settingsRepo.load(sourceId, seriesId);
+        return ReaderData(
+          sourceId: sourceId,
+          bookId: bookId,
+          seriesId: seriesId,
+          settings: settings,
+          source: OfflinePages(archivePath, entries),
+        );
+      } on ArchiveException {
+        // Corrupt cache: quarantine and fall through to online.
+        await cache.delete(sourceId, bookId);
+      }
+    }
+
+    // Online path.
     final api = await ref.watch(komgaApiForProvider(sourceId).future);
     if (api == null) {
       throw StateError('No connected source for this book.');
     }
-    final db = ref.watch(appDatabaseProvider);
 
-    // Resolve the series id (needed to key reader settings). Prefer the cached
-    // book row; fall back to fetching the book online.
     final cached = await db.getBook(sourceId, bookId);
     String seriesId;
     if (cached != null) {
@@ -67,9 +108,6 @@ class ReaderController extends _$ReaderController {
 
     final pages = await api.bookPages(bookId);
 
-    // Seed the default reading direction from the series' readingDirection, but
-    // only when the user has no persisted settings yet (avoids an extra fetch).
-    final settingsRepo = ReaderSettingsRepository(db);
     String? direction;
     if (!await settingsRepo.has(sourceId, seriesId)) {
       try {
@@ -81,13 +119,18 @@ class ReaderController extends _$ReaderController {
     final settings =
         await settingsRepo.load(sourceId, seriesId, mangaDirection: direction);
 
+    // Background full-chapter download (idempotent, fire-and-forget).
+    unawaited(ref
+        .read(downloadManagerProvider)
+        .enqueueBook(sourceId, bookId)
+        .catchError((_) {}));
+
     return ReaderData(
       sourceId: sourceId,
       bookId: bookId,
       seriesId: seriesId,
-      api: api,
-      pages: pages,
       settings: settings,
+      source: OnlinePages(api, pages),
     );
   }
 

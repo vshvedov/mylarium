@@ -8,7 +8,9 @@ import 'package:path_provider/path_provider.dart';
 import '../age_rating.dart';
 import 'tables/app_settings.dart';
 import 'tables/books.dart';
+import 'tables/cached_assets.dart';
 import 'tables/cached_metadata.dart';
+import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
 import 'tables/reader_settings.dart';
@@ -28,12 +30,14 @@ part 'database.g.dart';
   CachedMetadata,
   LibraryPrefs,
   ReaderSettings,
+  CachedAssets,
+  DownloadTasks,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +67,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.createTable(readerSettings);
           }
+          // v4 -> v5: offline cache (downloaded archives) + download queue.
+          if (from < 5) {
+            await m.createTable(cachedAssets);
+            await m.createTable(downloadTasks);
+            await m.createIndex(cachedAssetsLru);
+          }
         },
       );
 
@@ -85,6 +95,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateReduceMotionOverride(bool v) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(reduceMotionOverride: Value(v)));
+
+  Future<void> updateCacheCapBytes(int bytes) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(cacheCapBytes: Value(bytes)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();
@@ -267,6 +281,64 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertReaderSettings(ReaderSettingsCompanion row) =>
       into(readerSettings).insertOnConflictUpdate(row);
+
+  // --- Cached assets (offline archives) ------------------------------------
+
+  Future<CachedAsset?> getCachedAsset(String sourceId, String bookId) =>
+      (select(cachedAssets)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .getSingleOrNull();
+
+  Future<List<CachedAsset>> allCachedAssets() => select(cachedAssets).get();
+
+  Stream<List<CachedAsset>> watchCachedAssets() => select(cachedAssets).watch();
+
+  Future<void> upsertCachedAsset(CachedAssetsCompanion row) =>
+      into(cachedAssets).insertOnConflictUpdate(row);
+
+  Future<void> deleteCachedAsset(String sourceId, String bookId) =>
+      (delete(cachedAssets)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .go();
+
+  Future<void> touchCachedAsset(
+    String sourceId,
+    String bookId,
+    int atMillis,
+  ) =>
+      (update(cachedAssets)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .write(CachedAssetsCompanion(lastAccessedAt: Value(atMillis)));
+
+  // --- Download tasks ------------------------------------------------------
+
+  Future<DownloadTask?> getDownloadTask(String sourceId, String bookId) =>
+      (select(downloadTasks)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .getSingleOrNull();
+
+  Future<List<DownloadTask>> unfinishedDownloadTasks() =>
+      (select(downloadTasks)..where((t) => t.state.equals('complete').not()))
+          .get();
+
+  Stream<DownloadTask?> watchDownloadTask(String sourceId, String bookId) =>
+      (select(downloadTasks)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .watchSingleOrNull();
+
+  Future<void> upsertDownloadTask(DownloadTasksCompanion row) =>
+      into(downloadTasks).insertOnConflictUpdate(row);
+
+  Future<void> deleteDownloadTask(String sourceId, String bookId) =>
+      (delete(downloadTasks)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .go();
 }
 
 LazyDatabase _open() => LazyDatabase(() async {

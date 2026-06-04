@@ -31,10 +31,16 @@ class _FakeSource implements PageSource {
   int get pageCount => _count;
 
   @override
+  ImageProvider imageProvider(int i) => _IdProvider(i);
+
+  @override
   Future<ImageProvider> page(int i) async => _IdProvider(i);
 
   @override
   double? aspectRatio(int i) => null;
+
+  @override
+  Set<int> get widePages => const {};
 }
 
 void main() {

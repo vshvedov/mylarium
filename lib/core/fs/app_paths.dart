@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -13,11 +14,27 @@ class AppPaths {
   /// The thumbnails root, relative to applicationSupport.
   static const thumbnailsDir = 'thumbnails';
 
+  /// Downloaded comic archives root, relative to applicationSupport.
+  static const archivesDir = 'media/archives';
+
+  /// Test seam: when set, [resolve] joins against this root instead of the
+  /// platform applicationSupport directory (lets tests simulate the cross-install
+  /// container-path change that the relative-path promise guards).
+  @visibleForTesting
+  static String? debugOverrideRoot;
+
   /// Resolves a stored RELATIVE path to an absolute path for this install.
   static Future<String> resolve(String relativePath) async {
-    final dir = await getApplicationSupportDirectory();
-    return p.join(dir.path, relativePath);
+    final root = debugOverrideRoot ??
+        (await getApplicationSupportDirectory()).path;
+    return p.join(root, relativePath);
   }
+
+  /// Relative path for a downloaded archive. Ids are sanitized so a hostile id
+  /// cannot escape the media root. Extension is irrelevant (decode sniffs magic
+  /// bytes), so a generic suffix is used.
+  static String archiveRelativePath(String sourceId, String bookId) =>
+      p.join(archivesDir, _safe(sourceId), '${_safe(bookId)}.archive');
 
   /// Relative path for a cached thumbnail. Keeping `<ownerType>/<sourceId>/...`
   /// segments avoids id collisions across sources. Ids are sanitized so a hostile

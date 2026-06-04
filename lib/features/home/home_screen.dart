@@ -167,6 +167,15 @@ class HomeScreen extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.sd_storage_outlined),
+              title: const Text('Storage'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/settings/storage');
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.lock_outline),
               title: const Text('Library locks'),
               onTap: () {

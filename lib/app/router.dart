@@ -9,6 +9,7 @@ import '../features/library/libraries_screen.dart';
 import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
+import '../features/offline/storage_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
@@ -87,6 +88,10 @@ final appRouterProvider = Provider<GoRouter>(
       GoRoute(
         path: '/settings/library-lock',
         builder: (_, _) => const LibraryLockScreen(),
+      ),
+      GoRoute(
+        path: '/settings/storage',
+        builder: (_, _) => const StorageScreen(),
       ),
       GoRoute(
         path: '/reader/:sourceId/:bookId',
