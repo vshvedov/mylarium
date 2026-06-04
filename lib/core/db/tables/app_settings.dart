@@ -20,6 +20,11 @@ class AppSettings extends Table {
   BoolColumn get downloadWifiOnly =>
       boolean().withDefault(const Constant(true))();
 
+  /// Stable per-install id (uuid v4), generated once on first settings read.
+  /// Stamped on local reading sessions; forward-compat for phase-2 multi-device
+  /// dedup. NULL only between the column add and the first generation.
+  TextColumn get deviceId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

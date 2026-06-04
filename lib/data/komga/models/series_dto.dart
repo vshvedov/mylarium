@@ -11,6 +11,8 @@ class SeriesDto {
     this.summary,
     this.readingDirection,
     this.booksCount = 0,
+    this.publisher,
+    this.genres = const [],
   });
 
   final String id;
@@ -30,9 +32,17 @@ class SeriesDto {
   final String? readingDirection;
   final int booksCount;
 
+  /// Publisher, for the stats publisher breakdown. Null when unset.
+  final String? publisher;
+
+  /// Genres, for the stats genre breakdown (tag-overlap). Empty when unset.
+  final List<String> genres;
+
   factory SeriesDto.fromJson(Map<String, Object?> json) {
     final meta = (json['metadata'] as Map<String, Object?>?) ?? const {};
     final name = json['name'] as String? ?? '';
+    final publisher = meta['publisher'] as String?;
+    final rawGenres = meta['genres'];
     return SeriesDto(
       id: json['id'] as String,
       libraryId: json['libraryId'] as String? ?? '',
@@ -44,6 +54,10 @@ class SeriesDto {
       summary: meta['summary'] as String?,
       readingDirection: meta['readingDirection'] as String?,
       booksCount: (json['booksCount'] as num?)?.toInt() ?? 0,
+      publisher: (publisher == null || publisher.isEmpty) ? null : publisher,
+      genres: rawGenres is List
+          ? rawGenres.whereType<String>().toList(growable: false)
+          : const [],
     );
   }
 }

@@ -86,4 +86,28 @@ abstract final class AppIcons {
       fontFamily: _family, fontPackage: _package); // imageBroken
   static const coverPlaceholder =
       IconData(0xe2ca, fontFamily: _family, fontPackage: _package); // image
+
+  // Stats / reading insights
+  static const stats =
+      IconData(0xe150, fontFamily: _family, fontPackage: _package); // chartBar
+  static const trend = IconData(0xe156,
+      fontFamily: _family, fontPackage: _package); // chartLineUp
+  static const streak =
+      IconData(0xe242, fontFamily: _family, fontPackage: _package); // fire
+  static const heatmap = IconData(0xe10a,
+      fontFamily: _family, fontPackage: _package); // calendarBlank
+  static const clock =
+      IconData(0xe19a, fontFamily: _family, fontPackage: _package); // clock
+  static const share = IconData(0xe408,
+      fontFamily: _family, fontPackage: _package); // shareNetwork
+
+  // Badges (milestones)
+  static const badge =
+      IconData(0xe320, fontFamily: _family, fontPackage: _package); // medal
+  static const trophy =
+      IconData(0xe67e, fontFamily: _family, fontPackage: _package); // trophy
+  static const flame =
+      IconData(0xe624, fontFamily: _family, fontPackage: _package); // flame
+  static const pages =
+      IconData(0xe758, fontFamily: _family, fontPackage: _package); // books
 }

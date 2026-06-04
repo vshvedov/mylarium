@@ -86,6 +86,17 @@ class $AppSettingsTable extends AppSettings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -94,6 +105,7 @@ class $AppSettingsTable extends AppSettings
     cacheCapBytes,
     autoCacheEnabled,
     downloadWifiOnly,
+    deviceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -152,6 +164,12 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
     return context;
   }
 
@@ -185,6 +203,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}download_wifi_only'],
       )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      ),
     );
   }
 
@@ -206,6 +228,11 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
 
   /// Whether auto-cache downloads require Wi-Fi. Manual downloads ignore this.
   final bool downloadWifiOnly;
+
+  /// Stable per-install id (uuid v4), generated once on first settings read.
+  /// Stamped on local reading sessions; forward-compat for phase-2 multi-device
+  /// dedup. NULL only between the column add and the first generation.
+  final String? deviceId;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -213,6 +240,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     required this.cacheCapBytes,
     required this.autoCacheEnabled,
     required this.downloadWifiOnly,
+    this.deviceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -223,6 +251,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     map['cache_cap_bytes'] = Variable<int>(cacheCapBytes);
     map['auto_cache_enabled'] = Variable<bool>(autoCacheEnabled);
     map['download_wifi_only'] = Variable<bool>(downloadWifiOnly);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -234,6 +265,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       cacheCapBytes: Value(cacheCapBytes),
       autoCacheEnabled: Value(autoCacheEnabled),
       downloadWifiOnly: Value(downloadWifiOnly),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -251,6 +285,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       cacheCapBytes: serializer.fromJson<int>(json['cacheCapBytes']),
       autoCacheEnabled: serializer.fromJson<bool>(json['autoCacheEnabled']),
       downloadWifiOnly: serializer.fromJson<bool>(json['downloadWifiOnly']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -263,6 +298,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'cacheCapBytes': serializer.toJson<int>(cacheCapBytes),
       'autoCacheEnabled': serializer.toJson<bool>(autoCacheEnabled),
       'downloadWifiOnly': serializer.toJson<bool>(downloadWifiOnly),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -273,6 +309,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     int? cacheCapBytes,
     bool? autoCacheEnabled,
     bool? downloadWifiOnly,
+    Value<String?> deviceId = const Value.absent(),
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -280,6 +317,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     cacheCapBytes: cacheCapBytes ?? this.cacheCapBytes,
     autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
     downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
+    deviceId: deviceId.present ? deviceId.value : this.deviceId,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -297,6 +335,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       downloadWifiOnly: data.downloadWifiOnly.present
           ? data.downloadWifiOnly.value
           : this.downloadWifiOnly,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -308,7 +347,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('reduceMotionOverride: $reduceMotionOverride, ')
           ..write('cacheCapBytes: $cacheCapBytes, ')
           ..write('autoCacheEnabled: $autoCacheEnabled, ')
-          ..write('downloadWifiOnly: $downloadWifiOnly')
+          ..write('downloadWifiOnly: $downloadWifiOnly, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -321,6 +361,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     cacheCapBytes,
     autoCacheEnabled,
     downloadWifiOnly,
+    deviceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -331,7 +372,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.reduceMotionOverride == this.reduceMotionOverride &&
           other.cacheCapBytes == this.cacheCapBytes &&
           other.autoCacheEnabled == this.autoCacheEnabled &&
-          other.downloadWifiOnly == this.downloadWifiOnly);
+          other.downloadWifiOnly == this.downloadWifiOnly &&
+          other.deviceId == this.deviceId);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -341,6 +383,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<int> cacheCapBytes;
   final Value<bool> autoCacheEnabled;
   final Value<bool> downloadWifiOnly;
+  final Value<String?> deviceId;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -348,6 +391,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.cacheCapBytes = const Value.absent(),
     this.autoCacheEnabled = const Value.absent(),
     this.downloadWifiOnly = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -356,6 +400,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.cacheCapBytes = const Value.absent(),
     this.autoCacheEnabled = const Value.absent(),
     this.downloadWifiOnly = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -364,6 +409,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<int>? cacheCapBytes,
     Expression<bool>? autoCacheEnabled,
     Expression<bool>? downloadWifiOnly,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -373,6 +419,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (cacheCapBytes != null) 'cache_cap_bytes': cacheCapBytes,
       if (autoCacheEnabled != null) 'auto_cache_enabled': autoCacheEnabled,
       if (downloadWifiOnly != null) 'download_wifi_only': downloadWifiOnly,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -383,6 +430,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<int>? cacheCapBytes,
     Value<bool>? autoCacheEnabled,
     Value<bool>? downloadWifiOnly,
+    Value<String?>? deviceId,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -391,6 +439,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       cacheCapBytes: cacheCapBytes ?? this.cacheCapBytes,
       autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
       downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -417,6 +466,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (downloadWifiOnly.present) {
       map['download_wifi_only'] = Variable<bool>(downloadWifiOnly.value);
     }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -428,7 +480,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('reduceMotionOverride: $reduceMotionOverride, ')
           ..write('cacheCapBytes: $cacheCapBytes, ')
           ..write('autoCacheEnabled: $autoCacheEnabled, ')
-          ..write('downloadWifiOnly: $downloadWifiOnly')
+          ..write('downloadWifiOnly: $downloadWifiOnly, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
@@ -5229,6 +5282,2600 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
   }
 }
 
+class $BookStateTable extends BookState
+    with TableInfo<$BookStateTable, BookStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BookStateTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currentPageMeta = const VerificationMeta(
+    'currentPage',
+  );
+  @override
+  late final GeneratedColumn<int> currentPage = GeneratedColumn<int>(
+    'current_page',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _progressVolumesMeta = const VerificationMeta(
+    'progressVolumes',
+  );
+  @override
+  late final GeneratedColumn<double> progressVolumes = GeneratedColumn<double>(
+    'progress_volumes',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timesRereadMeta = const VerificationMeta(
+    'timesReread',
+  );
+  @override
+  late final GeneratedColumn<int> timesReread = GeneratedColumn<int>(
+    'times_reread',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isRereadingMeta = const VerificationMeta(
+    'isRereading',
+  );
+  @override
+  late final GeneratedColumn<bool> isRereading = GeneratedColumn<bool>(
+    'is_rereading',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_rereading" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<int> startedAt = GeneratedColumn<int>(
+    'started_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _finishedAtMeta = const VerificationMeta(
+    'finishedAt',
+  );
+  @override
+  late final GeneratedColumn<int> finishedAt = GeneratedColumn<int>(
+    'finished_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _visibilityMeta = const VerificationMeta(
+    'visibility',
+  );
+  @override
+  late final GeneratedColumn<String> visibility = GeneratedColumn<String>(
+    'visibility',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('private'),
+  );
+  static const VerificationMeta _shareToFeedMeta = const VerificationMeta(
+    'shareToFeed',
+  );
+  @override
+  late final GeneratedColumn<bool> shareToFeed = GeneratedColumn<bool>(
+    'share_to_feed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("share_to_feed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _remoteUpdatedAtMeta = const VerificationMeta(
+    'remoteUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> remoteUpdatedAt = GeneratedColumn<int>(
+    'remote_updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reconciledAtMeta = const VerificationMeta(
+    'reconciledAt',
+  );
+  @override
+  late final GeneratedColumn<int> reconciledAt = GeneratedColumn<int>(
+    'reconciled_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    bookId,
+    status,
+    currentPage,
+    progressVolumes,
+    rating,
+    timesReread,
+    isRereading,
+    startedAt,
+    finishedAt,
+    visibility,
+    shareToFeed,
+    updatedAt,
+    remoteUpdatedAt,
+    reconciledAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'book_state';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BookStateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('current_page')) {
+      context.handle(
+        _currentPageMeta,
+        currentPage.isAcceptableOrUnknown(
+          data['current_page']!,
+          _currentPageMeta,
+        ),
+      );
+    }
+    if (data.containsKey('progress_volumes')) {
+      context.handle(
+        _progressVolumesMeta,
+        progressVolumes.isAcceptableOrUnknown(
+          data['progress_volumes']!,
+          _progressVolumesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    }
+    if (data.containsKey('times_reread')) {
+      context.handle(
+        _timesRereadMeta,
+        timesReread.isAcceptableOrUnknown(
+          data['times_reread']!,
+          _timesRereadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_rereading')) {
+      context.handle(
+        _isRereadingMeta,
+        isRereading.isAcceptableOrUnknown(
+          data['is_rereading']!,
+          _isRereadingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+        _finishedAtMeta,
+        finishedAt.isAcceptableOrUnknown(data['finished_at']!, _finishedAtMeta),
+      );
+    }
+    if (data.containsKey('visibility')) {
+      context.handle(
+        _visibilityMeta,
+        visibility.isAcceptableOrUnknown(data['visibility']!, _visibilityMeta),
+      );
+    }
+    if (data.containsKey('share_to_feed')) {
+      context.handle(
+        _shareToFeedMeta,
+        shareToFeed.isAcceptableOrUnknown(
+          data['share_to_feed']!,
+          _shareToFeedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('remote_updated_at')) {
+      context.handle(
+        _remoteUpdatedAtMeta,
+        remoteUpdatedAt.isAcceptableOrUnknown(
+          data['remote_updated_at']!,
+          _remoteUpdatedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reconciled_at')) {
+      context.handle(
+        _reconciledAtMeta,
+        reconciledAt.isAcceptableOrUnknown(
+          data['reconciled_at']!,
+          _reconciledAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, bookId};
+  @override
+  BookStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BookStateRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      ),
+      currentPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_page'],
+      )!,
+      progressVolumes: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}progress_volumes'],
+      ),
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      ),
+      timesReread: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}times_reread'],
+      )!,
+      isRereading: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_rereading'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at'],
+      ),
+      finishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}finished_at'],
+      ),
+      visibility: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visibility'],
+      )!,
+      shareToFeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}share_to_feed'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      remoteUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}remote_updated_at'],
+      ),
+      reconciledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reconciled_at'],
+      ),
+    );
+  }
+
+  @override
+  $BookStateTable createAlias(String alias) {
+    return $BookStateTable(attachedDatabase, alias);
+  }
+}
+
+class BookStateRow extends DataClass implements Insertable<BookStateRow> {
+  final String sourceId;
+  final String bookId;
+
+  /// One of [ReadStatus] by name, or NULL before any progress is recorded.
+  final String? status;
+  final int currentPage;
+
+  /// RESERVED (forward-compat for Komga volume progress); unwritten in phase 1.
+  final double? progressVolumes;
+
+  /// RESERVED (no rating UI in phase 1).
+  final int? rating;
+  final int timesReread;
+  final bool isRereading;
+  final int? startedAt;
+  final int? finishedAt;
+  final String visibility;
+  final bool shareToFeed;
+
+  /// Local lastModified, epoch ms (device clock).
+  final int updatedAt;
+
+  /// Last-seen Komga progress lastModified, epoch ms (SERVER clock). The
+  /// "is there something new on the server" baseline; only ever a server value,
+  /// NULL when the server has no read progress for this book. Never compared
+  /// against a device clock.
+  final int? remoteUpdatedAt;
+
+  /// When this book was last reconciled, epoch ms (DEVICE clock). Drives the
+  /// reconcile rotation (least-recently-reconciled first); NULL = never
+  /// reconciled, so it sorts to the head. Kept separate from [remoteUpdatedAt]
+  /// so the rotation order and the freshness comparison never mix clock
+  /// domains.
+  final int? reconciledAt;
+  const BookStateRow({
+    required this.sourceId,
+    required this.bookId,
+    this.status,
+    required this.currentPage,
+    this.progressVolumes,
+    this.rating,
+    required this.timesReread,
+    required this.isRereading,
+    this.startedAt,
+    this.finishedAt,
+    required this.visibility,
+    required this.shareToFeed,
+    required this.updatedAt,
+    this.remoteUpdatedAt,
+    this.reconciledAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['book_id'] = Variable<String>(bookId);
+    if (!nullToAbsent || status != null) {
+      map['status'] = Variable<String>(status);
+    }
+    map['current_page'] = Variable<int>(currentPage);
+    if (!nullToAbsent || progressVolumes != null) {
+      map['progress_volumes'] = Variable<double>(progressVolumes);
+    }
+    if (!nullToAbsent || rating != null) {
+      map['rating'] = Variable<int>(rating);
+    }
+    map['times_reread'] = Variable<int>(timesReread);
+    map['is_rereading'] = Variable<bool>(isRereading);
+    if (!nullToAbsent || startedAt != null) {
+      map['started_at'] = Variable<int>(startedAt);
+    }
+    if (!nullToAbsent || finishedAt != null) {
+      map['finished_at'] = Variable<int>(finishedAt);
+    }
+    map['visibility'] = Variable<String>(visibility);
+    map['share_to_feed'] = Variable<bool>(shareToFeed);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || remoteUpdatedAt != null) {
+      map['remote_updated_at'] = Variable<int>(remoteUpdatedAt);
+    }
+    if (!nullToAbsent || reconciledAt != null) {
+      map['reconciled_at'] = Variable<int>(reconciledAt);
+    }
+    return map;
+  }
+
+  BookStateCompanion toCompanion(bool nullToAbsent) {
+    return BookStateCompanion(
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      status: status == null && nullToAbsent
+          ? const Value.absent()
+          : Value(status),
+      currentPage: Value(currentPage),
+      progressVolumes: progressVolumes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(progressVolumes),
+      rating: rating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rating),
+      timesReread: Value(timesReread),
+      isRereading: Value(isRereading),
+      startedAt: startedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startedAt),
+      finishedAt: finishedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(finishedAt),
+      visibility: Value(visibility),
+      shareToFeed: Value(shareToFeed),
+      updatedAt: Value(updatedAt),
+      remoteUpdatedAt: remoteUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteUpdatedAt),
+      reconciledAt: reconciledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reconciledAt),
+    );
+  }
+
+  factory BookStateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BookStateRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      status: serializer.fromJson<String?>(json['status']),
+      currentPage: serializer.fromJson<int>(json['currentPage']),
+      progressVolumes: serializer.fromJson<double?>(json['progressVolumes']),
+      rating: serializer.fromJson<int?>(json['rating']),
+      timesReread: serializer.fromJson<int>(json['timesReread']),
+      isRereading: serializer.fromJson<bool>(json['isRereading']),
+      startedAt: serializer.fromJson<int?>(json['startedAt']),
+      finishedAt: serializer.fromJson<int?>(json['finishedAt']),
+      visibility: serializer.fromJson<String>(json['visibility']),
+      shareToFeed: serializer.fromJson<bool>(json['shareToFeed']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      remoteUpdatedAt: serializer.fromJson<int?>(json['remoteUpdatedAt']),
+      reconciledAt: serializer.fromJson<int?>(json['reconciledAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'bookId': serializer.toJson<String>(bookId),
+      'status': serializer.toJson<String?>(status),
+      'currentPage': serializer.toJson<int>(currentPage),
+      'progressVolumes': serializer.toJson<double?>(progressVolumes),
+      'rating': serializer.toJson<int?>(rating),
+      'timesReread': serializer.toJson<int>(timesReread),
+      'isRereading': serializer.toJson<bool>(isRereading),
+      'startedAt': serializer.toJson<int?>(startedAt),
+      'finishedAt': serializer.toJson<int?>(finishedAt),
+      'visibility': serializer.toJson<String>(visibility),
+      'shareToFeed': serializer.toJson<bool>(shareToFeed),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'remoteUpdatedAt': serializer.toJson<int?>(remoteUpdatedAt),
+      'reconciledAt': serializer.toJson<int?>(reconciledAt),
+    };
+  }
+
+  BookStateRow copyWith({
+    String? sourceId,
+    String? bookId,
+    Value<String?> status = const Value.absent(),
+    int? currentPage,
+    Value<double?> progressVolumes = const Value.absent(),
+    Value<int?> rating = const Value.absent(),
+    int? timesReread,
+    bool? isRereading,
+    Value<int?> startedAt = const Value.absent(),
+    Value<int?> finishedAt = const Value.absent(),
+    String? visibility,
+    bool? shareToFeed,
+    int? updatedAt,
+    Value<int?> remoteUpdatedAt = const Value.absent(),
+    Value<int?> reconciledAt = const Value.absent(),
+  }) => BookStateRow(
+    sourceId: sourceId ?? this.sourceId,
+    bookId: bookId ?? this.bookId,
+    status: status.present ? status.value : this.status,
+    currentPage: currentPage ?? this.currentPage,
+    progressVolumes: progressVolumes.present
+        ? progressVolumes.value
+        : this.progressVolumes,
+    rating: rating.present ? rating.value : this.rating,
+    timesReread: timesReread ?? this.timesReread,
+    isRereading: isRereading ?? this.isRereading,
+    startedAt: startedAt.present ? startedAt.value : this.startedAt,
+    finishedAt: finishedAt.present ? finishedAt.value : this.finishedAt,
+    visibility: visibility ?? this.visibility,
+    shareToFeed: shareToFeed ?? this.shareToFeed,
+    updatedAt: updatedAt ?? this.updatedAt,
+    remoteUpdatedAt: remoteUpdatedAt.present
+        ? remoteUpdatedAt.value
+        : this.remoteUpdatedAt,
+    reconciledAt: reconciledAt.present ? reconciledAt.value : this.reconciledAt,
+  );
+  BookStateRow copyWithCompanion(BookStateCompanion data) {
+    return BookStateRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      status: data.status.present ? data.status.value : this.status,
+      currentPage: data.currentPage.present
+          ? data.currentPage.value
+          : this.currentPage,
+      progressVolumes: data.progressVolumes.present
+          ? data.progressVolumes.value
+          : this.progressVolumes,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      timesReread: data.timesReread.present
+          ? data.timesReread.value
+          : this.timesReread,
+      isRereading: data.isRereading.present
+          ? data.isRereading.value
+          : this.isRereading,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
+      visibility: data.visibility.present
+          ? data.visibility.value
+          : this.visibility,
+      shareToFeed: data.shareToFeed.present
+          ? data.shareToFeed.value
+          : this.shareToFeed,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      remoteUpdatedAt: data.remoteUpdatedAt.present
+          ? data.remoteUpdatedAt.value
+          : this.remoteUpdatedAt,
+      reconciledAt: data.reconciledAt.present
+          ? data.reconciledAt.value
+          : this.reconciledAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookStateRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('status: $status, ')
+          ..write('currentPage: $currentPage, ')
+          ..write('progressVolumes: $progressVolumes, ')
+          ..write('rating: $rating, ')
+          ..write('timesReread: $timesReread, ')
+          ..write('isRereading: $isRereading, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('visibility: $visibility, ')
+          ..write('shareToFeed: $shareToFeed, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteUpdatedAt: $remoteUpdatedAt, ')
+          ..write('reconciledAt: $reconciledAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    bookId,
+    status,
+    currentPage,
+    progressVolumes,
+    rating,
+    timesReread,
+    isRereading,
+    startedAt,
+    finishedAt,
+    visibility,
+    shareToFeed,
+    updatedAt,
+    remoteUpdatedAt,
+    reconciledAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BookStateRow &&
+          other.sourceId == this.sourceId &&
+          other.bookId == this.bookId &&
+          other.status == this.status &&
+          other.currentPage == this.currentPage &&
+          other.progressVolumes == this.progressVolumes &&
+          other.rating == this.rating &&
+          other.timesReread == this.timesReread &&
+          other.isRereading == this.isRereading &&
+          other.startedAt == this.startedAt &&
+          other.finishedAt == this.finishedAt &&
+          other.visibility == this.visibility &&
+          other.shareToFeed == this.shareToFeed &&
+          other.updatedAt == this.updatedAt &&
+          other.remoteUpdatedAt == this.remoteUpdatedAt &&
+          other.reconciledAt == this.reconciledAt);
+}
+
+class BookStateCompanion extends UpdateCompanion<BookStateRow> {
+  final Value<String> sourceId;
+  final Value<String> bookId;
+  final Value<String?> status;
+  final Value<int> currentPage;
+  final Value<double?> progressVolumes;
+  final Value<int?> rating;
+  final Value<int> timesReread;
+  final Value<bool> isRereading;
+  final Value<int?> startedAt;
+  final Value<int?> finishedAt;
+  final Value<String> visibility;
+  final Value<bool> shareToFeed;
+  final Value<int> updatedAt;
+  final Value<int?> remoteUpdatedAt;
+  final Value<int?> reconciledAt;
+  final Value<int> rowid;
+  const BookStateCompanion({
+    this.sourceId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.currentPage = const Value.absent(),
+    this.progressVolumes = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.timesReread = const Value.absent(),
+    this.isRereading = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+    this.visibility = const Value.absent(),
+    this.shareToFeed = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.remoteUpdatedAt = const Value.absent(),
+    this.reconciledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BookStateCompanion.insert({
+    required String sourceId,
+    required String bookId,
+    this.status = const Value.absent(),
+    this.currentPage = const Value.absent(),
+    this.progressVolumes = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.timesReread = const Value.absent(),
+    this.isRereading = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+    this.visibility = const Value.absent(),
+    this.shareToFeed = const Value.absent(),
+    required int updatedAt,
+    this.remoteUpdatedAt = const Value.absent(),
+    this.reconciledAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       bookId = Value(bookId),
+       updatedAt = Value(updatedAt);
+  static Insertable<BookStateRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? bookId,
+    Expression<String>? status,
+    Expression<int>? currentPage,
+    Expression<double>? progressVolumes,
+    Expression<int>? rating,
+    Expression<int>? timesReread,
+    Expression<bool>? isRereading,
+    Expression<int>? startedAt,
+    Expression<int>? finishedAt,
+    Expression<String>? visibility,
+    Expression<bool>? shareToFeed,
+    Expression<int>? updatedAt,
+    Expression<int>? remoteUpdatedAt,
+    Expression<int>? reconciledAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (bookId != null) 'book_id': bookId,
+      if (status != null) 'status': status,
+      if (currentPage != null) 'current_page': currentPage,
+      if (progressVolumes != null) 'progress_volumes': progressVolumes,
+      if (rating != null) 'rating': rating,
+      if (timesReread != null) 'times_reread': timesReread,
+      if (isRereading != null) 'is_rereading': isRereading,
+      if (startedAt != null) 'started_at': startedAt,
+      if (finishedAt != null) 'finished_at': finishedAt,
+      if (visibility != null) 'visibility': visibility,
+      if (shareToFeed != null) 'share_to_feed': shareToFeed,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (remoteUpdatedAt != null) 'remote_updated_at': remoteUpdatedAt,
+      if (reconciledAt != null) 'reconciled_at': reconciledAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BookStateCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? bookId,
+    Value<String?>? status,
+    Value<int>? currentPage,
+    Value<double?>? progressVolumes,
+    Value<int?>? rating,
+    Value<int>? timesReread,
+    Value<bool>? isRereading,
+    Value<int?>? startedAt,
+    Value<int?>? finishedAt,
+    Value<String>? visibility,
+    Value<bool>? shareToFeed,
+    Value<int>? updatedAt,
+    Value<int?>? remoteUpdatedAt,
+    Value<int?>? reconciledAt,
+    Value<int>? rowid,
+  }) {
+    return BookStateCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      bookId: bookId ?? this.bookId,
+      status: status ?? this.status,
+      currentPage: currentPage ?? this.currentPage,
+      progressVolumes: progressVolumes ?? this.progressVolumes,
+      rating: rating ?? this.rating,
+      timesReread: timesReread ?? this.timesReread,
+      isRereading: isRereading ?? this.isRereading,
+      startedAt: startedAt ?? this.startedAt,
+      finishedAt: finishedAt ?? this.finishedAt,
+      visibility: visibility ?? this.visibility,
+      shareToFeed: shareToFeed ?? this.shareToFeed,
+      updatedAt: updatedAt ?? this.updatedAt,
+      remoteUpdatedAt: remoteUpdatedAt ?? this.remoteUpdatedAt,
+      reconciledAt: reconciledAt ?? this.reconciledAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (currentPage.present) {
+      map['current_page'] = Variable<int>(currentPage.value);
+    }
+    if (progressVolumes.present) {
+      map['progress_volumes'] = Variable<double>(progressVolumes.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
+    if (timesReread.present) {
+      map['times_reread'] = Variable<int>(timesReread.value);
+    }
+    if (isRereading.present) {
+      map['is_rereading'] = Variable<bool>(isRereading.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<int>(startedAt.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<int>(finishedAt.value);
+    }
+    if (visibility.present) {
+      map['visibility'] = Variable<String>(visibility.value);
+    }
+    if (shareToFeed.present) {
+      map['share_to_feed'] = Variable<bool>(shareToFeed.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (remoteUpdatedAt.present) {
+      map['remote_updated_at'] = Variable<int>(remoteUpdatedAt.value);
+    }
+    if (reconciledAt.present) {
+      map['reconciled_at'] = Variable<int>(reconciledAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookStateCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('status: $status, ')
+          ..write('currentPage: $currentPage, ')
+          ..write('progressVolumes: $progressVolumes, ')
+          ..write('rating: $rating, ')
+          ..write('timesReread: $timesReread, ')
+          ..write('isRereading: $isRereading, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('visibility: $visibility, ')
+          ..write('shareToFeed: $shareToFeed, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('remoteUpdatedAt: $remoteUpdatedAt, ')
+          ..write('reconciledAt: $reconciledAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ReadingSessionsTable extends ReadingSessions
+    with TableInfo<$ReadingSessionsTable, ReadingSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReadingSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<String> seriesId = GeneratedColumn<String>(
+    'series_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<int> startedAt = GeneratedColumn<int>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<int> endedAt = GeneratedColumn<int>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeSecondsMeta = const VerificationMeta(
+    'activeSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> activeSeconds = GeneratedColumn<int>(
+    'active_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startPageMeta = const VerificationMeta(
+    'startPage',
+  );
+  @override
+  late final GeneratedColumn<int> startPage = GeneratedColumn<int>(
+    'start_page',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endPageMeta = const VerificationMeta(
+    'endPage',
+  );
+  @override
+  late final GeneratedColumn<int> endPage = GeneratedColumn<int>(
+    'end_page',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pagesReadMeta = const VerificationMeta(
+    'pagesRead',
+  );
+  @override
+  late final GeneratedColumn<int> pagesRead = GeneratedColumn<int>(
+    'pages_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isCompletionMeta = const VerificationMeta(
+    'isCompletion',
+  );
+  @override
+  late final GeneratedColumn<bool> isCompletion = GeneratedColumn<bool>(
+    'is_completion',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_completion" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _rereadIndexMeta = const VerificationMeta(
+    'rereadIndex',
+  );
+  @override
+  late final GeneratedColumn<int> rereadIndex = GeneratedColumn<int>(
+    'reread_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _visibilityMeta = const VerificationMeta(
+    'visibility',
+  );
+  @override
+  late final GeneratedColumn<String> visibility = GeneratedColumn<String>(
+    'visibility',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('private'),
+  );
+  static const VerificationMeta _shareToFeedMeta = const VerificationMeta(
+    'shareToFeed',
+  );
+  @override
+  late final GeneratedColumn<bool> shareToFeed = GeneratedColumn<bool>(
+    'share_to_feed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("share_to_feed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sourceId,
+    bookId,
+    seriesId,
+    startedAt,
+    endedAt,
+    activeSeconds,
+    startPage,
+    endPage,
+    pagesRead,
+    isCompletion,
+    rereadIndex,
+    deviceId,
+    visibility,
+    shareToFeed,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reading_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReadingSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesIdMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('active_seconds')) {
+      context.handle(
+        _activeSecondsMeta,
+        activeSeconds.isAcceptableOrUnknown(
+          data['active_seconds']!,
+          _activeSecondsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activeSecondsMeta);
+    }
+    if (data.containsKey('start_page')) {
+      context.handle(
+        _startPageMeta,
+        startPage.isAcceptableOrUnknown(data['start_page']!, _startPageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startPageMeta);
+    }
+    if (data.containsKey('end_page')) {
+      context.handle(
+        _endPageMeta,
+        endPage.isAcceptableOrUnknown(data['end_page']!, _endPageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endPageMeta);
+    }
+    if (data.containsKey('pages_read')) {
+      context.handle(
+        _pagesReadMeta,
+        pagesRead.isAcceptableOrUnknown(data['pages_read']!, _pagesReadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pagesReadMeta);
+    }
+    if (data.containsKey('is_completion')) {
+      context.handle(
+        _isCompletionMeta,
+        isCompletion.isAcceptableOrUnknown(
+          data['is_completion']!,
+          _isCompletionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reread_index')) {
+      context.handle(
+        _rereadIndexMeta,
+        rereadIndex.isAcceptableOrUnknown(
+          data['reread_index']!,
+          _rereadIndexMeta,
+        ),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('visibility')) {
+      context.handle(
+        _visibilityMeta,
+        visibility.isAcceptableOrUnknown(data['visibility']!, _visibilityMeta),
+      );
+    }
+    if (data.containsKey('share_to_feed')) {
+      context.handle(
+        _shareToFeedMeta,
+        shareToFeed.isAcceptableOrUnknown(
+          data['share_to_feed']!,
+          _shareToFeedMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReadingSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReadingSessionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      activeSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}active_seconds'],
+      )!,
+      startPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_page'],
+      )!,
+      endPage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_page'],
+      )!,
+      pagesRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pages_read'],
+      )!,
+      isCompletion: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_completion'],
+      )!,
+      rereadIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reread_index'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      visibility: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visibility'],
+      )!,
+      shareToFeed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}share_to_feed'],
+      )!,
+    );
+  }
+
+  @override
+  $ReadingSessionsTable createAlias(String alias) {
+    return $ReadingSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class ReadingSessionRow extends DataClass
+    implements Insertable<ReadingSessionRow> {
+  /// uuid v4.
+  final String id;
+  final String sourceId;
+  final String bookId;
+  final String seriesId;
+
+  /// Epoch ms.
+  final int startedAt;
+  final int endedAt;
+
+  /// Idle-capped active reading seconds.
+  final int activeSeconds;
+  final int startPage;
+  final int endPage;
+  final int pagesRead;
+  final bool isCompletion;
+  final int rereadIndex;
+  final String deviceId;
+  final String visibility;
+  final bool shareToFeed;
+  const ReadingSessionRow({
+    required this.id,
+    required this.sourceId,
+    required this.bookId,
+    required this.seriesId,
+    required this.startedAt,
+    required this.endedAt,
+    required this.activeSeconds,
+    required this.startPage,
+    required this.endPage,
+    required this.pagesRead,
+    required this.isCompletion,
+    required this.rereadIndex,
+    required this.deviceId,
+    required this.visibility,
+    required this.shareToFeed,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['source_id'] = Variable<String>(sourceId);
+    map['book_id'] = Variable<String>(bookId);
+    map['series_id'] = Variable<String>(seriesId);
+    map['started_at'] = Variable<int>(startedAt);
+    map['ended_at'] = Variable<int>(endedAt);
+    map['active_seconds'] = Variable<int>(activeSeconds);
+    map['start_page'] = Variable<int>(startPage);
+    map['end_page'] = Variable<int>(endPage);
+    map['pages_read'] = Variable<int>(pagesRead);
+    map['is_completion'] = Variable<bool>(isCompletion);
+    map['reread_index'] = Variable<int>(rereadIndex);
+    map['device_id'] = Variable<String>(deviceId);
+    map['visibility'] = Variable<String>(visibility);
+    map['share_to_feed'] = Variable<bool>(shareToFeed);
+    return map;
+  }
+
+  ReadingSessionsCompanion toCompanion(bool nullToAbsent) {
+    return ReadingSessionsCompanion(
+      id: Value(id),
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      seriesId: Value(seriesId),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      activeSeconds: Value(activeSeconds),
+      startPage: Value(startPage),
+      endPage: Value(endPage),
+      pagesRead: Value(pagesRead),
+      isCompletion: Value(isCompletion),
+      rereadIndex: Value(rereadIndex),
+      deviceId: Value(deviceId),
+      visibility: Value(visibility),
+      shareToFeed: Value(shareToFeed),
+    );
+  }
+
+  factory ReadingSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReadingSessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      seriesId: serializer.fromJson<String>(json['seriesId']),
+      startedAt: serializer.fromJson<int>(json['startedAt']),
+      endedAt: serializer.fromJson<int>(json['endedAt']),
+      activeSeconds: serializer.fromJson<int>(json['activeSeconds']),
+      startPage: serializer.fromJson<int>(json['startPage']),
+      endPage: serializer.fromJson<int>(json['endPage']),
+      pagesRead: serializer.fromJson<int>(json['pagesRead']),
+      isCompletion: serializer.fromJson<bool>(json['isCompletion']),
+      rereadIndex: serializer.fromJson<int>(json['rereadIndex']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      visibility: serializer.fromJson<String>(json['visibility']),
+      shareToFeed: serializer.fromJson<bool>(json['shareToFeed']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'bookId': serializer.toJson<String>(bookId),
+      'seriesId': serializer.toJson<String>(seriesId),
+      'startedAt': serializer.toJson<int>(startedAt),
+      'endedAt': serializer.toJson<int>(endedAt),
+      'activeSeconds': serializer.toJson<int>(activeSeconds),
+      'startPage': serializer.toJson<int>(startPage),
+      'endPage': serializer.toJson<int>(endPage),
+      'pagesRead': serializer.toJson<int>(pagesRead),
+      'isCompletion': serializer.toJson<bool>(isCompletion),
+      'rereadIndex': serializer.toJson<int>(rereadIndex),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'visibility': serializer.toJson<String>(visibility),
+      'shareToFeed': serializer.toJson<bool>(shareToFeed),
+    };
+  }
+
+  ReadingSessionRow copyWith({
+    String? id,
+    String? sourceId,
+    String? bookId,
+    String? seriesId,
+    int? startedAt,
+    int? endedAt,
+    int? activeSeconds,
+    int? startPage,
+    int? endPage,
+    int? pagesRead,
+    bool? isCompletion,
+    int? rereadIndex,
+    String? deviceId,
+    String? visibility,
+    bool? shareToFeed,
+  }) => ReadingSessionRow(
+    id: id ?? this.id,
+    sourceId: sourceId ?? this.sourceId,
+    bookId: bookId ?? this.bookId,
+    seriesId: seriesId ?? this.seriesId,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    activeSeconds: activeSeconds ?? this.activeSeconds,
+    startPage: startPage ?? this.startPage,
+    endPage: endPage ?? this.endPage,
+    pagesRead: pagesRead ?? this.pagesRead,
+    isCompletion: isCompletion ?? this.isCompletion,
+    rereadIndex: rereadIndex ?? this.rereadIndex,
+    deviceId: deviceId ?? this.deviceId,
+    visibility: visibility ?? this.visibility,
+    shareToFeed: shareToFeed ?? this.shareToFeed,
+  );
+  ReadingSessionRow copyWithCompanion(ReadingSessionsCompanion data) {
+    return ReadingSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      activeSeconds: data.activeSeconds.present
+          ? data.activeSeconds.value
+          : this.activeSeconds,
+      startPage: data.startPage.present ? data.startPage.value : this.startPage,
+      endPage: data.endPage.present ? data.endPage.value : this.endPage,
+      pagesRead: data.pagesRead.present ? data.pagesRead.value : this.pagesRead,
+      isCompletion: data.isCompletion.present
+          ? data.isCompletion.value
+          : this.isCompletion,
+      rereadIndex: data.rereadIndex.present
+          ? data.rereadIndex.value
+          : this.rereadIndex,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      visibility: data.visibility.present
+          ? data.visibility.value
+          : this.visibility,
+      shareToFeed: data.shareToFeed.present
+          ? data.shareToFeed.value
+          : this.shareToFeed,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSessionRow(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('activeSeconds: $activeSeconds, ')
+          ..write('startPage: $startPage, ')
+          ..write('endPage: $endPage, ')
+          ..write('pagesRead: $pagesRead, ')
+          ..write('isCompletion: $isCompletion, ')
+          ..write('rereadIndex: $rereadIndex, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('visibility: $visibility, ')
+          ..write('shareToFeed: $shareToFeed')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sourceId,
+    bookId,
+    seriesId,
+    startedAt,
+    endedAt,
+    activeSeconds,
+    startPage,
+    endPage,
+    pagesRead,
+    isCompletion,
+    rereadIndex,
+    deviceId,
+    visibility,
+    shareToFeed,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReadingSessionRow &&
+          other.id == this.id &&
+          other.sourceId == this.sourceId &&
+          other.bookId == this.bookId &&
+          other.seriesId == this.seriesId &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.activeSeconds == this.activeSeconds &&
+          other.startPage == this.startPage &&
+          other.endPage == this.endPage &&
+          other.pagesRead == this.pagesRead &&
+          other.isCompletion == this.isCompletion &&
+          other.rereadIndex == this.rereadIndex &&
+          other.deviceId == this.deviceId &&
+          other.visibility == this.visibility &&
+          other.shareToFeed == this.shareToFeed);
+}
+
+class ReadingSessionsCompanion extends UpdateCompanion<ReadingSessionRow> {
+  final Value<String> id;
+  final Value<String> sourceId;
+  final Value<String> bookId;
+  final Value<String> seriesId;
+  final Value<int> startedAt;
+  final Value<int> endedAt;
+  final Value<int> activeSeconds;
+  final Value<int> startPage;
+  final Value<int> endPage;
+  final Value<int> pagesRead;
+  final Value<bool> isCompletion;
+  final Value<int> rereadIndex;
+  final Value<String> deviceId;
+  final Value<String> visibility;
+  final Value<bool> shareToFeed;
+  final Value<int> rowid;
+  const ReadingSessionsCompanion({
+    this.id = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.activeSeconds = const Value.absent(),
+    this.startPage = const Value.absent(),
+    this.endPage = const Value.absent(),
+    this.pagesRead = const Value.absent(),
+    this.isCompletion = const Value.absent(),
+    this.rereadIndex = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.visibility = const Value.absent(),
+    this.shareToFeed = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReadingSessionsCompanion.insert({
+    required String id,
+    required String sourceId,
+    required String bookId,
+    required String seriesId,
+    required int startedAt,
+    required int endedAt,
+    required int activeSeconds,
+    required int startPage,
+    required int endPage,
+    required int pagesRead,
+    this.isCompletion = const Value.absent(),
+    this.rereadIndex = const Value.absent(),
+    required String deviceId,
+    this.visibility = const Value.absent(),
+    this.shareToFeed = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sourceId = Value(sourceId),
+       bookId = Value(bookId),
+       seriesId = Value(seriesId),
+       startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       activeSeconds = Value(activeSeconds),
+       startPage = Value(startPage),
+       endPage = Value(endPage),
+       pagesRead = Value(pagesRead),
+       deviceId = Value(deviceId);
+  static Insertable<ReadingSessionRow> custom({
+    Expression<String>? id,
+    Expression<String>? sourceId,
+    Expression<String>? bookId,
+    Expression<String>? seriesId,
+    Expression<int>? startedAt,
+    Expression<int>? endedAt,
+    Expression<int>? activeSeconds,
+    Expression<int>? startPage,
+    Expression<int>? endPage,
+    Expression<int>? pagesRead,
+    Expression<bool>? isCompletion,
+    Expression<int>? rereadIndex,
+    Expression<String>? deviceId,
+    Expression<String>? visibility,
+    Expression<bool>? shareToFeed,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sourceId != null) 'source_id': sourceId,
+      if (bookId != null) 'book_id': bookId,
+      if (seriesId != null) 'series_id': seriesId,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (activeSeconds != null) 'active_seconds': activeSeconds,
+      if (startPage != null) 'start_page': startPage,
+      if (endPage != null) 'end_page': endPage,
+      if (pagesRead != null) 'pages_read': pagesRead,
+      if (isCompletion != null) 'is_completion': isCompletion,
+      if (rereadIndex != null) 'reread_index': rereadIndex,
+      if (deviceId != null) 'device_id': deviceId,
+      if (visibility != null) 'visibility': visibility,
+      if (shareToFeed != null) 'share_to_feed': shareToFeed,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReadingSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sourceId,
+    Value<String>? bookId,
+    Value<String>? seriesId,
+    Value<int>? startedAt,
+    Value<int>? endedAt,
+    Value<int>? activeSeconds,
+    Value<int>? startPage,
+    Value<int>? endPage,
+    Value<int>? pagesRead,
+    Value<bool>? isCompletion,
+    Value<int>? rereadIndex,
+    Value<String>? deviceId,
+    Value<String>? visibility,
+    Value<bool>? shareToFeed,
+    Value<int>? rowid,
+  }) {
+    return ReadingSessionsCompanion(
+      id: id ?? this.id,
+      sourceId: sourceId ?? this.sourceId,
+      bookId: bookId ?? this.bookId,
+      seriesId: seriesId ?? this.seriesId,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      activeSeconds: activeSeconds ?? this.activeSeconds,
+      startPage: startPage ?? this.startPage,
+      endPage: endPage ?? this.endPage,
+      pagesRead: pagesRead ?? this.pagesRead,
+      isCompletion: isCompletion ?? this.isCompletion,
+      rereadIndex: rereadIndex ?? this.rereadIndex,
+      deviceId: deviceId ?? this.deviceId,
+      visibility: visibility ?? this.visibility,
+      shareToFeed: shareToFeed ?? this.shareToFeed,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (seriesId.present) {
+      map['series_id'] = Variable<String>(seriesId.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<int>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<int>(endedAt.value);
+    }
+    if (activeSeconds.present) {
+      map['active_seconds'] = Variable<int>(activeSeconds.value);
+    }
+    if (startPage.present) {
+      map['start_page'] = Variable<int>(startPage.value);
+    }
+    if (endPage.present) {
+      map['end_page'] = Variable<int>(endPage.value);
+    }
+    if (pagesRead.present) {
+      map['pages_read'] = Variable<int>(pagesRead.value);
+    }
+    if (isCompletion.present) {
+      map['is_completion'] = Variable<bool>(isCompletion.value);
+    }
+    if (rereadIndex.present) {
+      map['reread_index'] = Variable<int>(rereadIndex.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (visibility.present) {
+      map['visibility'] = Variable<String>(visibility.value);
+    }
+    if (shareToFeed.present) {
+      map['share_to_feed'] = Variable<bool>(shareToFeed.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('activeSeconds: $activeSeconds, ')
+          ..write('startPage: $startPage, ')
+          ..write('endPage: $endPage, ')
+          ..write('pagesRead: $pagesRead, ')
+          ..write('isCompletion: $isCompletion, ')
+          ..write('rereadIndex: $rereadIndex, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('visibility: $visibility, ')
+          ..write('shareToFeed: $shareToFeed, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncQueueTable extends SyncQueue
+    with TableInfo<$SyncQueueTable, SyncQueueRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncQueueTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pageMeta = const VerificationMeta('page');
+  @override
+  late final GeneratedColumn<int> page = GeneratedColumn<int>(
+    'page',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedMeta = const VerificationMeta(
+    'completed',
+  );
+  @override
+  late final GeneratedColumn<bool> completed = GeneratedColumn<bool>(
+    'completed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _queuedAtMeta = const VerificationMeta(
+    'queuedAt',
+  );
+  @override
+  late final GeneratedColumn<int> queuedAt = GeneratedColumn<int>(
+    'queued_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sourceId,
+    bookId,
+    page,
+    completed,
+    queuedAt,
+    attempts,
+    state,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_queue';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncQueueRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('page')) {
+      context.handle(
+        _pageMeta,
+        page.isAcceptableOrUnknown(data['page']!, _pageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pageMeta);
+    }
+    if (data.containsKey('completed')) {
+      context.handle(
+        _completedMeta,
+        completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
+      );
+    }
+    if (data.containsKey('queued_at')) {
+      context.handle(
+        _queuedAtMeta,
+        queuedAt.isAcceptableOrUnknown(data['queued_at']!, _queuedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queuedAtMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncQueueRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncQueueRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      page: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}page'],
+      )!,
+      completed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completed'],
+      )!,
+      queuedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}queued_at'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+    );
+  }
+
+  @override
+  $SyncQueueTable createAlias(String alias) {
+    return $SyncQueueTable(attachedDatabase, alias);
+  }
+}
+
+class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
+  final int id;
+  final String sourceId;
+  final String bookId;
+  final int page;
+  final bool completed;
+  final int queuedAt;
+  final int attempts;
+  final String state;
+  const SyncQueueRow({
+    required this.id,
+    required this.sourceId,
+    required this.bookId,
+    required this.page,
+    required this.completed,
+    required this.queuedAt,
+    required this.attempts,
+    required this.state,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['source_id'] = Variable<String>(sourceId);
+    map['book_id'] = Variable<String>(bookId);
+    map['page'] = Variable<int>(page);
+    map['completed'] = Variable<bool>(completed);
+    map['queued_at'] = Variable<int>(queuedAt);
+    map['attempts'] = Variable<int>(attempts);
+    map['state'] = Variable<String>(state);
+    return map;
+  }
+
+  SyncQueueCompanion toCompanion(bool nullToAbsent) {
+    return SyncQueueCompanion(
+      id: Value(id),
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      page: Value(page),
+      completed: Value(completed),
+      queuedAt: Value(queuedAt),
+      attempts: Value(attempts),
+      state: Value(state),
+    );
+  }
+
+  factory SyncQueueRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncQueueRow(
+      id: serializer.fromJson<int>(json['id']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      page: serializer.fromJson<int>(json['page']),
+      completed: serializer.fromJson<bool>(json['completed']),
+      queuedAt: serializer.fromJson<int>(json['queuedAt']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      state: serializer.fromJson<String>(json['state']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'bookId': serializer.toJson<String>(bookId),
+      'page': serializer.toJson<int>(page),
+      'completed': serializer.toJson<bool>(completed),
+      'queuedAt': serializer.toJson<int>(queuedAt),
+      'attempts': serializer.toJson<int>(attempts),
+      'state': serializer.toJson<String>(state),
+    };
+  }
+
+  SyncQueueRow copyWith({
+    int? id,
+    String? sourceId,
+    String? bookId,
+    int? page,
+    bool? completed,
+    int? queuedAt,
+    int? attempts,
+    String? state,
+  }) => SyncQueueRow(
+    id: id ?? this.id,
+    sourceId: sourceId ?? this.sourceId,
+    bookId: bookId ?? this.bookId,
+    page: page ?? this.page,
+    completed: completed ?? this.completed,
+    queuedAt: queuedAt ?? this.queuedAt,
+    attempts: attempts ?? this.attempts,
+    state: state ?? this.state,
+  );
+  SyncQueueRow copyWithCompanion(SyncQueueCompanion data) {
+    return SyncQueueRow(
+      id: data.id.present ? data.id.value : this.id,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      page: data.page.present ? data.page.value : this.page,
+      completed: data.completed.present ? data.completed.value : this.completed,
+      queuedAt: data.queuedAt.present ? data.queuedAt.value : this.queuedAt,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      state: data.state.present ? data.state.value : this.state,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncQueueRow(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('page: $page, ')
+          ..write('completed: $completed, ')
+          ..write('queuedAt: $queuedAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('state: $state')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sourceId,
+    bookId,
+    page,
+    completed,
+    queuedAt,
+    attempts,
+    state,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncQueueRow &&
+          other.id == this.id &&
+          other.sourceId == this.sourceId &&
+          other.bookId == this.bookId &&
+          other.page == this.page &&
+          other.completed == this.completed &&
+          other.queuedAt == this.queuedAt &&
+          other.attempts == this.attempts &&
+          other.state == this.state);
+}
+
+class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
+  final Value<int> id;
+  final Value<String> sourceId;
+  final Value<String> bookId;
+  final Value<int> page;
+  final Value<bool> completed;
+  final Value<int> queuedAt;
+  final Value<int> attempts;
+  final Value<String> state;
+  const SyncQueueCompanion({
+    this.id = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.page = const Value.absent(),
+    this.completed = const Value.absent(),
+    this.queuedAt = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.state = const Value.absent(),
+  });
+  SyncQueueCompanion.insert({
+    this.id = const Value.absent(),
+    required String sourceId,
+    required String bookId,
+    required int page,
+    this.completed = const Value.absent(),
+    required int queuedAt,
+    this.attempts = const Value.absent(),
+    this.state = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       bookId = Value(bookId),
+       page = Value(page),
+       queuedAt = Value(queuedAt);
+  static Insertable<SyncQueueRow> custom({
+    Expression<int>? id,
+    Expression<String>? sourceId,
+    Expression<String>? bookId,
+    Expression<int>? page,
+    Expression<bool>? completed,
+    Expression<int>? queuedAt,
+    Expression<int>? attempts,
+    Expression<String>? state,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sourceId != null) 'source_id': sourceId,
+      if (bookId != null) 'book_id': bookId,
+      if (page != null) 'page': page,
+      if (completed != null) 'completed': completed,
+      if (queuedAt != null) 'queued_at': queuedAt,
+      if (attempts != null) 'attempts': attempts,
+      if (state != null) 'state': state,
+    });
+  }
+
+  SyncQueueCompanion copyWith({
+    Value<int>? id,
+    Value<String>? sourceId,
+    Value<String>? bookId,
+    Value<int>? page,
+    Value<bool>? completed,
+    Value<int>? queuedAt,
+    Value<int>? attempts,
+    Value<String>? state,
+  }) {
+    return SyncQueueCompanion(
+      id: id ?? this.id,
+      sourceId: sourceId ?? this.sourceId,
+      bookId: bookId ?? this.bookId,
+      page: page ?? this.page,
+      completed: completed ?? this.completed,
+      queuedAt: queuedAt ?? this.queuedAt,
+      attempts: attempts ?? this.attempts,
+      state: state ?? this.state,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (page.present) {
+      map['page'] = Variable<int>(page.value);
+    }
+    if (completed.present) {
+      map['completed'] = Variable<bool>(completed.value);
+    }
+    if (queuedAt.present) {
+      map['queued_at'] = Variable<int>(queuedAt.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncQueueCompanion(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('bookId: $bookId, ')
+          ..write('page: $page, ')
+          ..write('completed: $completed, ')
+          ..write('queuedAt: $queuedAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('state: $state')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SeriesMetaTable extends SeriesMeta
+    with TableInfo<$SeriesMetaTable, SeriesMetaRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SeriesMetaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<String> seriesId = GeneratedColumn<String>(
+    'series_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _publisherMeta = const VerificationMeta(
+    'publisher',
+  );
+  @override
+  late final GeneratedColumn<String> publisher = GeneratedColumn<String>(
+    'publisher',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genresMeta = const VerificationMeta('genres');
+  @override
+  late final GeneratedColumn<String> genres = GeneratedColumn<String>(
+    'genres',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [sourceId, seriesId, publisher, genres];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'series_meta';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SeriesMetaRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesIdMeta);
+    }
+    if (data.containsKey('publisher')) {
+      context.handle(
+        _publisherMeta,
+        publisher.isAcceptableOrUnknown(data['publisher']!, _publisherMeta),
+      );
+    }
+    if (data.containsKey('genres')) {
+      context.handle(
+        _genresMeta,
+        genres.isAcceptableOrUnknown(data['genres']!, _genresMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, seriesId};
+  @override
+  SeriesMetaRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SeriesMetaRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_id'],
+      )!,
+      publisher: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}publisher'],
+      ),
+      genres: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}genres'],
+      ),
+    );
+  }
+
+  @override
+  $SeriesMetaTable createAlias(String alias) {
+    return $SeriesMetaTable(attachedDatabase, alias);
+  }
+}
+
+class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
+  final String sourceId;
+  final String seriesId;
+  final String? publisher;
+
+  /// JSON-encoded `List<String>` of genres (tag-overlap breakdown).
+  final String? genres;
+  const SeriesMetaRow({
+    required this.sourceId,
+    required this.seriesId,
+    this.publisher,
+    this.genres,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['series_id'] = Variable<String>(seriesId);
+    if (!nullToAbsent || publisher != null) {
+      map['publisher'] = Variable<String>(publisher);
+    }
+    if (!nullToAbsent || genres != null) {
+      map['genres'] = Variable<String>(genres);
+    }
+    return map;
+  }
+
+  SeriesMetaCompanion toCompanion(bool nullToAbsent) {
+    return SeriesMetaCompanion(
+      sourceId: Value(sourceId),
+      seriesId: Value(seriesId),
+      publisher: publisher == null && nullToAbsent
+          ? const Value.absent()
+          : Value(publisher),
+      genres: genres == null && nullToAbsent
+          ? const Value.absent()
+          : Value(genres),
+    );
+  }
+
+  factory SeriesMetaRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SeriesMetaRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      seriesId: serializer.fromJson<String>(json['seriesId']),
+      publisher: serializer.fromJson<String?>(json['publisher']),
+      genres: serializer.fromJson<String?>(json['genres']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'seriesId': serializer.toJson<String>(seriesId),
+      'publisher': serializer.toJson<String?>(publisher),
+      'genres': serializer.toJson<String?>(genres),
+    };
+  }
+
+  SeriesMetaRow copyWith({
+    String? sourceId,
+    String? seriesId,
+    Value<String?> publisher = const Value.absent(),
+    Value<String?> genres = const Value.absent(),
+  }) => SeriesMetaRow(
+    sourceId: sourceId ?? this.sourceId,
+    seriesId: seriesId ?? this.seriesId,
+    publisher: publisher.present ? publisher.value : this.publisher,
+    genres: genres.present ? genres.value : this.genres,
+  );
+  SeriesMetaRow copyWithCompanion(SeriesMetaCompanion data) {
+    return SeriesMetaRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
+      publisher: data.publisher.present ? data.publisher.value : this.publisher,
+      genres: data.genres.present ? data.genres.value : this.genres,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeriesMetaRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('publisher: $publisher, ')
+          ..write('genres: $genres')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sourceId, seriesId, publisher, genres);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SeriesMetaRow &&
+          other.sourceId == this.sourceId &&
+          other.seriesId == this.seriesId &&
+          other.publisher == this.publisher &&
+          other.genres == this.genres);
+}
+
+class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
+  final Value<String> sourceId;
+  final Value<String> seriesId;
+  final Value<String?> publisher;
+  final Value<String?> genres;
+  final Value<int> rowid;
+  const SeriesMetaCompanion({
+    this.sourceId = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.publisher = const Value.absent(),
+    this.genres = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SeriesMetaCompanion.insert({
+    required String sourceId,
+    required String seriesId,
+    this.publisher = const Value.absent(),
+    this.genres = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       seriesId = Value(seriesId);
+  static Insertable<SeriesMetaRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? seriesId,
+    Expression<String>? publisher,
+    Expression<String>? genres,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (seriesId != null) 'series_id': seriesId,
+      if (publisher != null) 'publisher': publisher,
+      if (genres != null) 'genres': genres,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SeriesMetaCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? seriesId,
+    Value<String?>? publisher,
+    Value<String?>? genres,
+    Value<int>? rowid,
+  }) {
+    return SeriesMetaCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      seriesId: seriesId ?? this.seriesId,
+      publisher: publisher ?? this.publisher,
+      genres: genres ?? this.genres,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (seriesId.present) {
+      map['series_id'] = Variable<String>(seriesId.value);
+    }
+    if (publisher.present) {
+      map['publisher'] = Variable<String>(publisher.value);
+    }
+    if (genres.present) {
+      map['genres'] = Variable<String>(genres.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SeriesMetaCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('publisher: $publisher, ')
+          ..write('genres: $genres, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5243,6 +7890,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReaderSettingsTable readerSettings = $ReaderSettingsTable(this);
   late final $CachedAssetsTable cachedAssets = $CachedAssetsTable(this);
   late final $DownloadTasksTable downloadTasks = $DownloadTasksTable(this);
+  late final $BookStateTable bookState = $BookStateTable(this);
+  late final $ReadingSessionsTable readingSessions = $ReadingSessionsTable(
+    this,
+  );
+  late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
+  late final $SeriesMetaTable seriesMeta = $SeriesMetaTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -5254,6 +7907,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index cachedAssetsLru = Index(
     'cached_assets_lru',
     'CREATE INDEX cached_assets_lru ON cached_assets (last_accessed_at)',
+  );
+  late final Index syncQueueBook = Index(
+    'sync_queue_book',
+    'CREATE UNIQUE INDEX sync_queue_book ON sync_queue (source_id, book_id)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -5271,9 +7928,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     readerSettings,
     cachedAssets,
     downloadTasks,
+    bookState,
+    readingSessions,
+    syncQueue,
+    seriesMeta,
     seriesKeyset,
     seriesKeysetLib,
     cachedAssetsLru,
+    syncQueueBook,
   ];
 }
 
@@ -5285,6 +7947,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> cacheCapBytes,
       Value<bool> autoCacheEnabled,
       Value<bool> downloadWifiOnly,
+      Value<String?> deviceId,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -5294,6 +7957,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<int> cacheCapBytes,
       Value<bool> autoCacheEnabled,
       Value<bool> downloadWifiOnly,
+      Value<String?> deviceId,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -5332,6 +7996,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get downloadWifiOnly => $composableBuilder(
     column: $table.downloadWifiOnly,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5374,6 +8043,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.downloadWifiOnly,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -5410,6 +8084,9 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.downloadWifiOnly,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 }
 
 class $$AppSettingsTableTableManager
@@ -5449,6 +8126,7 @@ class $$AppSettingsTableTableManager
                 Value<int> cacheCapBytes = const Value.absent(),
                 Value<bool> autoCacheEnabled = const Value.absent(),
                 Value<bool> downloadWifiOnly = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -5456,6 +8134,7 @@ class $$AppSettingsTableTableManager
                 cacheCapBytes: cacheCapBytes,
                 autoCacheEnabled: autoCacheEnabled,
                 downloadWifiOnly: downloadWifiOnly,
+                deviceId: deviceId,
               ),
           createCompanionCallback:
               ({
@@ -5465,6 +8144,7 @@ class $$AppSettingsTableTableManager
                 Value<int> cacheCapBytes = const Value.absent(),
                 Value<bool> autoCacheEnabled = const Value.absent(),
                 Value<bool> downloadWifiOnly = const Value.absent(),
+                Value<String?> deviceId = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -5472,6 +8152,7 @@ class $$AppSettingsTableTableManager
                 cacheCapBytes: cacheCapBytes,
                 autoCacheEnabled: autoCacheEnabled,
                 downloadWifiOnly: downloadWifiOnly,
+                deviceId: deviceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -7924,6 +10605,1252 @@ typedef $$DownloadTasksTableProcessedTableManager =
       DownloadTask,
       PrefetchHooks Function()
     >;
+typedef $$BookStateTableCreateCompanionBuilder =
+    BookStateCompanion Function({
+      required String sourceId,
+      required String bookId,
+      Value<String?> status,
+      Value<int> currentPage,
+      Value<double?> progressVolumes,
+      Value<int?> rating,
+      Value<int> timesReread,
+      Value<bool> isRereading,
+      Value<int?> startedAt,
+      Value<int?> finishedAt,
+      Value<String> visibility,
+      Value<bool> shareToFeed,
+      required int updatedAt,
+      Value<int?> remoteUpdatedAt,
+      Value<int?> reconciledAt,
+      Value<int> rowid,
+    });
+typedef $$BookStateTableUpdateCompanionBuilder =
+    BookStateCompanion Function({
+      Value<String> sourceId,
+      Value<String> bookId,
+      Value<String?> status,
+      Value<int> currentPage,
+      Value<double?> progressVolumes,
+      Value<int?> rating,
+      Value<int> timesReread,
+      Value<bool> isRereading,
+      Value<int?> startedAt,
+      Value<int?> finishedAt,
+      Value<String> visibility,
+      Value<bool> shareToFeed,
+      Value<int> updatedAt,
+      Value<int?> remoteUpdatedAt,
+      Value<int?> reconciledAt,
+      Value<int> rowid,
+    });
+
+class $$BookStateTableFilterComposer
+    extends Composer<_$AppDatabase, $BookStateTable> {
+  $$BookStateTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentPage => $composableBuilder(
+    column: $table.currentPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get progressVolumes => $composableBuilder(
+    column: $table.progressVolumes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timesReread => $composableBuilder(
+    column: $table.timesReread,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isRereading => $composableBuilder(
+    column: $table.isRereading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get remoteUpdatedAt => $composableBuilder(
+    column: $table.remoteUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reconciledAt => $composableBuilder(
+    column: $table.reconciledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BookStateTableOrderingComposer
+    extends Composer<_$AppDatabase, $BookStateTable> {
+  $$BookStateTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currentPage => $composableBuilder(
+    column: $table.currentPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get progressVolumes => $composableBuilder(
+    column: $table.progressVolumes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timesReread => $composableBuilder(
+    column: $table.timesReread,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isRereading => $composableBuilder(
+    column: $table.isRereading,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get remoteUpdatedAt => $composableBuilder(
+    column: $table.remoteUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reconciledAt => $composableBuilder(
+    column: $table.reconciledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BookStateTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BookStateTable> {
+  $$BookStateTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get currentPage => $composableBuilder(
+    column: $table.currentPage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get progressVolumes => $composableBuilder(
+    column: $table.progressVolumes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<int> get timesReread => $composableBuilder(
+    column: $table.timesReread,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isRereading => $composableBuilder(
+    column: $table.isRereading,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get remoteUpdatedAt => $composableBuilder(
+    column: $table.remoteUpdatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reconciledAt => $composableBuilder(
+    column: $table.reconciledAt,
+    builder: (column) => column,
+  );
+}
+
+class $$BookStateTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BookStateTable,
+          BookStateRow,
+          $$BookStateTableFilterComposer,
+          $$BookStateTableOrderingComposer,
+          $$BookStateTableAnnotationComposer,
+          $$BookStateTableCreateCompanionBuilder,
+          $$BookStateTableUpdateCompanionBuilder,
+          (
+            BookStateRow,
+            BaseReferences<_$AppDatabase, $BookStateTable, BookStateRow>,
+          ),
+          BookStateRow,
+          PrefetchHooks Function()
+        > {
+  $$BookStateTableTableManager(_$AppDatabase db, $BookStateTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BookStateTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BookStateTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BookStateTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<int> currentPage = const Value.absent(),
+                Value<double?> progressVolumes = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
+                Value<int> timesReread = const Value.absent(),
+                Value<bool> isRereading = const Value.absent(),
+                Value<int?> startedAt = const Value.absent(),
+                Value<int?> finishedAt = const Value.absent(),
+                Value<String> visibility = const Value.absent(),
+                Value<bool> shareToFeed = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int?> remoteUpdatedAt = const Value.absent(),
+                Value<int?> reconciledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BookStateCompanion(
+                sourceId: sourceId,
+                bookId: bookId,
+                status: status,
+                currentPage: currentPage,
+                progressVolumes: progressVolumes,
+                rating: rating,
+                timesReread: timesReread,
+                isRereading: isRereading,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
+                visibility: visibility,
+                shareToFeed: shareToFeed,
+                updatedAt: updatedAt,
+                remoteUpdatedAt: remoteUpdatedAt,
+                reconciledAt: reconciledAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String bookId,
+                Value<String?> status = const Value.absent(),
+                Value<int> currentPage = const Value.absent(),
+                Value<double?> progressVolumes = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
+                Value<int> timesReread = const Value.absent(),
+                Value<bool> isRereading = const Value.absent(),
+                Value<int?> startedAt = const Value.absent(),
+                Value<int?> finishedAt = const Value.absent(),
+                Value<String> visibility = const Value.absent(),
+                Value<bool> shareToFeed = const Value.absent(),
+                required int updatedAt,
+                Value<int?> remoteUpdatedAt = const Value.absent(),
+                Value<int?> reconciledAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BookStateCompanion.insert(
+                sourceId: sourceId,
+                bookId: bookId,
+                status: status,
+                currentPage: currentPage,
+                progressVolumes: progressVolumes,
+                rating: rating,
+                timesReread: timesReread,
+                isRereading: isRereading,
+                startedAt: startedAt,
+                finishedAt: finishedAt,
+                visibility: visibility,
+                shareToFeed: shareToFeed,
+                updatedAt: updatedAt,
+                remoteUpdatedAt: remoteUpdatedAt,
+                reconciledAt: reconciledAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BookStateTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BookStateTable,
+      BookStateRow,
+      $$BookStateTableFilterComposer,
+      $$BookStateTableOrderingComposer,
+      $$BookStateTableAnnotationComposer,
+      $$BookStateTableCreateCompanionBuilder,
+      $$BookStateTableUpdateCompanionBuilder,
+      (
+        BookStateRow,
+        BaseReferences<_$AppDatabase, $BookStateTable, BookStateRow>,
+      ),
+      BookStateRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ReadingSessionsTableCreateCompanionBuilder =
+    ReadingSessionsCompanion Function({
+      required String id,
+      required String sourceId,
+      required String bookId,
+      required String seriesId,
+      required int startedAt,
+      required int endedAt,
+      required int activeSeconds,
+      required int startPage,
+      required int endPage,
+      required int pagesRead,
+      Value<bool> isCompletion,
+      Value<int> rereadIndex,
+      required String deviceId,
+      Value<String> visibility,
+      Value<bool> shareToFeed,
+      Value<int> rowid,
+    });
+typedef $$ReadingSessionsTableUpdateCompanionBuilder =
+    ReadingSessionsCompanion Function({
+      Value<String> id,
+      Value<String> sourceId,
+      Value<String> bookId,
+      Value<String> seriesId,
+      Value<int> startedAt,
+      Value<int> endedAt,
+      Value<int> activeSeconds,
+      Value<int> startPage,
+      Value<int> endPage,
+      Value<int> pagesRead,
+      Value<bool> isCompletion,
+      Value<int> rereadIndex,
+      Value<String> deviceId,
+      Value<String> visibility,
+      Value<bool> shareToFeed,
+      Value<int> rowid,
+    });
+
+class $$ReadingSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get activeSeconds => $composableBuilder(
+    column: $table.activeSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startPage => $composableBuilder(
+    column: $table.startPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endPage => $composableBuilder(
+    column: $table.endPage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pagesRead => $composableBuilder(
+    column: $table.pagesRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCompletion => $composableBuilder(
+    column: $table.isCompletion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rereadIndex => $composableBuilder(
+    column: $table.rereadIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReadingSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get activeSeconds => $composableBuilder(
+    column: $table.activeSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startPage => $composableBuilder(
+    column: $table.startPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endPage => $composableBuilder(
+    column: $table.endPage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pagesRead => $composableBuilder(
+    column: $table.pagesRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCompletion => $composableBuilder(
+    column: $table.isCompletion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rereadIndex => $composableBuilder(
+    column: $table.rereadIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReadingSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReadingSessionsTable> {
+  $$ReadingSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesId =>
+      $composableBuilder(column: $table.seriesId, builder: (column) => column);
+
+  GeneratedColumn<int> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get activeSeconds => $composableBuilder(
+    column: $table.activeSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startPage =>
+      $composableBuilder(column: $table.startPage, builder: (column) => column);
+
+  GeneratedColumn<int> get endPage =>
+      $composableBuilder(column: $table.endPage, builder: (column) => column);
+
+  GeneratedColumn<int> get pagesRead =>
+      $composableBuilder(column: $table.pagesRead, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCompletion => $composableBuilder(
+    column: $table.isCompletion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get rereadIndex => $composableBuilder(
+    column: $table.rereadIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get shareToFeed => $composableBuilder(
+    column: $table.shareToFeed,
+    builder: (column) => column,
+  );
+}
+
+class $$ReadingSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReadingSessionsTable,
+          ReadingSessionRow,
+          $$ReadingSessionsTableFilterComposer,
+          $$ReadingSessionsTableOrderingComposer,
+          $$ReadingSessionsTableAnnotationComposer,
+          $$ReadingSessionsTableCreateCompanionBuilder,
+          $$ReadingSessionsTableUpdateCompanionBuilder,
+          (
+            ReadingSessionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ReadingSessionsTable,
+              ReadingSessionRow
+            >,
+          ),
+          ReadingSessionRow,
+          PrefetchHooks Function()
+        > {
+  $$ReadingSessionsTableTableManager(
+    _$AppDatabase db,
+    $ReadingSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReadingSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReadingSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReadingSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String> seriesId = const Value.absent(),
+                Value<int> startedAt = const Value.absent(),
+                Value<int> endedAt = const Value.absent(),
+                Value<int> activeSeconds = const Value.absent(),
+                Value<int> startPage = const Value.absent(),
+                Value<int> endPage = const Value.absent(),
+                Value<int> pagesRead = const Value.absent(),
+                Value<bool> isCompletion = const Value.absent(),
+                Value<int> rereadIndex = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> visibility = const Value.absent(),
+                Value<bool> shareToFeed = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingSessionsCompanion(
+                id: id,
+                sourceId: sourceId,
+                bookId: bookId,
+                seriesId: seriesId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                activeSeconds: activeSeconds,
+                startPage: startPage,
+                endPage: endPage,
+                pagesRead: pagesRead,
+                isCompletion: isCompletion,
+                rereadIndex: rereadIndex,
+                deviceId: deviceId,
+                visibility: visibility,
+                shareToFeed: shareToFeed,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sourceId,
+                required String bookId,
+                required String seriesId,
+                required int startedAt,
+                required int endedAt,
+                required int activeSeconds,
+                required int startPage,
+                required int endPage,
+                required int pagesRead,
+                Value<bool> isCompletion = const Value.absent(),
+                Value<int> rereadIndex = const Value.absent(),
+                required String deviceId,
+                Value<String> visibility = const Value.absent(),
+                Value<bool> shareToFeed = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingSessionsCompanion.insert(
+                id: id,
+                sourceId: sourceId,
+                bookId: bookId,
+                seriesId: seriesId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                activeSeconds: activeSeconds,
+                startPage: startPage,
+                endPage: endPage,
+                pagesRead: pagesRead,
+                isCompletion: isCompletion,
+                rereadIndex: rereadIndex,
+                deviceId: deviceId,
+                visibility: visibility,
+                shareToFeed: shareToFeed,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReadingSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReadingSessionsTable,
+      ReadingSessionRow,
+      $$ReadingSessionsTableFilterComposer,
+      $$ReadingSessionsTableOrderingComposer,
+      $$ReadingSessionsTableAnnotationComposer,
+      $$ReadingSessionsTableCreateCompanionBuilder,
+      $$ReadingSessionsTableUpdateCompanionBuilder,
+      (
+        ReadingSessionRow,
+        BaseReferences<_$AppDatabase, $ReadingSessionsTable, ReadingSessionRow>,
+      ),
+      ReadingSessionRow,
+      PrefetchHooks Function()
+    >;
+typedef $$SyncQueueTableCreateCompanionBuilder =
+    SyncQueueCompanion Function({
+      Value<int> id,
+      required String sourceId,
+      required String bookId,
+      required int page,
+      Value<bool> completed,
+      required int queuedAt,
+      Value<int> attempts,
+      Value<String> state,
+    });
+typedef $$SyncQueueTableUpdateCompanionBuilder =
+    SyncQueueCompanion Function({
+      Value<int> id,
+      Value<String> sourceId,
+      Value<String> bookId,
+      Value<int> page,
+      Value<bool> completed,
+      Value<int> queuedAt,
+      Value<int> attempts,
+      Value<String> state,
+    });
+
+class $$SyncQueueTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncQueueTable> {
+  $$SyncQueueTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get page => $composableBuilder(
+    column: $table.page,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get queuedAt => $composableBuilder(
+    column: $table.queuedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncQueueTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncQueueTable> {
+  $$SyncQueueTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get page => $composableBuilder(
+    column: $table.page,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completed => $composableBuilder(
+    column: $table.completed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get queuedAt => $composableBuilder(
+    column: $table.queuedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncQueueTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncQueueTable> {
+  $$SyncQueueTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<int> get page =>
+      $composableBuilder(column: $table.page, builder: (column) => column);
+
+  GeneratedColumn<bool> get completed =>
+      $composableBuilder(column: $table.completed, builder: (column) => column);
+
+  GeneratedColumn<int> get queuedAt =>
+      $composableBuilder(column: $table.queuedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+}
+
+class $$SyncQueueTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncQueueTable,
+          SyncQueueRow,
+          $$SyncQueueTableFilterComposer,
+          $$SyncQueueTableOrderingComposer,
+          $$SyncQueueTableAnnotationComposer,
+          $$SyncQueueTableCreateCompanionBuilder,
+          $$SyncQueueTableUpdateCompanionBuilder,
+          (
+            SyncQueueRow,
+            BaseReferences<_$AppDatabase, $SyncQueueTable, SyncQueueRow>,
+          ),
+          SyncQueueRow,
+          PrefetchHooks Function()
+        > {
+  $$SyncQueueTableTableManager(_$AppDatabase db, $SyncQueueTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncQueueTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncQueueTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncQueueTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<int> page = const Value.absent(),
+                Value<bool> completed = const Value.absent(),
+                Value<int> queuedAt = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String> state = const Value.absent(),
+              }) => SyncQueueCompanion(
+                id: id,
+                sourceId: sourceId,
+                bookId: bookId,
+                page: page,
+                completed: completed,
+                queuedAt: queuedAt,
+                attempts: attempts,
+                state: state,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String sourceId,
+                required String bookId,
+                required int page,
+                Value<bool> completed = const Value.absent(),
+                required int queuedAt,
+                Value<int> attempts = const Value.absent(),
+                Value<String> state = const Value.absent(),
+              }) => SyncQueueCompanion.insert(
+                id: id,
+                sourceId: sourceId,
+                bookId: bookId,
+                page: page,
+                completed: completed,
+                queuedAt: queuedAt,
+                attempts: attempts,
+                state: state,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncQueueTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncQueueTable,
+      SyncQueueRow,
+      $$SyncQueueTableFilterComposer,
+      $$SyncQueueTableOrderingComposer,
+      $$SyncQueueTableAnnotationComposer,
+      $$SyncQueueTableCreateCompanionBuilder,
+      $$SyncQueueTableUpdateCompanionBuilder,
+      (
+        SyncQueueRow,
+        BaseReferences<_$AppDatabase, $SyncQueueTable, SyncQueueRow>,
+      ),
+      SyncQueueRow,
+      PrefetchHooks Function()
+    >;
+typedef $$SeriesMetaTableCreateCompanionBuilder =
+    SeriesMetaCompanion Function({
+      required String sourceId,
+      required String seriesId,
+      Value<String?> publisher,
+      Value<String?> genres,
+      Value<int> rowid,
+    });
+typedef $$SeriesMetaTableUpdateCompanionBuilder =
+    SeriesMetaCompanion Function({
+      Value<String> sourceId,
+      Value<String> seriesId,
+      Value<String?> publisher,
+      Value<String?> genres,
+      Value<int> rowid,
+    });
+
+class $$SeriesMetaTableFilterComposer
+    extends Composer<_$AppDatabase, $SeriesMetaTable> {
+  $$SeriesMetaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get publisher => $composableBuilder(
+    column: $table.publisher,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SeriesMetaTableOrderingComposer
+    extends Composer<_$AppDatabase, $SeriesMetaTable> {
+  $$SeriesMetaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get publisher => $composableBuilder(
+    column: $table.publisher,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SeriesMetaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SeriesMetaTable> {
+  $$SeriesMetaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesId =>
+      $composableBuilder(column: $table.seriesId, builder: (column) => column);
+
+  GeneratedColumn<String> get publisher =>
+      $composableBuilder(column: $table.publisher, builder: (column) => column);
+
+  GeneratedColumn<String> get genres =>
+      $composableBuilder(column: $table.genres, builder: (column) => column);
+}
+
+class $$SeriesMetaTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SeriesMetaTable,
+          SeriesMetaRow,
+          $$SeriesMetaTableFilterComposer,
+          $$SeriesMetaTableOrderingComposer,
+          $$SeriesMetaTableAnnotationComposer,
+          $$SeriesMetaTableCreateCompanionBuilder,
+          $$SeriesMetaTableUpdateCompanionBuilder,
+          (
+            SeriesMetaRow,
+            BaseReferences<_$AppDatabase, $SeriesMetaTable, SeriesMetaRow>,
+          ),
+          SeriesMetaRow,
+          PrefetchHooks Function()
+        > {
+  $$SeriesMetaTableTableManager(_$AppDatabase db, $SeriesMetaTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SeriesMetaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SeriesMetaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SeriesMetaTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> seriesId = const Value.absent(),
+                Value<String?> publisher = const Value.absent(),
+                Value<String?> genres = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SeriesMetaCompanion(
+                sourceId: sourceId,
+                seriesId: seriesId,
+                publisher: publisher,
+                genres: genres,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String seriesId,
+                Value<String?> publisher = const Value.absent(),
+                Value<String?> genres = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SeriesMetaCompanion.insert(
+                sourceId: sourceId,
+                seriesId: seriesId,
+                publisher: publisher,
+                genres: genres,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SeriesMetaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SeriesMetaTable,
+      SeriesMetaRow,
+      $$SeriesMetaTableFilterComposer,
+      $$SeriesMetaTableOrderingComposer,
+      $$SeriesMetaTableAnnotationComposer,
+      $$SeriesMetaTableCreateCompanionBuilder,
+      $$SeriesMetaTableUpdateCompanionBuilder,
+      (
+        SeriesMetaRow,
+        BaseReferences<_$AppDatabase, $SeriesMetaTable, SeriesMetaRow>,
+      ),
+      SeriesMetaRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7950,4 +11877,12 @@ class $AppDatabaseManager {
       $$CachedAssetsTableTableManager(_db, _db.cachedAssets);
   $$DownloadTasksTableTableManager get downloadTasks =>
       $$DownloadTasksTableTableManager(_db, _db.downloadTasks);
+  $$BookStateTableTableManager get bookState =>
+      $$BookStateTableTableManager(_db, _db.bookState);
+  $$ReadingSessionsTableTableManager get readingSessions =>
+      $$ReadingSessionsTableTableManager(_db, _db.readingSessions);
+  $$SyncQueueTableTableManager get syncQueue =>
+      $$SyncQueueTableTableManager(_db, _db.syncQueue);
+  $$SeriesMetaTableTableManager get seriesMeta =>
+      $$SeriesMetaTableTableManager(_db, _db.seriesMeta);
 }

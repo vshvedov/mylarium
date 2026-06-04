@@ -32,8 +32,10 @@ class OfflinePages extends ReaderPages {
   final List<String> entries;
 }
 
-/// Everything the reader needs for one book. The current page index is view
-/// state (read-position write-back is T6), not held here.
+/// Everything the reader needs for one book. The live page index is view state
+/// held by the screen; [initialPage] seeds it from the saved read position
+/// (T6). Per-turn progress write-back is handled by the screen via the
+/// SyncEngine.
 class ReaderData {
   const ReaderData({
     required this.sourceId,
@@ -41,6 +43,7 @@ class ReaderData {
     required this.seriesId,
     required this.settings,
     required this.source,
+    required this.initialPage,
   });
 
   final String sourceId;
@@ -49,12 +52,17 @@ class ReaderData {
   final ReaderSettings settings;
   final ReaderPages source;
 
+  /// 0-based page to open at, from the saved `BookState` (clamped to the book's
+  /// range by the screen). 0 for a never-opened book.
+  final int initialPage;
+
   ReaderData copyWith({ReaderSettings? settings}) => ReaderData(
         sourceId: sourceId,
         bookId: bookId,
         seriesId: seriesId,
         settings: settings ?? this.settings,
         source: source,
+        initialPage: initialPage,
       );
 }
 
@@ -67,6 +75,10 @@ class ReaderController extends _$ReaderController {
   Future<ReaderData> build(String sourceId, String bookId) async {
     final db = ref.watch(appDatabaseProvider);
     final settingsRepo = ReaderSettingsRepository(db);
+
+    // Resume position: seed the reader from the saved local read state.
+    final initialPage =
+        (await db.getBookState(sourceId, bookId))?.currentPage ?? 0;
 
     // Offline-first: read a cached archive if available.
     final cache = ref.watch(offlineCacheManagerProvider);
@@ -83,6 +95,7 @@ class ReaderController extends _$ReaderController {
           seriesId: seriesId,
           settings: settings,
           source: OfflinePages(archivePath, entries),
+          initialPage: initialPage,
         );
       } on ArchiveException {
         // Corrupt cache: quarantine and fall through to online.
@@ -131,6 +144,7 @@ class ReaderController extends _$ReaderController {
       seriesId: seriesId,
       settings: settings,
       source: OnlinePages(api, pages),
+      initialPage: initialPage,
     );
   }
 

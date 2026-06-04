@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../../core/db/database.dart';
@@ -25,6 +27,17 @@ SeriesCompanion seriesToRow(String sourceId, SeriesDto dto) => SeriesCompanion(
       status: Value(dto.status),
       summary: Value(dto.summary),
       booksCount: Value(dto.booksCount),
+    );
+
+/// Side-table metadata (publisher / genres) for the stats breakdowns. Genres
+/// are JSON-encoded; a missing publisher / empty genre list stays NULL so the
+/// stats roll-up can bucket the series under "Unknown".
+SeriesMetaCompanion seriesMetaToRow(String sourceId, SeriesDto dto) =>
+    SeriesMetaCompanion(
+      sourceId: Value(sourceId),
+      seriesId: Value(dto.id),
+      publisher: Value(dto.publisher),
+      genres: Value(dto.genres.isEmpty ? null : jsonEncode(dto.genres)),
     );
 
 BooksCompanion bookToRow(String sourceId, BookDto dto) => BooksCompanion(

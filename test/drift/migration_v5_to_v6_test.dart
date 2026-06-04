@@ -24,15 +24,25 @@ void main() {
     final db = AppDatabase(schema.newConnection());
     await verifier.migrateAndValidate(db, 6);
 
-    // Old settings survived; new columns default correctly.
-    final settings = await db.getOrCreateSettings();
-    expect(settings.themeMode, 'dark');
-    expect(settings.cacheCapBytes, 999);
-    expect(settings.autoCacheEnabled, isTrue);
-    expect(settings.downloadWifiOnly, isTrue);
+    // Old settings survived; new columns default correctly. Read via raw SQL:
+    // the typed mapper expects current (v7) columns the v6 schema lacks
+    // (device_id), and getOrCreateSettings now generates it.
+    final row = await db
+        .customSelect('SELECT theme_mode, cache_cap_bytes, auto_cache_enabled, '
+            'download_wifi_only FROM app_settings WHERE id = 1')
+        .getSingle();
+    expect(row.data['theme_mode'], 'dark');
+    expect(row.data['cache_cap_bytes'], 999);
+    expect(row.data['auto_cache_enabled'], 1);
+    expect(row.data['download_wifi_only'], 1);
 
-    await db.updateAutoCacheEnabled(false);
-    expect((await db.getOrCreateSettings()).autoCacheEnabled, isFalse);
+    await db.customStatement(
+        'UPDATE app_settings SET auto_cache_enabled = 0 WHERE id = 1');
+    final updated = await db
+        .customSelect(
+            'SELECT auto_cache_enabled FROM app_settings WHERE id = 1')
+        .getSingle();
+    expect(updated.data['auto_cache_enabled'], 0);
 
     await db.close();
   });

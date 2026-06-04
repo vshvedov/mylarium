@@ -4,9 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../age_rating.dart';
 import 'tables/app_settings.dart';
+import 'tables/book_state.dart';
 import 'tables/books.dart';
 import 'tables/cached_assets.dart';
 import 'tables/cached_metadata.dart';
@@ -14,8 +16,11 @@ import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
 import 'tables/reader_settings.dart';
+import 'tables/reading_sessions.dart';
 import 'tables/series.dart';
+import 'tables/series_meta.dart';
 import 'tables/sources.dart';
+import 'tables/sync_queue.dart';
 import 'tables/thumbnails.dart';
 
 part 'database.g.dart';
@@ -32,12 +37,16 @@ part 'database.g.dart';
   ReaderSettings,
   CachedAssets,
   DownloadTasks,
+  BookState,
+  ReadingSessions,
+  SyncQueue,
+  SeriesMeta,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,18 +98,37 @@ class AppDatabase extends _$AppDatabase {
               await m.addColumn(downloadTasks, downloadTasks.permanent);
             }
           }
+          // v6 -> v7: progress sync + reading stats. New tables (book state,
+          // append-only sessions, write-back queue, series metadata) plus a
+          // per-install deviceId. app_settings exists from v1 on every path
+          // reaching v7, so its addColumn is unconditional within this guard.
+          // Series publisher/genres live in a side table (series_meta) rather
+          // than as new series columns, so the historical v1 -> v2
+          // createTable(series) keeps emitting the v2 shape (see SeriesMeta).
+          if (from < 7 && to >= 7) {
+            await m.createTable(bookState);
+            await m.createTable(readingSessions);
+            await m.createTable(syncQueue);
+            await m.createIndex(syncQueueBook);
+            await m.createTable(seriesMeta);
+            await m.addColumn(appSettings, appSettings.deviceId);
+          }
         },
       );
 
-  /// Reads the single settings row, inserting defaults exactly once. Never
-  /// clobbers a persisted row on subsequent launches.
+  /// Reads the canonical settings row (id = 1), inserting defaults exactly once
+  /// and generating a stable [AppSetting.deviceId] on first read. Never
+  /// clobbers a persisted row on subsequent launches. The deviceId generation
+  /// is a single atomic `UPDATE ... WHERE id = 1 AND device_id IS NULL`, so two
+  /// concurrent first-launch callers cannot mint two ids.
   Future<AppSetting> getOrCreateSettings() async {
-    final existing = await (select(appSettings)..limit(1)).getSingleOrNull();
-    if (existing != null) return existing;
     await into(appSettings).insert(
       const AppSettingsCompanion(id: Value(1)),
       mode: InsertMode.insertOrIgnore,
     );
+    await (update(appSettings)
+          ..where((t) => t.id.equals(1) & t.deviceId.isNull()))
+        .write(AppSettingsCompanion(deviceId: Value(const Uuid().v4())));
     return (select(appSettings)..where((t) => t.id.equals(1))).getSingle();
   }
 
@@ -224,6 +252,19 @@ class AppDatabase extends _$AppDatabase {
       (select(series)
             ..where((t) => t.sourceId.equals(sourceId) & t.id.equals(id)))
           .getSingleOrNull();
+
+  // --- Series metadata (publisher / genres for stats) ----------------------
+
+  Future<void> upsertSeriesMeta(SeriesMetaCompanion row) =>
+      into(seriesMeta).insertOnConflictUpdate(row);
+
+  Future<SeriesMetaRow?> getSeriesMeta(String sourceId, String seriesId) =>
+      (select(seriesMeta)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.seriesId.equals(seriesId)))
+          .getSingleOrNull();
+
+  Future<List<SeriesMetaRow>> allSeriesMeta() => select(seriesMeta).get();
 
   /// Books of a series, ordered by numberSort then number (drives series
   /// detail).
@@ -373,6 +414,84 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) =>
                 t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
           .go();
+
+  // --- Book state (local read state) ---------------------------------------
+
+  Future<BookStateRow?> getBookState(String sourceId, String bookId) =>
+      (select(bookState)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .getSingleOrNull();
+
+  Future<void> upsertBookState(BookStateCompanion row) =>
+      into(bookState).insertOnConflictUpdate(row);
+
+  Stream<BookStateRow?> watchBookState(String sourceId, String bookId) =>
+      (select(bookState)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .watchSingleOrNull();
+
+  /// Komga book-state rows ordered for reconcile rotation: least-recently
+  /// reconciled first (NULL [BookState.reconciledAt] = never reconciled =
+  /// highest priority, since SQLite sorts NULL first in ascending order). The
+  /// rotation key is a device clock, distinct from the server-clock freshness
+  /// baseline, so the order is stable.
+  Future<List<BookStateRow>> bookStatesForReconcile(
+    Set<String> komgaSourceIds, {
+    required int limit,
+  }) =>
+      (select(bookState)
+            ..where((t) => t.sourceId.isIn(komgaSourceIds))
+            ..orderBy([(t) => OrderingTerm(expression: t.reconciledAt)])
+            ..limit(limit))
+          .get();
+
+  // --- Reading sessions (append-only stats log) ----------------------------
+
+  Future<void> insertReadingSession(ReadingSessionsCompanion row) =>
+      into(readingSessions).insert(row);
+
+  /// Sessions whose start falls in the half-open epoch-ms window
+  /// `[startMs, endMs)`, ordered by start.
+  Future<List<ReadingSessionRow>> sessionsInRange(int startMs, int endMs) =>
+      (select(readingSessions)
+            ..where((t) =>
+                t.startedAt.isBiggerOrEqualValue(startMs) &
+                t.startedAt.isSmallerThanValue(endMs))
+            ..orderBy([(t) => OrderingTerm(expression: t.startedAt)]))
+          .get();
+
+  Future<List<ReadingSessionRow>> allReadingSessions() =>
+      (select(readingSessions)
+            ..orderBy([(t) => OrderingTerm(expression: t.startedAt)]))
+          .get();
+
+  // --- Sync queue (Komga write-back) ---------------------------------------
+
+  /// Replaces any queued row for `{sourceId, bookId}` (pending OR dead-lettered)
+  /// with a single fresh pending row carrying the latest progress.
+  Future<void> enqueueSync(SyncQueueCompanion row) => transaction(() async {
+        await (delete(syncQueue)
+              ..where((t) =>
+                  t.sourceId.equals(row.sourceId.value) &
+                  t.bookId.equals(row.bookId.value)))
+            .go();
+        await into(syncQueue).insert(row);
+      });
+
+  /// Pending (non-dead-lettered) rows, oldest first.
+  Future<List<SyncQueueRow>> pendingSync() =>
+      (select(syncQueue)
+            ..where((t) => t.state.equals('pending'))
+            ..orderBy([(t) => OrderingTerm(expression: t.queuedAt)]))
+          .get();
+
+  Future<void> deleteSyncRow(int id) =>
+      (delete(syncQueue)..where((t) => t.id.equals(id))).go();
+
+  Future<void> updateSyncRow(int id, SyncQueueCompanion row) =>
+      (update(syncQueue)..where((t) => t.id.equals(id))).write(row);
 }
 
 LazyDatabase _open() => LazyDatabase(() async {

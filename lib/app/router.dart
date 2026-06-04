@@ -14,6 +14,7 @@ import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
 import '../features/sources/debug_sources_screen.dart';
+import '../features/stats/stats_screen.dart';
 
 /// The route the app boots to. Overridden in main() to `/onboarding` when no
 /// source exists yet, else `/`. Throws until overridden so a missing override
@@ -66,6 +67,7 @@ final appRouterProvider = Provider<GoRouter>(
         ),
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
+      GoRoute(path: '/stats', builder: (_, _) => const StatsScreen()),
       GoRoute(
         path: '/collections/:sourceId',
         builder: (_, state) =>

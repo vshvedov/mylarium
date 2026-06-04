@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,8 @@ import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../core/network/komga_exception.dart';
 import '../offline/offline_providers.dart';
+import '../sync/sync_models.dart';
+import '../sync/sync_providers.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
 import 'gestures/tap_zones.dart';
@@ -70,7 +74,8 @@ class _ReaderBody extends ConsumerStatefulWidget {
   ConsumerState<_ReaderBody> createState() => _ReaderBodyState();
 }
 
-class _ReaderBodyState extends ConsumerState<_ReaderBody> {
+class _ReaderBodyState extends ConsumerState<_ReaderBody>
+    with WidgetsBindingObserver {
   final _zoomed = ValueNotifier<bool>(false);
   final _scrollController = ScrollController();
   PageController? _pageController;
@@ -81,6 +86,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
 
   bool _chrome = true;
   int? _cacheWidth;
+
+  /// Reading-time + page-span accumulator for the current session. Lives on the
+  /// State (a stable lifetime) so orientation rebuilds do not reset it.
+  final _recorder = ReadingSessionRecorder();
+
+  /// Debounces per-turn progress write-back (BookState + Komga queue).
+  Timer? _progressDebounce;
 
   /// Double-page "single-page nudge": shifts the spread pairing by one page
   /// (in-session; a transient alignment correction).
@@ -97,7 +109,80 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
+    // Resume at the saved page (clamped to the book's range), and start a
+    // reading session at the opening page.
+    final count = _readerPageCount(widget.data);
+    _page = count == 0 ? 0 : widget.data.initialPage.clamp(0, count - 1);
+    _recorder.onPage(_page, _nowMs());
+    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onWebtoonScroll);
+  }
+
+  int _nowMs() => DateTime.now().millisecondsSinceEpoch;
+
+  int get _pageCount => _source?.pageCount ?? _readerPageCount(widget.data);
+
+  bool _isLastPage(int page) => _pageCount > 0 && page >= _pageCount - 1;
+
+  /// Records a page change: feeds the session recorder and schedules a debounced
+  /// progress write-back. The last page flushes immediately (marks completion).
+  void _reportPage(int page) {
+    _recorder.onPage(page, _nowMs());
+    _progressDebounce?.cancel();
+    if (_isLastPage(page)) {
+      _pushProgress(page, completed: true);
+    } else {
+      _progressDebounce = Timer(
+        const Duration(seconds: 2),
+        () => _pushProgress(page, completed: false),
+      );
+    }
+  }
+
+  void _pushProgress(int page, {required bool completed}) {
+    final sourceId = widget.sourceId;
+    final bookId = widget.bookId;
+    ref
+        .read(syncEngineProvider.future)
+        .then((e) => e.recordProgress(sourceId, bookId, page, completed))
+        .catchError((Object _) {});
+  }
+
+  /// Appends the current reading session (if it has measurable activity) and
+  /// resets the recorder so a later checkpoint or dispose does not double-emit.
+  void _finalizeSession() {
+    final span = _recorder.build(
+      sourceId: widget.sourceId,
+      bookId: widget.bookId,
+      seriesId: widget.data.seriesId,
+    );
+    _recorder.reset();
+    if (span == null) return;
+    final isCompletion = _isLastPage(span.endPage);
+    ref
+        .read(syncEngineProvider.future)
+        .then((e) => e.recordSession(span, isCompletion: isCompletion))
+        .catchError((Object _) {});
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        // Background: flush time, push the final position, and checkpoint the
+        // session so a background-kill does not lose it.
+        _recorder.pause(_nowMs());
+        _progressDebounce?.cancel();
+        _pushProgress(_page, completed: _isLastPage(_page));
+        _finalizeSession();
+      case AppLifecycleState.resumed:
+        // Start a fresh session segment at the current page.
+        _recorder.onPage(_page, _nowMs());
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   void _onWebtoonScroll() {
@@ -107,6 +192,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
     if (page != _page) {
       setState(() => _page = page);
       _prefetcher?.onPage(page);
+      _reportPage(page);
     }
   }
 
@@ -212,6 +298,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _progressDebounce?.cancel();
+    // Push the final position (durable) and append the session (best-effort;
+    // the SyncEngine + database are app-lifetime, so the write survives this
+    // screen's teardown).
+    _pushProgress(_page, completed: _isLastPage(_page));
+    _finalizeSession();
     _zoomed.dispose();
     _scrollController.dispose();
     _pageController?.dispose();
@@ -221,6 +314,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
   void _onControllerPage(int index) {
     _page = _pageForControllerIndex(index);
     _prefetcher?.onPage(_page);
+    _reportPage(_page);
     setState(() {});
   }
 
@@ -261,6 +355,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
 
   void _seekPage(int page) {
     _page = page;
+    _reportPage(page);
     if (_mode.isWebtoon) {
       if (_scrollController.hasClients) {
         final offsets = _webtoonOffsets();

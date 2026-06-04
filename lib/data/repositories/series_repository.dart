@@ -44,6 +44,7 @@ class SeriesRepository {
     );
     for (final dto in result.content) {
       await _db.upsertSeries(seriesToRow(sourceId, dto));
+      await _db.upsertSeriesMeta(seriesMetaToRow(sourceId, dto));
     }
     return result.totalElements;
   }

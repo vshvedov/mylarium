@@ -9,6 +9,7 @@ import 'app/router.dart';
 import 'app/theme/theme_controller.dart';
 import 'core/db/database.dart';
 import 'features/offline/offline_providers.dart';
+import 'features/sync/sync_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,4 +42,36 @@ Future<void> main() async {
   );
   // Resume any unfinished offline downloads (fire-and-forget).
   unawaited(container.read(downloadManagerProvider).resumeAll());
+  // Reconcile read-progress with Komga and flush any queued write-backs on
+  // launch; flush again whenever the app returns to the foreground.
+  unawaited(_runLaunchSync(container));
+  WidgetsBinding.instance.addObserver(_SyncLifecycleObserver(container));
+}
+
+Future<void> _runLaunchSync(ProviderContainer container) async {
+  try {
+    final engine = await container.read(syncEngineProvider.future);
+    // Push local progress up first so reconcile pulls a server state that
+    // already reflects this device's truth, then pull any off-device deltas.
+    await engine.flushQueue();
+    await engine.reconcile();
+  } catch (_) {
+    // Offline / unreachable: flush and reconcile retry on the next trigger.
+  }
+}
+
+/// Flushes the Komga write-back queue when the app returns to the foreground.
+class _SyncLifecycleObserver with WidgetsBindingObserver {
+  _SyncLifecycleObserver(this._container);
+
+  final ProviderContainer _container;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _container
+        .read(syncEngineProvider.future)
+        .then((e) => e.flushQueue())
+        .catchError((Object _) {});
+  }
 }
