@@ -20,6 +20,7 @@ class ReaderChrome extends StatefulWidget {
     required this.onClose,
     required this.onSettings,
     required this.onSeekPage,
+    required this.onImageQuality,
     this.onNudge,
     this.nudged = false,
   });
@@ -41,6 +42,9 @@ class ReaderChrome extends StatefulWidget {
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
   final void Function(int page) onSeekPage;
+
+  /// Opens the global image-quality controls.
+  final VoidCallback onImageQuality;
 
   /// Double-page single-page nudge (shown only when non-null).
   final VoidCallback? onNudge;
@@ -68,6 +72,7 @@ class _ReaderChromeState extends State<ReaderChrome> {
               settings: widget.settings,
               onClose: widget.onClose,
               onSettings: widget.onSettings,
+              onImageQuality: widget.onImageQuality,
               onNudge: widget.onNudge,
               nudged: widget.nudged,
             ),
@@ -182,6 +187,7 @@ class _TopBar extends StatelessWidget {
     required this.settings,
     required this.onClose,
     required this.onSettings,
+    required this.onImageQuality,
     required this.onNudge,
     required this.nudged,
   });
@@ -191,6 +197,7 @@ class _TopBar extends StatelessWidget {
   final ReaderSettings settings;
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
+  final VoidCallback onImageQuality;
   final VoidCallback? onNudge;
   final bool nudged;
 
@@ -261,6 +268,8 @@ class _TopBar extends StatelessWidget {
                     case 'animate':
                       onSettings(settings.copyWith(
                           animatePageTurn: !settings.animatePageTurn));
+                    case 'quality':
+                      onImageQuality();
                   }
                 },
                 itemBuilder: (_) => [
@@ -268,6 +277,16 @@ class _TopBar extends StatelessWidget {
                   _check('doubleTap', 'Double-tap zoom', settings.doubleTapZoom),
                   _check('animate', 'Animate page turn',
                       settings.animatePageTurn),
+                  const PopupMenuItem<String>(
+                    value: 'quality',
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.options, size: 18),
+                        SizedBox(width: 8),
+                        Text('Image quality'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],

@@ -25,6 +25,16 @@ class AppSettings extends Table {
   /// dedup. NULL only between the column add and the first generation.
   TextColumn get deviceId => text().nullable()();
 
+  /// Reader image quality. When true, Mylarium picks the page decode ceiling for
+  /// the device; when false, [imageQualityManualLevel] selects it.
+  BoolColumn get imageQualitySmart =>
+      boolean().withDefault(const Constant(true))();
+
+  /// Manual quality stop (index into the reader's ceiling table), used only when
+  /// [imageQualitySmart] is false. Defaults to the middle stop.
+  IntColumn get imageQualityManualLevel =>
+      integer().withDefault(const Constant(2))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
+import '../../app/widgets/app_bottom_sheet.dart';
 import '../../core/network/komga_exception.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_models.dart';
@@ -13,6 +14,7 @@ import '../sync/sync_providers.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
 import 'gestures/tap_zones.dart';
+import 'image_quality.dart';
 import 'komga_page_source.dart';
 import 'offline_page_source.dart';
 import 'page_source.dart';
@@ -22,14 +24,8 @@ import 'reader_controller.dart';
 import 'reader_models.dart';
 import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
+import 'widgets/image_quality_sheet.dart';
 import 'widgets/reader_chrome.dart';
-
-/// Upper bound on the per-page decode width (physical px). Caps bitmap size on
-/// large hi-DPI screens so the prefetch window fits the image-cache budget and
-/// GPU uploads stay cheap. Tunable: raise for sharper full-screen pages on big
-/// tablets, lower for smoother turning on weak GPUs. Pages are also never
-/// upscaled past their intrinsic width.
-const int kMaxDecodeWidth = 2048;
 
 /// The reader. Loads the book online, then renders the current mode's view with
 /// immersive chrome, tap-zone gestures, and a precache-ahead pipeline.
@@ -108,6 +104,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Canonical current page index (0-based).
   int _page = 0;
 
+  /// Per-page decode-width ceiling from the global image-quality preference.
+  /// Seeded in [initState] and kept current via [build]'s listener so changing
+  /// the setting re-decodes pages live.
+  int _decodeCeiling = kSmartDecodeCeiling;
+
   ReadingMode get _mode => widget.data.settings.mode;
 
   @override
@@ -116,6 +117,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
+    _decodeCeiling = ref.read(imageQualityControllerProvider).ceiling;
     // Resume at the saved page (clamped to the book's range), and start a
     // reading session at the opening page.
     final count = _readerPageCount(widget.data);
@@ -237,7 +239,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // past this is a deliberate, rare path, not the per-turn cost. The decode
     // is additionally clamped to each page's intrinsic width (never upscaled)
     // inside the page sources.
-    final cacheWidth = (width * dpr).round().clamp(1, kMaxDecodeWidth);
+    final cacheWidth = (width * dpr).round().clamp(1, _decodeCeiling);
     // Only rebuild when the decode sizing actually changes (e.g. rotation), so
     // a metrics/theme dependency change does not reset the prefetch window.
     if (_source != null && _cacheWidth == cacheWidth) return;
@@ -334,6 +336,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
 
   void _toggleChrome() => setState(() => _chrome = !_chrome);
 
+  void _openImageQuality() => AppBottomSheet.show<void>(
+        context,
+        builder: (_) => const ImageQualitySheet(),
+      );
+
   void _step(int delta) {
     final controller = _pageController;
     if (controller == null || !controller.hasClients) return;
@@ -387,6 +394,15 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
 
   @override
   Widget build(BuildContext context) {
+    // React to a live image-quality change: re-derive the decode ceiling and
+    // rebuild the page source so pages re-decode at the new quality.
+    ref.listen(imageQualityControllerProvider, (_, next) {
+      if (next.ceiling != _decodeCeiling) {
+        _decodeCeiling = next.ceiling;
+        _rebuildSource();
+        setState(() {});
+      }
+    });
     final source = _source!;
     final s = widget.data.settings;
     final size = MediaQuery.sizeOf(context);
@@ -444,6 +460,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
                 ref.read(readerControllerProvider(widget.sourceId, widget.bookId)
                     .notifier).updateSettings(next),
             onSeekPage: _seekPage,
+            onImageQuality: _openImageQuality,
             onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
             nudged: _nudge,
           ),

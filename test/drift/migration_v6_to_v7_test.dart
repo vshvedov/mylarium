@@ -29,12 +29,15 @@ void main() {
     final db = AppDatabase(schema.newConnection());
     await verifier.migrateAndValidate(db, 7);
 
-    // Old settings survived; deviceId is generated on first read.
-    final settings = await db.getOrCreateSettings();
-    expect(settings.themeMode, 'dark');
-    expect(settings.cacheCapBytes, 999);
-    expect(settings.deviceId, isNotNull);
-    expect(settings.deviceId, isNotEmpty);
+    // Old settings survived. Read raw: the typed AppSetting mapper expects
+    // current (v8) columns the v7 schema lacks. (deviceId generation is a
+    // getOrCreateSettings concern, covered by app_database_test and v7->v8.)
+    final row = await db
+        .customSelect('SELECT theme_mode, cache_cap_bytes FROM app_settings '
+            'WHERE id = 1')
+        .getSingle();
+    expect(row.data['theme_mode'], 'dark');
+    expect(row.data['cache_cap_bytes'], 999);
 
     // Old series row survived; series metadata lives in the new side table and
     // is empty until the series is re-synced.

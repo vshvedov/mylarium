@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -113,6 +113,13 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(seriesMeta);
             await m.addColumn(appSettings, appSettings.deviceId);
           }
+          // v7 -> v8: reader image-quality preference (Smart toggle + manual
+          // stop). app_settings exists on every path reaching v8, so the
+          // addColumns are unconditional within this guard.
+          if (from < 8 && to >= 8) {
+            await m.addColumn(appSettings, appSettings.imageQualitySmart);
+            await m.addColumn(appSettings, appSettings.imageQualityManualLevel);
+          }
         },
       );
 
@@ -151,6 +158,14 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateDownloadWifiOnly(bool v) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(downloadWifiOnly: Value(v)));
+
+  Future<void> updateImageQualitySmart(bool v) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(imageQualitySmart: Value(v)));
+
+  Future<void> updateImageQualityManualLevel(int level) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(imageQualityManualLevel: Value(level)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();

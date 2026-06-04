@@ -97,6 +97,33 @@ class $AppSettingsTable extends AppSettings
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _imageQualitySmartMeta = const VerificationMeta(
+    'imageQualitySmart',
+  );
+  @override
+  late final GeneratedColumn<bool> imageQualitySmart = GeneratedColumn<bool>(
+    'image_quality_smart',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("image_quality_smart" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _imageQualityManualLevelMeta =
+      const VerificationMeta('imageQualityManualLevel');
+  @override
+  late final GeneratedColumn<int> imageQualityManualLevel =
+      GeneratedColumn<int>(
+        'image_quality_manual_level',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(2),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -106,6 +133,8 @@ class $AppSettingsTable extends AppSettings
     autoCacheEnabled,
     downloadWifiOnly,
     deviceId,
+    imageQualitySmart,
+    imageQualityManualLevel,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -170,6 +199,24 @@ class $AppSettingsTable extends AppSettings
         deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
       );
     }
+    if (data.containsKey('image_quality_smart')) {
+      context.handle(
+        _imageQualitySmartMeta,
+        imageQualitySmart.isAcceptableOrUnknown(
+          data['image_quality_smart']!,
+          _imageQualitySmartMeta,
+        ),
+      );
+    }
+    if (data.containsKey('image_quality_manual_level')) {
+      context.handle(
+        _imageQualityManualLevelMeta,
+        imageQualityManualLevel.isAcceptableOrUnknown(
+          data['image_quality_manual_level']!,
+          _imageQualityManualLevelMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -207,6 +254,14 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.string,
         data['${effectivePrefix}device_id'],
       ),
+      imageQualitySmart: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}image_quality_smart'],
+      )!,
+      imageQualityManualLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}image_quality_manual_level'],
+      )!,
     );
   }
 
@@ -233,6 +288,14 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// Stamped on local reading sessions; forward-compat for phase-2 multi-device
   /// dedup. NULL only between the column add and the first generation.
   final String? deviceId;
+
+  /// Reader image quality. When true, Mylarium picks the page decode ceiling for
+  /// the device; when false, [imageQualityManualLevel] selects it.
+  final bool imageQualitySmart;
+
+  /// Manual quality stop (index into the reader's ceiling table), used only when
+  /// [imageQualitySmart] is false. Defaults to the middle stop.
+  final int imageQualityManualLevel;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -241,6 +304,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     required this.autoCacheEnabled,
     required this.downloadWifiOnly,
     this.deviceId,
+    required this.imageQualitySmart,
+    required this.imageQualityManualLevel,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -254,6 +319,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     if (!nullToAbsent || deviceId != null) {
       map['device_id'] = Variable<String>(deviceId);
     }
+    map['image_quality_smart'] = Variable<bool>(imageQualitySmart);
+    map['image_quality_manual_level'] = Variable<int>(imageQualityManualLevel);
     return map;
   }
 
@@ -268,6 +335,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       deviceId: deviceId == null && nullToAbsent
           ? const Value.absent()
           : Value(deviceId),
+      imageQualitySmart: Value(imageQualitySmart),
+      imageQualityManualLevel: Value(imageQualityManualLevel),
     );
   }
 
@@ -286,6 +355,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       autoCacheEnabled: serializer.fromJson<bool>(json['autoCacheEnabled']),
       downloadWifiOnly: serializer.fromJson<bool>(json['downloadWifiOnly']),
       deviceId: serializer.fromJson<String?>(json['deviceId']),
+      imageQualitySmart: serializer.fromJson<bool>(json['imageQualitySmart']),
+      imageQualityManualLevel: serializer.fromJson<int>(
+        json['imageQualityManualLevel'],
+      ),
     );
   }
   @override
@@ -299,6 +372,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'autoCacheEnabled': serializer.toJson<bool>(autoCacheEnabled),
       'downloadWifiOnly': serializer.toJson<bool>(downloadWifiOnly),
       'deviceId': serializer.toJson<String?>(deviceId),
+      'imageQualitySmart': serializer.toJson<bool>(imageQualitySmart),
+      'imageQualityManualLevel': serializer.toJson<int>(
+        imageQualityManualLevel,
+      ),
     };
   }
 
@@ -310,6 +387,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     bool? autoCacheEnabled,
     bool? downloadWifiOnly,
     Value<String?> deviceId = const Value.absent(),
+    bool? imageQualitySmart,
+    int? imageQualityManualLevel,
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -318,6 +397,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
     downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
     deviceId: deviceId.present ? deviceId.value : this.deviceId,
+    imageQualitySmart: imageQualitySmart ?? this.imageQualitySmart,
+    imageQualityManualLevel:
+        imageQualityManualLevel ?? this.imageQualityManualLevel,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -336,6 +418,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ? data.downloadWifiOnly.value
           : this.downloadWifiOnly,
       deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      imageQualitySmart: data.imageQualitySmart.present
+          ? data.imageQualitySmart.value
+          : this.imageQualitySmart,
+      imageQualityManualLevel: data.imageQualityManualLevel.present
+          ? data.imageQualityManualLevel.value
+          : this.imageQualityManualLevel,
     );
   }
 
@@ -348,7 +436,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('cacheCapBytes: $cacheCapBytes, ')
           ..write('autoCacheEnabled: $autoCacheEnabled, ')
           ..write('downloadWifiOnly: $downloadWifiOnly, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('imageQualitySmart: $imageQualitySmart, ')
+          ..write('imageQualityManualLevel: $imageQualityManualLevel')
           ..write(')'))
         .toString();
   }
@@ -362,6 +452,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     autoCacheEnabled,
     downloadWifiOnly,
     deviceId,
+    imageQualitySmart,
+    imageQualityManualLevel,
   );
   @override
   bool operator ==(Object other) =>
@@ -373,7 +465,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.cacheCapBytes == this.cacheCapBytes &&
           other.autoCacheEnabled == this.autoCacheEnabled &&
           other.downloadWifiOnly == this.downloadWifiOnly &&
-          other.deviceId == this.deviceId);
+          other.deviceId == this.deviceId &&
+          other.imageQualitySmart == this.imageQualitySmart &&
+          other.imageQualityManualLevel == this.imageQualityManualLevel);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -384,6 +478,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<bool> autoCacheEnabled;
   final Value<bool> downloadWifiOnly;
   final Value<String?> deviceId;
+  final Value<bool> imageQualitySmart;
+  final Value<int> imageQualityManualLevel;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -392,6 +488,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.autoCacheEnabled = const Value.absent(),
     this.downloadWifiOnly = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.imageQualitySmart = const Value.absent(),
+    this.imageQualityManualLevel = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -401,6 +499,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.autoCacheEnabled = const Value.absent(),
     this.downloadWifiOnly = const Value.absent(),
     this.deviceId = const Value.absent(),
+    this.imageQualitySmart = const Value.absent(),
+    this.imageQualityManualLevel = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -410,6 +510,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<bool>? autoCacheEnabled,
     Expression<bool>? downloadWifiOnly,
     Expression<String>? deviceId,
+    Expression<bool>? imageQualitySmart,
+    Expression<int>? imageQualityManualLevel,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -420,6 +522,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (autoCacheEnabled != null) 'auto_cache_enabled': autoCacheEnabled,
       if (downloadWifiOnly != null) 'download_wifi_only': downloadWifiOnly,
       if (deviceId != null) 'device_id': deviceId,
+      if (imageQualitySmart != null) 'image_quality_smart': imageQualitySmart,
+      if (imageQualityManualLevel != null)
+        'image_quality_manual_level': imageQualityManualLevel,
     });
   }
 
@@ -431,6 +536,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<bool>? autoCacheEnabled,
     Value<bool>? downloadWifiOnly,
     Value<String?>? deviceId,
+    Value<bool>? imageQualitySmart,
+    Value<int>? imageQualityManualLevel,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -440,6 +547,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
       downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
       deviceId: deviceId ?? this.deviceId,
+      imageQualitySmart: imageQualitySmart ?? this.imageQualitySmart,
+      imageQualityManualLevel:
+          imageQualityManualLevel ?? this.imageQualityManualLevel,
     );
   }
 
@@ -469,6 +579,14 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (deviceId.present) {
       map['device_id'] = Variable<String>(deviceId.value);
     }
+    if (imageQualitySmart.present) {
+      map['image_quality_smart'] = Variable<bool>(imageQualitySmart.value);
+    }
+    if (imageQualityManualLevel.present) {
+      map['image_quality_manual_level'] = Variable<int>(
+        imageQualityManualLevel.value,
+      );
+    }
     return map;
   }
 
@@ -481,7 +599,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('cacheCapBytes: $cacheCapBytes, ')
           ..write('autoCacheEnabled: $autoCacheEnabled, ')
           ..write('downloadWifiOnly: $downloadWifiOnly, ')
-          ..write('deviceId: $deviceId')
+          ..write('deviceId: $deviceId, ')
+          ..write('imageQualitySmart: $imageQualitySmart, ')
+          ..write('imageQualityManualLevel: $imageQualityManualLevel')
           ..write(')'))
         .toString();
   }
@@ -7948,6 +8068,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<bool> autoCacheEnabled,
       Value<bool> downloadWifiOnly,
       Value<String?> deviceId,
+      Value<bool> imageQualitySmart,
+      Value<int> imageQualityManualLevel,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -7958,6 +8080,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<bool> autoCacheEnabled,
       Value<bool> downloadWifiOnly,
       Value<String?> deviceId,
+      Value<bool> imageQualitySmart,
+      Value<int> imageQualityManualLevel,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -8001,6 +8125,16 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<String> get deviceId => $composableBuilder(
     column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get imageQualitySmart => $composableBuilder(
+    column: $table.imageQualitySmart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get imageQualityManualLevel => $composableBuilder(
+    column: $table.imageQualityManualLevel,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -8048,6 +8182,16 @@ class $$AppSettingsTableOrderingComposer
     column: $table.deviceId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get imageQualitySmart => $composableBuilder(
+    column: $table.imageQualitySmart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get imageQualityManualLevel => $composableBuilder(
+    column: $table.imageQualityManualLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -8087,6 +8231,16 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get deviceId =>
       $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<bool> get imageQualitySmart => $composableBuilder(
+    column: $table.imageQualitySmart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get imageQualityManualLevel => $composableBuilder(
+    column: $table.imageQualityManualLevel,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -8127,6 +8281,8 @@ class $$AppSettingsTableTableManager
                 Value<bool> autoCacheEnabled = const Value.absent(),
                 Value<bool> downloadWifiOnly = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
+                Value<bool> imageQualitySmart = const Value.absent(),
+                Value<int> imageQualityManualLevel = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -8135,6 +8291,8 @@ class $$AppSettingsTableTableManager
                 autoCacheEnabled: autoCacheEnabled,
                 downloadWifiOnly: downloadWifiOnly,
                 deviceId: deviceId,
+                imageQualitySmart: imageQualitySmart,
+                imageQualityManualLevel: imageQualityManualLevel,
               ),
           createCompanionCallback:
               ({
@@ -8145,6 +8303,8 @@ class $$AppSettingsTableTableManager
                 Value<bool> autoCacheEnabled = const Value.absent(),
                 Value<bool> downloadWifiOnly = const Value.absent(),
                 Value<String?> deviceId = const Value.absent(),
+                Value<bool> imageQualitySmart = const Value.absent(),
+                Value<int> imageQualityManualLevel = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -8153,6 +8313,8 @@ class $$AppSettingsTableTableManager
                 autoCacheEnabled: autoCacheEnabled,
                 downloadWifiOnly: downloadWifiOnly,
                 deviceId: deviceId,
+                imageQualitySmart: imageQualitySmart,
+                imageQualityManualLevel: imageQualityManualLevel,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
