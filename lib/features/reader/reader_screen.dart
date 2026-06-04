@@ -318,6 +318,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody> {
           child: ReaderChrome(
             visible: _chrome,
             title: 'Page ${_page + 1} of ${source.pageCount}',
+            offline: widget.data.source is OfflinePages,
             settings: s,
             pageCount: source.pageCount,
             currentPage: _page,

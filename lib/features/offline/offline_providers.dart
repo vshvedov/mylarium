@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/archive/archive_extractor.dart';
+import '../../core/db/database.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/source_providers.dart';
 import 'download_manager.dart';
@@ -35,12 +36,17 @@ DownloadManager downloadManager(Ref ref) {
   );
 }
 
-/// Whether a book is available offline, reactive to cache changes (streams the
-/// cached-asset set and maps to this book's presence).
+/// The cached asset for a book (or null), reactive. Drives the per-book offline
+/// indicator and Download control.
 @riverpod
-Stream<bool> offlineAvailable(Ref ref, String sourceId, String bookId) {
-  return ref.watch(appDatabaseProvider).watchCachedAssets().map(
-        (assets) =>
-            assets.any((a) => a.sourceId == sourceId && a.bookId == bookId),
-      );
-}
+Stream<CachedAsset?> cachedAsset(Ref ref, String sourceId, String bookId) =>
+    ref.watch(appDatabaseProvider).watchCachedAsset(sourceId, bookId);
+
+/// Live download progress for a book.
+@riverpod
+Stream<DownloadProgress> downloadProgress(
+  Ref ref,
+  String sourceId,
+  String bookId,
+) =>
+    ref.watch(downloadManagerProvider).watch(sourceId, bookId);

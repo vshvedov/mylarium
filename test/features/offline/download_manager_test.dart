@@ -102,6 +102,47 @@ void main() {
     expect(file.existsSync(), isTrue);
   });
 
+  test('manual download stores in the permanent downloads pool', () async {
+    final dl = _FakeDownloader([1, 2, 3]);
+    await manager(dl).enqueueBook('s1', 'b1', manual: true);
+    await waitForAsset('b1');
+
+    final asset = await db.getCachedAsset('s1', 'b1');
+    expect(asset!.permanent, isTrue);
+    expect(asset.relativePath, startsWith('media/downloads/'));
+  });
+
+  test('auto-cache disabled skips auto, but manual still downloads', () async {
+    await db.getOrCreateSettings();
+    await db.updateAutoCacheEnabled(false);
+
+    final auto = _FakeDownloader([1]);
+    await manager(auto).enqueueBook('s1', 'b1'); // auto -> skipped
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(auto.calls, 0);
+    expect(await db.getCachedAsset('s1', 'b1'), isNull);
+
+    final man = _FakeDownloader([1, 2]);
+    await manager(man).enqueueBook('s1', 'b1', manual: true);
+    await waitForAsset('b1');
+    expect((await db.getCachedAsset('s1', 'b1'))!.permanent, isTrue);
+  });
+
+  test('manual download promotes an existing auto-cached copy', () async {
+    final dl = _FakeDownloader([9, 9]);
+    final m = manager(dl);
+    await m.enqueueBook('s1', 'b1'); // auto first
+    await waitForAsset('b1');
+    expect((await db.getCachedAsset('s1', 'b1'))!.permanent, isFalse);
+
+    await m.enqueueBook('s1', 'b1', manual: true); // promote
+    final asset = await db.getCachedAsset('s1', 'b1');
+    expect(asset!.permanent, isTrue);
+    expect(asset.relativePath, startsWith('media/downloads/'));
+    expect(File(await AppPaths.resolve(asset.relativePath)).existsSync(),
+        isTrue);
+  });
+
   test('enqueue is idempotent once cached', () async {
     final dl = _FakeDownloader([1]);
     final m = manager(dl);

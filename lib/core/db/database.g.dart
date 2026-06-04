@@ -56,12 +56,44 @@ class $AppSettingsTable extends AppSettings
     requiredDuringInsert: false,
     defaultValue: const Constant(2147483648),
   );
+  static const VerificationMeta _autoCacheEnabledMeta = const VerificationMeta(
+    'autoCacheEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> autoCacheEnabled = GeneratedColumn<bool>(
+    'auto_cache_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_cache_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _downloadWifiOnlyMeta = const VerificationMeta(
+    'downloadWifiOnly',
+  );
+  @override
+  late final GeneratedColumn<bool> downloadWifiOnly = GeneratedColumn<bool>(
+    'download_wifi_only',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("download_wifi_only" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     themeMode,
     reduceMotionOverride,
     cacheCapBytes,
+    autoCacheEnabled,
+    downloadWifiOnly,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -102,6 +134,24 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('auto_cache_enabled')) {
+      context.handle(
+        _autoCacheEnabledMeta,
+        autoCacheEnabled.isAcceptableOrUnknown(
+          data['auto_cache_enabled']!,
+          _autoCacheEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('download_wifi_only')) {
+      context.handle(
+        _downloadWifiOnlyMeta,
+        downloadWifiOnly.isAcceptableOrUnknown(
+          data['download_wifi_only']!,
+          _downloadWifiOnlyMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -127,6 +177,14 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.int,
         data['${effectivePrefix}cache_cap_bytes'],
       )!,
+      autoCacheEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_cache_enabled'],
+      )!,
+      downloadWifiOnly: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}download_wifi_only'],
+      )!,
     );
   }
 
@@ -141,11 +199,20 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   final String themeMode;
   final bool reduceMotionOverride;
   final int cacheCapBytes;
+
+  /// Whether opening a chapter auto-downloads it in the background (the
+  /// ephemeral, LRU-evicted auto-cache pool).
+  final bool autoCacheEnabled;
+
+  /// Whether auto-cache downloads require Wi-Fi. Manual downloads ignore this.
+  final bool downloadWifiOnly;
   const AppSetting({
     required this.id,
     required this.themeMode,
     required this.reduceMotionOverride,
     required this.cacheCapBytes,
+    required this.autoCacheEnabled,
+    required this.downloadWifiOnly,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -154,6 +221,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     map['theme_mode'] = Variable<String>(themeMode);
     map['reduce_motion_override'] = Variable<bool>(reduceMotionOverride);
     map['cache_cap_bytes'] = Variable<int>(cacheCapBytes);
+    map['auto_cache_enabled'] = Variable<bool>(autoCacheEnabled);
+    map['download_wifi_only'] = Variable<bool>(downloadWifiOnly);
     return map;
   }
 
@@ -163,6 +232,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       themeMode: Value(themeMode),
       reduceMotionOverride: Value(reduceMotionOverride),
       cacheCapBytes: Value(cacheCapBytes),
+      autoCacheEnabled: Value(autoCacheEnabled),
+      downloadWifiOnly: Value(downloadWifiOnly),
     );
   }
 
@@ -178,6 +249,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         json['reduceMotionOverride'],
       ),
       cacheCapBytes: serializer.fromJson<int>(json['cacheCapBytes']),
+      autoCacheEnabled: serializer.fromJson<bool>(json['autoCacheEnabled']),
+      downloadWifiOnly: serializer.fromJson<bool>(json['downloadWifiOnly']),
     );
   }
   @override
@@ -188,6 +261,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'themeMode': serializer.toJson<String>(themeMode),
       'reduceMotionOverride': serializer.toJson<bool>(reduceMotionOverride),
       'cacheCapBytes': serializer.toJson<int>(cacheCapBytes),
+      'autoCacheEnabled': serializer.toJson<bool>(autoCacheEnabled),
+      'downloadWifiOnly': serializer.toJson<bool>(downloadWifiOnly),
     };
   }
 
@@ -196,11 +271,15 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     String? themeMode,
     bool? reduceMotionOverride,
     int? cacheCapBytes,
+    bool? autoCacheEnabled,
+    bool? downloadWifiOnly,
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
     reduceMotionOverride: reduceMotionOverride ?? this.reduceMotionOverride,
     cacheCapBytes: cacheCapBytes ?? this.cacheCapBytes,
+    autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
+    downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -212,6 +291,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       cacheCapBytes: data.cacheCapBytes.present
           ? data.cacheCapBytes.value
           : this.cacheCapBytes,
+      autoCacheEnabled: data.autoCacheEnabled.present
+          ? data.autoCacheEnabled.value
+          : this.autoCacheEnabled,
+      downloadWifiOnly: data.downloadWifiOnly.present
+          ? data.downloadWifiOnly.value
+          : this.downloadWifiOnly,
     );
   }
 
@@ -221,14 +306,22 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
           ..write('reduceMotionOverride: $reduceMotionOverride, ')
-          ..write('cacheCapBytes: $cacheCapBytes')
+          ..write('cacheCapBytes: $cacheCapBytes, ')
+          ..write('autoCacheEnabled: $autoCacheEnabled, ')
+          ..write('downloadWifiOnly: $downloadWifiOnly')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, themeMode, reduceMotionOverride, cacheCapBytes);
+  int get hashCode => Object.hash(
+    id,
+    themeMode,
+    reduceMotionOverride,
+    cacheCapBytes,
+    autoCacheEnabled,
+    downloadWifiOnly,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -236,7 +329,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.id == this.id &&
           other.themeMode == this.themeMode &&
           other.reduceMotionOverride == this.reduceMotionOverride &&
-          other.cacheCapBytes == this.cacheCapBytes);
+          other.cacheCapBytes == this.cacheCapBytes &&
+          other.autoCacheEnabled == this.autoCacheEnabled &&
+          other.downloadWifiOnly == this.downloadWifiOnly);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -244,23 +339,31 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<String> themeMode;
   final Value<bool> reduceMotionOverride;
   final Value<int> cacheCapBytes;
+  final Value<bool> autoCacheEnabled;
+  final Value<bool> downloadWifiOnly;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.reduceMotionOverride = const Value.absent(),
     this.cacheCapBytes = const Value.absent(),
+    this.autoCacheEnabled = const Value.absent(),
+    this.downloadWifiOnly = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.reduceMotionOverride = const Value.absent(),
     this.cacheCapBytes = const Value.absent(),
+    this.autoCacheEnabled = const Value.absent(),
+    this.downloadWifiOnly = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
     Expression<String>? themeMode,
     Expression<bool>? reduceMotionOverride,
     Expression<int>? cacheCapBytes,
+    Expression<bool>? autoCacheEnabled,
+    Expression<bool>? downloadWifiOnly,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -268,6 +371,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (reduceMotionOverride != null)
         'reduce_motion_override': reduceMotionOverride,
       if (cacheCapBytes != null) 'cache_cap_bytes': cacheCapBytes,
+      if (autoCacheEnabled != null) 'auto_cache_enabled': autoCacheEnabled,
+      if (downloadWifiOnly != null) 'download_wifi_only': downloadWifiOnly,
     });
   }
 
@@ -276,12 +381,16 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<String>? themeMode,
     Value<bool>? reduceMotionOverride,
     Value<int>? cacheCapBytes,
+    Value<bool>? autoCacheEnabled,
+    Value<bool>? downloadWifiOnly,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       themeMode: themeMode ?? this.themeMode,
       reduceMotionOverride: reduceMotionOverride ?? this.reduceMotionOverride,
       cacheCapBytes: cacheCapBytes ?? this.cacheCapBytes,
+      autoCacheEnabled: autoCacheEnabled ?? this.autoCacheEnabled,
+      downloadWifiOnly: downloadWifiOnly ?? this.downloadWifiOnly,
     );
   }
 
@@ -302,6 +411,12 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (cacheCapBytes.present) {
       map['cache_cap_bytes'] = Variable<int>(cacheCapBytes.value);
     }
+    if (autoCacheEnabled.present) {
+      map['auto_cache_enabled'] = Variable<bool>(autoCacheEnabled.value);
+    }
+    if (downloadWifiOnly.present) {
+      map['download_wifi_only'] = Variable<bool>(downloadWifiOnly.value);
+    }
     return map;
   }
 
@@ -311,7 +426,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('id: $id, ')
           ..write('themeMode: $themeMode, ')
           ..write('reduceMotionOverride: $reduceMotionOverride, ')
-          ..write('cacheCapBytes: $cacheCapBytes')
+          ..write('cacheCapBytes: $cacheCapBytes, ')
+          ..write('autoCacheEnabled: $autoCacheEnabled, ')
+          ..write('downloadWifiOnly: $downloadWifiOnly')
           ..write(')'))
         .toString();
   }
@@ -4622,6 +4739,21 @@ class $DownloadTasksTable extends DownloadTasks
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _permanentMeta = const VerificationMeta(
+    'permanent',
+  );
+  @override
+  late final GeneratedColumn<bool> permanent = GeneratedColumn<bool>(
+    'permanent',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("permanent" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -4642,6 +4774,7 @@ class $DownloadTasksTable extends DownloadTasks
     bytesDownloaded,
     totalBytes,
     requiresWifi,
+    permanent,
     updatedAt,
   ];
   @override
@@ -4710,6 +4843,12 @@ class $DownloadTasksTable extends DownloadTasks
         ),
       );
     }
+    if (data.containsKey('permanent')) {
+      context.handle(
+        _permanentMeta,
+        permanent.isAcceptableOrUnknown(data['permanent']!, _permanentMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -4755,6 +4894,10 @@ class $DownloadTasksTable extends DownloadTasks
         DriftSqlType.bool,
         data['${effectivePrefix}requires_wifi'],
       )!,
+      permanent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}permanent'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}updated_at'],
@@ -4776,6 +4919,10 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
   final int bytesDownloaded;
   final int? totalBytes;
   final bool requiresWifi;
+
+  /// True for a manual download (goes to the permanent downloads pool); false
+  /// for an auto-cache download. Lets resume-on-launch pick the right pool.
+  final bool permanent;
   final int updatedAt;
   const DownloadTask({
     required this.sourceId,
@@ -4785,6 +4932,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
     required this.bytesDownloaded,
     this.totalBytes,
     required this.requiresWifi,
+    required this.permanent,
     required this.updatedAt,
   });
   @override
@@ -4799,6 +4947,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
       map['total_bytes'] = Variable<int>(totalBytes);
     }
     map['requires_wifi'] = Variable<bool>(requiresWifi);
+    map['permanent'] = Variable<bool>(permanent);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
   }
@@ -4814,6 +4963,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
           ? const Value.absent()
           : Value(totalBytes),
       requiresWifi: Value(requiresWifi),
+      permanent: Value(permanent),
       updatedAt: Value(updatedAt),
     );
   }
@@ -4831,6 +4981,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
       bytesDownloaded: serializer.fromJson<int>(json['bytesDownloaded']),
       totalBytes: serializer.fromJson<int?>(json['totalBytes']),
       requiresWifi: serializer.fromJson<bool>(json['requiresWifi']),
+      permanent: serializer.fromJson<bool>(json['permanent']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
   }
@@ -4845,6 +4996,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
       'bytesDownloaded': serializer.toJson<int>(bytesDownloaded),
       'totalBytes': serializer.toJson<int?>(totalBytes),
       'requiresWifi': serializer.toJson<bool>(requiresWifi),
+      'permanent': serializer.toJson<bool>(permanent),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
   }
@@ -4857,6 +5009,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
     int? bytesDownloaded,
     Value<int?> totalBytes = const Value.absent(),
     bool? requiresWifi,
+    bool? permanent,
     int? updatedAt,
   }) => DownloadTask(
     sourceId: sourceId ?? this.sourceId,
@@ -4866,6 +5019,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
     bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
     totalBytes: totalBytes.present ? totalBytes.value : this.totalBytes,
     requiresWifi: requiresWifi ?? this.requiresWifi,
+    permanent: permanent ?? this.permanent,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   DownloadTask copyWithCompanion(DownloadTasksCompanion data) {
@@ -4883,6 +5037,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
       requiresWifi: data.requiresWifi.present
           ? data.requiresWifi.value
           : this.requiresWifi,
+      permanent: data.permanent.present ? data.permanent.value : this.permanent,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -4897,6 +5052,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
           ..write('bytesDownloaded: $bytesDownloaded, ')
           ..write('totalBytes: $totalBytes, ')
           ..write('requiresWifi: $requiresWifi, ')
+          ..write('permanent: $permanent, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -4911,6 +5067,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
     bytesDownloaded,
     totalBytes,
     requiresWifi,
+    permanent,
     updatedAt,
   );
   @override
@@ -4924,6 +5081,7 @@ class DownloadTask extends DataClass implements Insertable<DownloadTask> {
           other.bytesDownloaded == this.bytesDownloaded &&
           other.totalBytes == this.totalBytes &&
           other.requiresWifi == this.requiresWifi &&
+          other.permanent == this.permanent &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -4935,6 +5093,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
   final Value<int> bytesDownloaded;
   final Value<int?> totalBytes;
   final Value<bool> requiresWifi;
+  final Value<bool> permanent;
   final Value<int> updatedAt;
   final Value<int> rowid;
   const DownloadTasksCompanion({
@@ -4945,6 +5104,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
     this.bytesDownloaded = const Value.absent(),
     this.totalBytes = const Value.absent(),
     this.requiresWifi = const Value.absent(),
+    this.permanent = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4956,6 +5116,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
     this.bytesDownloaded = const Value.absent(),
     this.totalBytes = const Value.absent(),
     this.requiresWifi = const Value.absent(),
+    this.permanent = const Value.absent(),
     required int updatedAt,
     this.rowid = const Value.absent(),
   }) : sourceId = Value(sourceId),
@@ -4970,6 +5131,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
     Expression<int>? bytesDownloaded,
     Expression<int>? totalBytes,
     Expression<bool>? requiresWifi,
+    Expression<bool>? permanent,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -4981,6 +5143,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
       if (bytesDownloaded != null) 'bytes_downloaded': bytesDownloaded,
       if (totalBytes != null) 'total_bytes': totalBytes,
       if (requiresWifi != null) 'requires_wifi': requiresWifi,
+      if (permanent != null) 'permanent': permanent,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4994,6 +5157,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
     Value<int>? bytesDownloaded,
     Value<int?>? totalBytes,
     Value<bool>? requiresWifi,
+    Value<bool>? permanent,
     Value<int>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -5005,6 +5169,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
       bytesDownloaded: bytesDownloaded ?? this.bytesDownloaded,
       totalBytes: totalBytes ?? this.totalBytes,
       requiresWifi: requiresWifi ?? this.requiresWifi,
+      permanent: permanent ?? this.permanent,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -5034,6 +5199,9 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
     if (requiresWifi.present) {
       map['requires_wifi'] = Variable<bool>(requiresWifi.value);
     }
+    if (permanent.present) {
+      map['permanent'] = Variable<bool>(permanent.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<int>(updatedAt.value);
     }
@@ -5053,6 +5221,7 @@ class DownloadTasksCompanion extends UpdateCompanion<DownloadTask> {
           ..write('bytesDownloaded: $bytesDownloaded, ')
           ..write('totalBytes: $totalBytes, ')
           ..write('requiresWifi: $requiresWifi, ')
+          ..write('permanent: $permanent, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5114,6 +5283,8 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String> themeMode,
       Value<bool> reduceMotionOverride,
       Value<int> cacheCapBytes,
+      Value<bool> autoCacheEnabled,
+      Value<bool> downloadWifiOnly,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -5121,6 +5292,8 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String> themeMode,
       Value<bool> reduceMotionOverride,
       Value<int> cacheCapBytes,
+      Value<bool> autoCacheEnabled,
+      Value<bool> downloadWifiOnly,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -5149,6 +5322,16 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<int> get cacheCapBytes => $composableBuilder(
     column: $table.cacheCapBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoCacheEnabled => $composableBuilder(
+    column: $table.autoCacheEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get downloadWifiOnly => $composableBuilder(
+    column: $table.downloadWifiOnly,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5181,6 +5364,16 @@ class $$AppSettingsTableOrderingComposer
     column: $table.cacheCapBytes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get autoCacheEnabled => $composableBuilder(
+    column: $table.autoCacheEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get downloadWifiOnly => $composableBuilder(
+    column: $table.downloadWifiOnly,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -5205,6 +5398,16 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumn<int> get cacheCapBytes => $composableBuilder(
     column: $table.cacheCapBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get autoCacheEnabled => $composableBuilder(
+    column: $table.autoCacheEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get downloadWifiOnly => $composableBuilder(
+    column: $table.downloadWifiOnly,
     builder: (column) => column,
   );
 }
@@ -5244,11 +5447,15 @@ class $$AppSettingsTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<bool> reduceMotionOverride = const Value.absent(),
                 Value<int> cacheCapBytes = const Value.absent(),
+                Value<bool> autoCacheEnabled = const Value.absent(),
+                Value<bool> downloadWifiOnly = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
                 reduceMotionOverride: reduceMotionOverride,
                 cacheCapBytes: cacheCapBytes,
+                autoCacheEnabled: autoCacheEnabled,
+                downloadWifiOnly: downloadWifiOnly,
               ),
           createCompanionCallback:
               ({
@@ -5256,11 +5463,15 @@ class $$AppSettingsTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<bool> reduceMotionOverride = const Value.absent(),
                 Value<int> cacheCapBytes = const Value.absent(),
+                Value<bool> autoCacheEnabled = const Value.absent(),
+                Value<bool> downloadWifiOnly = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
                 reduceMotionOverride: reduceMotionOverride,
                 cacheCapBytes: cacheCapBytes,
+                autoCacheEnabled: autoCacheEnabled,
+                downloadWifiOnly: downloadWifiOnly,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -7440,6 +7651,7 @@ typedef $$DownloadTasksTableCreateCompanionBuilder =
       Value<int> bytesDownloaded,
       Value<int?> totalBytes,
       Value<bool> requiresWifi,
+      Value<bool> permanent,
       required int updatedAt,
       Value<int> rowid,
     });
@@ -7452,6 +7664,7 @@ typedef $$DownloadTasksTableUpdateCompanionBuilder =
       Value<int> bytesDownloaded,
       Value<int?> totalBytes,
       Value<bool> requiresWifi,
+      Value<bool> permanent,
       Value<int> updatedAt,
       Value<int> rowid,
     });
@@ -7497,6 +7710,11 @@ class $$DownloadTasksTableFilterComposer
 
   ColumnFilters<bool> get requiresWifi => $composableBuilder(
     column: $table.requiresWifi,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get permanent => $composableBuilder(
+    column: $table.permanent,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7550,6 +7768,11 @@ class $$DownloadTasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get permanent => $composableBuilder(
+    column: $table.permanent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -7591,6 +7814,9 @@ class $$DownloadTasksTableAnnotationComposer
     column: $table.requiresWifi,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get permanent =>
+      $composableBuilder(column: $table.permanent, builder: (column) => column);
 
   GeneratedColumn<int> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -7634,6 +7860,7 @@ class $$DownloadTasksTableTableManager
                 Value<int> bytesDownloaded = const Value.absent(),
                 Value<int?> totalBytes = const Value.absent(),
                 Value<bool> requiresWifi = const Value.absent(),
+                Value<bool> permanent = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DownloadTasksCompanion(
@@ -7644,6 +7871,7 @@ class $$DownloadTasksTableTableManager
                 bytesDownloaded: bytesDownloaded,
                 totalBytes: totalBytes,
                 requiresWifi: requiresWifi,
+                permanent: permanent,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -7656,6 +7884,7 @@ class $$DownloadTasksTableTableManager
                 Value<int> bytesDownloaded = const Value.absent(),
                 Value<int?> totalBytes = const Value.absent(),
                 Value<bool> requiresWifi = const Value.absent(),
+                Value<bool> permanent = const Value.absent(),
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
               }) => DownloadTasksCompanion.insert(
@@ -7666,6 +7895,7 @@ class $$DownloadTasksTableTableManager
                 bytesDownloaded: bytesDownloaded,
                 totalBytes: totalBytes,
                 requiresWifi: requiresWifi,
+                permanent: permanent,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

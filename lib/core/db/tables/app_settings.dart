@@ -7,9 +7,18 @@ class AppSettings extends Table {
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
   BoolColumn get reduceMotionOverride =>
       boolean().withDefault(const Constant(false))();
-  // 2 GiB default; unused until T5 (offline cache cap). 64-bit safe.
+  // 2 GiB default; the auto-cache size cap. 64-bit safe.
   IntColumn get cacheCapBytes =>
       integer().withDefault(const Constant(2147483648))();
+
+  /// Whether opening a chapter auto-downloads it in the background (the
+  /// ephemeral, LRU-evicted auto-cache pool).
+  BoolColumn get autoCacheEnabled =>
+      boolean().withDefault(const Constant(true))();
+
+  /// Whether auto-cache downloads require Wi-Fi. Manual downloads ignore this.
+  BoolColumn get downloadWifiOnly =>
+      boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column> get primaryKey => {id};

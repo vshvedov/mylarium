@@ -15,6 +15,10 @@ class DownloadTasks extends Table {
   IntColumn get bytesDownloaded => integer().withDefault(const Constant(0))();
   IntColumn get totalBytes => integer().nullable()();
   BoolColumn get requiresWifi => boolean().withDefault(const Constant(true))();
+
+  /// True for a manual download (goes to the permanent downloads pool); false
+  /// for an auto-cache download. Lets resume-on-launch pick the right pool.
+  BoolColumn get permanent => boolean().withDefault(const Constant(false))();
   IntColumn get updatedAt => integer()();
 
   @override

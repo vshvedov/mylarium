@@ -14,8 +14,12 @@ class AppPaths {
   /// The thumbnails root, relative to applicationSupport.
   static const thumbnailsDir = 'thumbnails';
 
-  /// Downloaded comic archives root, relative to applicationSupport.
+  /// Auto-cache (ephemeral, LRU-evicted) archives root.
   static const archivesDir = 'media/archives';
+
+  /// Manual downloads (permanent, user-managed) archives root, kept physically
+  /// separate from the auto-cache.
+  static const downloadsDir = 'media/downloads';
 
   /// Test seam: when set, [resolve] joins against this root instead of the
   /// platform applicationSupport directory (lets tests simulate the cross-install
@@ -35,6 +39,10 @@ class AppPaths {
   /// bytes), so a generic suffix is used.
   static String archiveRelativePath(String sourceId, String bookId) =>
       p.join(archivesDir, _safe(sourceId), '${_safe(bookId)}.archive');
+
+  /// Relative path for a manually-downloaded archive (separate from the cache).
+  static String downloadRelativePath(String sourceId, String bookId) =>
+      p.join(downloadsDir, _safe(sourceId), '${_safe(bookId)}.archive');
 
   /// Relative path for a cached thumbnail. Keeping `<ownerType>/<sourceId>/...`
   /// segments avoids id collisions across sources. Ids are sanitized so a hostile

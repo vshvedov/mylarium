@@ -29,10 +29,15 @@ void main() {
     final db = AppDatabase(schema.newConnection());
     await verifier.migrateAndValidate(db, 2);
 
-    // The v1 row survived the upgrade unchanged (no data loss).
-    final settings = await db.getOrCreateSettings();
-    expect(settings.themeMode, 'dark');
-    expect(settings.cacheCapBytes, 999);
+    // The v1 row survived the upgrade unchanged (no data loss). Read it via
+    // raw SQL: the typed mapper expects current (v6) columns that the v2 schema
+    // does not have.
+    final row = await db
+        .customSelect('SELECT theme_mode, cache_cap_bytes FROM app_settings '
+            'WHERE id = 1')
+        .getSingle();
+    expect(row.data['theme_mode'], 'dark');
+    expect(row.data['cache_cap_bytes'], 999);
 
     // The new tables are usable post-migration.
     await db.upsertSource(const SourcesCompanion(

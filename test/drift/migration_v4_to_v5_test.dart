@@ -11,7 +11,9 @@ void main() {
 
   setUpAll(() => verifier = SchemaVerifier(GeneratedHelper()));
 
-  test('v4 -> v5 preserves data and adds the offline tables', () async {
+  // download_tasks gained a column in v6, so the current migrator can only
+  // reproduce the head schema; these validate the v4 -> head (v6) path.
+  test('v4 -> v6 preserves data and adds the offline tables', () async {
     final schema = await verifier.schemaAt(4);
 
     final oldDb = v4.DatabaseAtV4(schema.newConnection());
@@ -25,7 +27,7 @@ void main() {
     await oldDb.close();
 
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 5);
+    await verifier.migrateAndValidate(db, 6);
 
     // v4 data survived.
     final series = await db.watchSeries('s1').first;
@@ -56,10 +58,10 @@ void main() {
     await db.close();
   });
 
-  test('v2 -> v5 chained migration reaches the v5 schema', () async {
+  test('v2 -> v6 chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 5);
+    await verifier.migrateAndValidate(db, 6);
     await db.close();
   });
 }

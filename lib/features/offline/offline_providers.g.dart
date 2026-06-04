@@ -77,7 +77,7 @@ final downloadManagerProvider = Provider<DownloadManager>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DownloadManagerRef = ProviderRef<DownloadManager>;
-String _$offlineAvailableHash() => r'8638cc19d0aa43be85f9d740e0388e82e544ce1a';
+String _$cachedAssetHash() => r'521c8063fd809750f78c046277db7d3fb06e07ac';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -100,35 +100,35 @@ class _SystemHash {
   }
 }
 
-/// Whether a book is available offline, reactive to cache changes (streams the
-/// cached-asset set and maps to this book's presence).
+/// The cached asset for a book (or null), reactive. Drives the per-book offline
+/// indicator and Download control.
 ///
-/// Copied from [offlineAvailable].
-@ProviderFor(offlineAvailable)
-const offlineAvailableProvider = OfflineAvailableFamily();
+/// Copied from [cachedAsset].
+@ProviderFor(cachedAsset)
+const cachedAssetProvider = CachedAssetFamily();
 
-/// Whether a book is available offline, reactive to cache changes (streams the
-/// cached-asset set and maps to this book's presence).
+/// The cached asset for a book (or null), reactive. Drives the per-book offline
+/// indicator and Download control.
 ///
-/// Copied from [offlineAvailable].
-class OfflineAvailableFamily extends Family<AsyncValue<bool>> {
-  /// Whether a book is available offline, reactive to cache changes (streams the
-  /// cached-asset set and maps to this book's presence).
+/// Copied from [cachedAsset].
+class CachedAssetFamily extends Family<AsyncValue<CachedAsset?>> {
+  /// The cached asset for a book (or null), reactive. Drives the per-book offline
+  /// indicator and Download control.
   ///
-  /// Copied from [offlineAvailable].
-  const OfflineAvailableFamily();
+  /// Copied from [cachedAsset].
+  const CachedAssetFamily();
 
-  /// Whether a book is available offline, reactive to cache changes (streams the
-  /// cached-asset set and maps to this book's presence).
+  /// The cached asset for a book (or null), reactive. Drives the per-book offline
+  /// indicator and Download control.
   ///
-  /// Copied from [offlineAvailable].
-  OfflineAvailableProvider call(String sourceId, String bookId) {
-    return OfflineAvailableProvider(sourceId, bookId);
+  /// Copied from [cachedAsset].
+  CachedAssetProvider call(String sourceId, String bookId) {
+    return CachedAssetProvider(sourceId, bookId);
   }
 
   @override
-  OfflineAvailableProvider getProviderOverride(
-    covariant OfflineAvailableProvider provider,
+  CachedAssetProvider getProviderOverride(
+    covariant CachedAssetProvider provider,
   ) {
     return call(provider.sourceId, provider.bookId);
   }
@@ -145,34 +145,33 @@ class OfflineAvailableFamily extends Family<AsyncValue<bool>> {
       _allTransitiveDependencies;
 
   @override
-  String? get name => r'offlineAvailableProvider';
+  String? get name => r'cachedAssetProvider';
 }
 
-/// Whether a book is available offline, reactive to cache changes (streams the
-/// cached-asset set and maps to this book's presence).
+/// The cached asset for a book (or null), reactive. Drives the per-book offline
+/// indicator and Download control.
 ///
-/// Copied from [offlineAvailable].
-class OfflineAvailableProvider extends AutoDisposeStreamProvider<bool> {
-  /// Whether a book is available offline, reactive to cache changes (streams the
-  /// cached-asset set and maps to this book's presence).
+/// Copied from [cachedAsset].
+class CachedAssetProvider extends AutoDisposeStreamProvider<CachedAsset?> {
+  /// The cached asset for a book (or null), reactive. Drives the per-book offline
+  /// indicator and Download control.
   ///
-  /// Copied from [offlineAvailable].
-  OfflineAvailableProvider(String sourceId, String bookId)
+  /// Copied from [cachedAsset].
+  CachedAssetProvider(String sourceId, String bookId)
     : this._internal(
-        (ref) => offlineAvailable(ref as OfflineAvailableRef, sourceId, bookId),
-        from: offlineAvailableProvider,
-        name: r'offlineAvailableProvider',
+        (ref) => cachedAsset(ref as CachedAssetRef, sourceId, bookId),
+        from: cachedAssetProvider,
+        name: r'cachedAssetProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
             ? null
-            : _$offlineAvailableHash,
-        dependencies: OfflineAvailableFamily._dependencies,
-        allTransitiveDependencies:
-            OfflineAvailableFamily._allTransitiveDependencies,
+            : _$cachedAssetHash,
+        dependencies: CachedAssetFamily._dependencies,
+        allTransitiveDependencies: CachedAssetFamily._allTransitiveDependencies,
         sourceId: sourceId,
         bookId: bookId,
       );
 
-  OfflineAvailableProvider._internal(
+  CachedAssetProvider._internal(
     super._createNotifier, {
     required super.name,
     required super.dependencies,
@@ -188,12 +187,12 @@ class OfflineAvailableProvider extends AutoDisposeStreamProvider<bool> {
 
   @override
   Override overrideWith(
-    Stream<bool> Function(OfflineAvailableRef provider) create,
+    Stream<CachedAsset?> Function(CachedAssetRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
-      override: OfflineAvailableProvider._internal(
-        (ref) => create(ref as OfflineAvailableRef),
+      override: CachedAssetProvider._internal(
+        (ref) => create(ref as CachedAssetRef),
         from: from,
         name: null,
         dependencies: null,
@@ -206,13 +205,13 @@ class OfflineAvailableProvider extends AutoDisposeStreamProvider<bool> {
   }
 
   @override
-  AutoDisposeStreamProviderElement<bool> createElement() {
-    return _OfflineAvailableProviderElement(this);
+  AutoDisposeStreamProviderElement<CachedAsset?> createElement() {
+    return _CachedAssetProviderElement(this);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is OfflineAvailableProvider &&
+    return other is CachedAssetProvider &&
         other.sourceId == sourceId &&
         other.bookId == bookId;
   }
@@ -229,7 +228,7 @@ class OfflineAvailableProvider extends AutoDisposeStreamProvider<bool> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin OfflineAvailableRef on AutoDisposeStreamProviderRef<bool> {
+mixin CachedAssetRef on AutoDisposeStreamProviderRef<CachedAsset?> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 
@@ -237,15 +236,160 @@ mixin OfflineAvailableRef on AutoDisposeStreamProviderRef<bool> {
   String get bookId;
 }
 
-class _OfflineAvailableProviderElement
-    extends AutoDisposeStreamProviderElement<bool>
-    with OfflineAvailableRef {
-  _OfflineAvailableProviderElement(super.provider);
+class _CachedAssetProviderElement
+    extends AutoDisposeStreamProviderElement<CachedAsset?>
+    with CachedAssetRef {
+  _CachedAssetProviderElement(super.provider);
 
   @override
-  String get sourceId => (origin as OfflineAvailableProvider).sourceId;
+  String get sourceId => (origin as CachedAssetProvider).sourceId;
   @override
-  String get bookId => (origin as OfflineAvailableProvider).bookId;
+  String get bookId => (origin as CachedAssetProvider).bookId;
+}
+
+String _$downloadProgressHash() => r'eb63daed55b4df6c6b382bc95680055a9ef3ed15';
+
+/// Live download progress for a book.
+///
+/// Copied from [downloadProgress].
+@ProviderFor(downloadProgress)
+const downloadProgressProvider = DownloadProgressFamily();
+
+/// Live download progress for a book.
+///
+/// Copied from [downloadProgress].
+class DownloadProgressFamily extends Family<AsyncValue<DownloadProgress>> {
+  /// Live download progress for a book.
+  ///
+  /// Copied from [downloadProgress].
+  const DownloadProgressFamily();
+
+  /// Live download progress for a book.
+  ///
+  /// Copied from [downloadProgress].
+  DownloadProgressProvider call(String sourceId, String bookId) {
+    return DownloadProgressProvider(sourceId, bookId);
+  }
+
+  @override
+  DownloadProgressProvider getProviderOverride(
+    covariant DownloadProgressProvider provider,
+  ) {
+    return call(provider.sourceId, provider.bookId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'downloadProgressProvider';
+}
+
+/// Live download progress for a book.
+///
+/// Copied from [downloadProgress].
+class DownloadProgressProvider
+    extends AutoDisposeStreamProvider<DownloadProgress> {
+  /// Live download progress for a book.
+  ///
+  /// Copied from [downloadProgress].
+  DownloadProgressProvider(String sourceId, String bookId)
+    : this._internal(
+        (ref) => downloadProgress(ref as DownloadProgressRef, sourceId, bookId),
+        from: downloadProgressProvider,
+        name: r'downloadProgressProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$downloadProgressHash,
+        dependencies: DownloadProgressFamily._dependencies,
+        allTransitiveDependencies:
+            DownloadProgressFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+        bookId: bookId,
+      );
+
+  DownloadProgressProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+    required this.bookId,
+  }) : super.internal();
+
+  final String sourceId;
+  final String bookId;
+
+  @override
+  Override overrideWith(
+    Stream<DownloadProgress> Function(DownloadProgressRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: DownloadProgressProvider._internal(
+        (ref) => create(ref as DownloadProgressRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+        bookId: bookId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<DownloadProgress> createElement() {
+    return _DownloadProgressProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DownloadProgressProvider &&
+        other.sourceId == sourceId &&
+        other.bookId == bookId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+    hash = _SystemHash.combine(hash, bookId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin DownloadProgressRef on AutoDisposeStreamProviderRef<DownloadProgress> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+
+  /// The parameter `bookId` of this provider.
+  String get bookId;
+}
+
+class _DownloadProgressProviderElement
+    extends AutoDisposeStreamProviderElement<DownloadProgress>
+    with DownloadProgressRef {
+  _DownloadProgressProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as DownloadProgressProvider).sourceId;
+  @override
+  String get bookId => (origin as DownloadProgressProvider).bookId;
 }
 
 // ignore_for_file: type=lint

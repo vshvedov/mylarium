@@ -95,21 +95,25 @@ void main() {
       ));
     }
 
-    test('deletes LRU rows + files over cap, keeps pinned', () async {
+    test('cap applies only to the auto pool; pinned is exempt and uncounted',
+        () async {
+      // A large pinned asset must NOT count toward the cap nor be evicted.
+      await seed('pinned', 1000, 0, pinned: true);
       await seed('old', 60, 1);
       await seed('new', 60, 2);
-      await seed('pinned', 60, 0, pinned: true);
 
       await OfflineCacheManager(db).evictToCap();
 
-      // total was 180, cap 100. Oldest evictable is 'old' (t1), then check 120,
-      // still > 100 -> evict 'new' (t2). 'pinned' never evicted.
+      // Evictable total is 120 (the 1000-byte pin is uncounted); cap 100 ->
+      // evict only the oldest auto ('old'). 'new' and 'pinned' remain.
       final remaining =
           (await db.allCachedAssets()).map((a) => a.bookId).toSet();
-      expect(remaining, {'pinned'});
-      expect(
-          File('${tmp.path}/media/archives/s1/old.archive').existsSync(), isFalse);
+      expect(remaining, {'new', 'pinned'});
+      expect(File('${tmp.path}/media/archives/s1/old.archive').existsSync(),
+          isFalse);
       expect(File('${tmp.path}/media/archives/s1/pinned.archive').existsSync(),
+          isTrue);
+      expect(File('${tmp.path}/media/archives/s1/new.archive').existsSync(),
           isTrue);
     });
   });

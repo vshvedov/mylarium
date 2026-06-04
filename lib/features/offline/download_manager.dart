@@ -59,18 +59,41 @@ class DownloadManager {
 
   static String _taskId(String sourceId, String bookId) => '$sourceId|$bookId';
 
-  /// Enqueues a book for offline download. Idempotent: no-ops when already
-  /// cached or a non-failed task exists, or when the source/credential is
-  /// missing. Never throws (network errors write a `failed` row instead).
+  /// Enqueues a book for offline download.
+  ///
+  /// [manual] true = an explicit user "Download": goes to the permanent
+  /// downloads pool, ignores the Wi-Fi-only setting, and runs even when
+  /// auto-cache is disabled. [manual] false = the on-open auto-cache: skipped
+  /// when auto-cache is disabled and gated by the Wi-Fi-only setting.
+  ///
+  /// Idempotent: a manual request promotes an existing auto-cached copy to the
+  /// downloads pool; otherwise an existing cache/active task is a no-op. Never
+  /// throws (network errors write a `failed` row instead).
   Future<void> enqueueBook(
     String sourceId,
     String bookId, {
-    bool pin = false,
+    bool manual = false,
   }) async {
     try {
-      if (await _db.getCachedAsset(sourceId, bookId) != null) return;
+      final cached = await _db.getCachedAsset(sourceId, bookId);
+      if (cached != null) {
+        // Promote an auto-cached copy to the permanent downloads pool. Isolate
+        // its errors: a failed promote must NOT mark the (still-valid) cached
+        // book as failed.
+        if (manual && !cached.permanent) {
+          try {
+            await _promote(sourceId, bookId, cached);
+          } catch (_) {
+            // Leave the auto-cached entry intact.
+          }
+        }
+        return;
+      }
       final existing = await _db.getDownloadTask(sourceId, bookId);
       if (existing != null && existing.state != 'failed') return;
+
+      final settings = await _db.getOrCreateSettings();
+      if (!manual && !settings.autoCacheEnabled) return;
 
       final source = await _db.getSource(sourceId);
       final baseUrl = source?.baseUrl;
@@ -90,14 +113,18 @@ class DownloadManager {
         }
       }
 
-      final rel = AppPaths.archiveRelativePath(sourceId, bookId);
+      final rel = manual
+          ? AppPaths.downloadRelativePath(sourceId, bookId)
+          : AppPaths.archiveRelativePath(sourceId, bookId);
+      final requiresWifi = manual ? false : settings.downloadWifiOnly;
       final taskId = _taskId(sourceId, bookId);
       await _db.upsertDownloadTask(DownloadTasksCompanion(
         sourceId: Value(sourceId),
         bookId: Value(bookId),
         taskId: Value(taskId),
         state: const Value('enqueued'),
-        requiresWifi: const Value(true),
+        requiresWifi: Value(requiresWifi),
+        permanent: Value(manual),
         updatedAt: Value(_now()),
       ));
 
@@ -108,11 +135,40 @@ class DownloadManager {
         url: '$baseUrl/api/v1/books/$bookId/file',
         headers: credential.toAuth().headers(),
         relativePath: rel,
-        pin: pin,
+        permanent: manual,
+        requiresWifi: requiresWifi,
       );
     } catch (_) {
       await _markFailed(sourceId, bookId);
     }
+  }
+
+  /// Moves an auto-cached archive into the permanent downloads pool.
+  ///
+  /// Crash-safe ordering: COPY to the downloads path, then update the row, then
+  /// delete the source. At every step a valid file backs the row (either the
+  /// archives copy, or the downloads copy), so a crash can never strand the book
+  /// as "available but missing"; the worst case is a harmless orphaned file.
+  Future<void> _promote(
+      String sourceId, String bookId, CachedAsset cached) async {
+    final fromAbs = await AppPaths.resolve(cached.relativePath);
+    final toRel = AppPaths.downloadRelativePath(sourceId, bookId);
+    final toFile = await AppPaths.prepareFile(toRel);
+    final fromFile = File(fromAbs);
+    if (!fromFile.existsSync()) return; // nothing to promote
+    await fromFile.copy(toFile.path);
+    await BackupExclusion.exclude(toFile.path);
+    await _db.upsertCachedAsset(CachedAssetsCompanion(
+      sourceId: Value(sourceId),
+      bookId: Value(bookId),
+      kind: Value(cached.kind),
+      relativePath: Value(toRel),
+      sizeBytes: Value(cached.sizeBytes),
+      lastAccessedAt: Value(cached.lastAccessedAt),
+      permanent: const Value(true),
+    ));
+    // Row now points at the downloads copy; remove the old archives copy.
+    if (fromFile.existsSync()) await fromFile.delete();
   }
 
   void _run({
@@ -122,7 +178,8 @@ class DownloadManager {
     required String url,
     required Map<String, String> headers,
     required String relativePath,
-    required bool pin,
+    required bool permanent,
+    required bool requiresWifi,
   }) {
     final dir = p.dirname(relativePath);
     final filename = p.basename(relativePath);
@@ -133,9 +190,7 @@ class DownloadManager {
           headers: headers,
           relativeDirectory: dir,
           filename: filename,
-          // T5 always requires Wi-Fi; a user toggle (persisted in the row's
-          // requiresWifi column) is a follow-up.
-          requiresWifi: true,
+          requiresWifi: requiresWifi,
         )
         .listen(
       (event) async {
@@ -154,7 +209,8 @@ class DownloadManager {
                 updatedAt: Value(_now()),
               ));
             case DownloadEventKind.complete:
-              await _complete(sourceId, bookId, taskId, relativePath, pin);
+              await _complete(
+                  sourceId, bookId, taskId, relativePath, permanent);
             case DownloadEventKind.failed:
               await _markFailed(sourceId, bookId);
           }
@@ -171,7 +227,7 @@ class DownloadManager {
     String bookId,
     String taskId,
     String relativePath,
-    bool pin,
+    bool permanent,
   ) async {
     final abs = await AppPaths.resolve(relativePath);
     await BackupExclusion.exclude(abs);
@@ -183,6 +239,7 @@ class DownloadManager {
         bookId: Value(bookId),
         taskId: Value(taskId),
         state: const Value('complete'),
+        permanent: Value(permanent),
         updatedAt: Value(_now()),
       ));
       await _db.upsertCachedAsset(CachedAssetsCompanion(
@@ -192,10 +249,11 @@ class DownloadManager {
         relativePath: Value(relativePath),
         sizeBytes: Value(size),
         lastAccessedAt: Value(_now()),
-        pinned: Value(pin),
+        permanent: Value(permanent),
       ));
     });
-    await _onAssetAdded?.call();
+    // Auto-cache downloads are subject to the cap; manual downloads are not.
+    if (!permanent) await _onAssetAdded?.call();
   }
 
   Future<void> _markFailed(String sourceId, String bookId) async {
@@ -216,10 +274,41 @@ class DownloadManager {
             totalBytes: t?.totalBytes,
           ));
 
-  /// Re-enqueues every unfinished task on launch.
+  /// Re-runs FAILED tasks on launch, honoring each task's stored pool
+  /// (auto/manual) and Wi-Fi requirement. Running/enqueued/paused tasks are left
+  /// to background_downloader's own tracking (configured via trackTasks), which
+  /// resumes them natively; re-enqueuing those would duplicate the task.
   Future<void> resumeAll() async {
     for (final task in await _db.unfinishedDownloadTasks()) {
-      await enqueueBook(task.sourceId, task.bookId);
+      if (task.state == 'failed') await _resume(task);
+    }
+  }
+
+  Future<void> _resume(DownloadTask task) async {
+    try {
+      if (await _db.getCachedAsset(task.sourceId, task.bookId) != null) return;
+      final source = await _db.getSource(task.sourceId);
+      final baseUrl = source?.baseUrl;
+      final credential = await _credentials.read(task.sourceId);
+      if (baseUrl == null || credential == null) {
+        await _markFailed(task.sourceId, task.bookId);
+        return;
+      }
+      final rel = task.permanent
+          ? AppPaths.downloadRelativePath(task.sourceId, task.bookId)
+          : AppPaths.archiveRelativePath(task.sourceId, task.bookId);
+      _run(
+        sourceId: task.sourceId,
+        bookId: task.bookId,
+        taskId: task.taskId,
+        url: '$baseUrl/api/v1/books/${task.bookId}/file',
+        headers: credential.toAuth().headers(),
+        relativePath: rel,
+        permanent: task.permanent,
+        requiresWifi: task.requiresWifi,
+      );
+    } catch (_) {
+      await _markFailed(task.sourceId, task.bookId);
     }
   }
 }

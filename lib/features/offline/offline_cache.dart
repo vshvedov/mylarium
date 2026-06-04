@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 
 import '../../core/db/database.dart';
 import '../../core/fs/app_paths.dart';
@@ -47,22 +46,6 @@ class OfflineCacheManager {
     for (final victim in selectEvictions(assets, settings.cacheCapBytes)) {
       await _delete(victim);
     }
-  }
-
-  Future<void> pin(String sourceId, String bookId, bool pinned) async {
-    final asset = await _db.getCachedAsset(sourceId, bookId);
-    if (asset == null) return;
-    await _db.upsertCachedAsset(CachedAssetsCompanion(
-      sourceId: Value(asset.sourceId),
-      bookId: Value(asset.bookId),
-      kind: Value(asset.kind),
-      relativePath: Value(asset.relativePath),
-      sizeBytes: Value(asset.sizeBytes),
-      sha: Value(asset.sha),
-      lastAccessedAt: Value(asset.lastAccessedAt),
-      pinned: Value(pinned),
-      permanent: Value(asset.permanent),
-    ));
   }
 
   Future<void> delete(String sourceId, String bookId) async {

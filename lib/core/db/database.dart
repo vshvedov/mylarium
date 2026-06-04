@@ -37,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -47,8 +47,11 @@ class AppDatabase extends _$AppDatabase {
         // Each bump is additive. v1 data is never touched (no data loss across
         // an app update).
         onUpgrade: (m, from, to) async {
+          // Each step is bounded by both `from` and `to` so migrating to an
+          // intermediate version (used by the golden migration tests) applies
+          // exactly the steps for versions in (from, to].
           // v1 -> v2: source + metadata tables.
-          if (from < 2) {
+          if (from < 2 && to >= 2) {
             await m.createTable(sources);
             await m.createTable(libraries);
             await m.createTable(series);
@@ -56,7 +59,7 @@ class AppDatabase extends _$AppDatabase {
           }
           // v2 -> v3: thumbnail/metadata caches, per-library prefs, and the
           // series keyset indexes that back the virtualized grids.
-          if (from < 3) {
+          if (from < 3 && to >= 3) {
             await m.createTable(thumbnails);
             await m.createTable(cachedMetadata);
             await m.createTable(libraryPrefs);
@@ -64,14 +67,27 @@ class AppDatabase extends _$AppDatabase {
             await m.createIndex(seriesKeysetLib);
           }
           // v3 -> v4: per-series reader settings.
-          if (from < 4) {
+          if (from < 4 && to >= 4) {
             await m.createTable(readerSettings);
           }
           // v4 -> v5: offline cache (downloaded archives) + download queue.
-          if (from < 5) {
+          if (from < 5 && to >= 5) {
             await m.createTable(cachedAssets);
             await m.createTable(downloadTasks);
             await m.createIndex(cachedAssetsLru);
+          }
+          // v5 -> v6: auto-cache settings (toggle + Wi-Fi-only) and a manual
+          // vs auto flag on download tasks (so resume picks the right pool).
+          if (from < 6 && to >= 6) {
+            await m.addColumn(appSettings, appSettings.autoCacheEnabled);
+            await m.addColumn(appSettings, appSettings.downloadWifiOnly);
+            // download_tasks was introduced in v5 without `permanent`; only a
+            // real v5 install lacks it. Upgrades from < 5 already create the
+            // table with the current (v6) shape via createTable above, so
+            // adding it again would duplicate the column.
+            if (from == 5) {
+              await m.addColumn(downloadTasks, downloadTasks.permanent);
+            }
           }
         },
       );
@@ -99,6 +115,14 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateCacheCapBytes(int bytes) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(cacheCapBytes: Value(bytes)));
+
+  Future<void> updateAutoCacheEnabled(bool v) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(autoCacheEnabled: Value(v)));
+
+  Future<void> updateDownloadWifiOnly(bool v) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(downloadWifiOnly: Value(v)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();
@@ -293,6 +317,12 @@ class AppDatabase extends _$AppDatabase {
   Future<List<CachedAsset>> allCachedAssets() => select(cachedAssets).get();
 
   Stream<List<CachedAsset>> watchCachedAssets() => select(cachedAssets).watch();
+
+  Stream<CachedAsset?> watchCachedAsset(String sourceId, String bookId) =>
+      (select(cachedAssets)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
+          .watchSingleOrNull();
 
   Future<void> upsertCachedAsset(CachedAssetsCompanion row) =>
       into(cachedAssets).insertOnConflictUpdate(row);

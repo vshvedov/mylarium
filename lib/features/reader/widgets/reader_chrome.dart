@@ -11,6 +11,7 @@ class ReaderChrome extends StatefulWidget {
     super.key,
     required this.visible,
     required this.title,
+    required this.offline,
     required this.settings,
     required this.pageCount,
     required this.currentPage,
@@ -24,6 +25,9 @@ class ReaderChrome extends StatefulWidget {
 
   final bool visible;
   final String title;
+
+  /// True when reading from the on-device cache (vs streaming from the server).
+  final bool offline;
   final ReaderSettings settings;
   final int pageCount;
 
@@ -59,6 +63,7 @@ class _ReaderChromeState extends State<ReaderChrome> {
           children: [
             _TopBar(
               title: widget.title,
+              offline: widget.offline,
               settings: widget.settings,
               onClose: widget.onClose,
               onSettings: widget.onSettings,
@@ -172,6 +177,7 @@ class _PreviewThumb extends StatelessWidget {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.title,
+    required this.offline,
     required this.settings,
     required this.onClose,
     required this.onSettings,
@@ -180,6 +186,7 @@ class _TopBar extends StatelessWidget {
   });
 
   final String title;
+  final bool offline;
   final ReaderSettings settings;
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
@@ -201,6 +208,12 @@ class _TopBar extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onClose,
               ),
+              Icon(
+                offline ? Icons.cloud_done_outlined : Icons.cloud_outlined,
+                size: 18,
+                semanticLabel: offline ? 'Reading offline' : 'Streaming',
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
