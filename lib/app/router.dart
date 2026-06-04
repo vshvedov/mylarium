@@ -9,6 +9,7 @@ import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
 import '../features/sources/debug_sources_screen.dart';
 
@@ -69,7 +70,7 @@ final appRouterProvider = Provider<GoRouter>(
       ),
       GoRoute(
         path: '/reader/:sourceId/:bookId',
-        builder: (_, state) => _ReaderPlaceholder(
+        builder: (_, state) => ReaderScreen(
           sourceId: state.pathParameters['sourceId']!,
           bookId: state.pathParameters['bookId']!,
         ),
@@ -84,17 +85,3 @@ final appRouterProvider = Provider<GoRouter>(
     ),
   ),
 );
-
-/// Placeholder until the reader engine (T4) replaces this route.
-class _ReaderPlaceholder extends StatelessWidget {
-  const _ReaderPlaceholder({required this.sourceId, required this.bookId});
-
-  final String sourceId;
-  final String bookId;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Reader')),
-        body: const Center(child: Text('Reader coming in T4.')),
-      );
-}

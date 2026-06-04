@@ -3439,6 +3439,536 @@ class LibraryPrefsCompanion extends UpdateCompanion<LibraryPref> {
   }
 }
 
+class $ReaderSettingsTable extends ReaderSettings
+    with TableInfo<$ReaderSettingsTable, ReaderSettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReaderSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<String> seriesId = GeneratedColumn<String>(
+    'series_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fitMeta = const VerificationMeta('fit');
+  @override
+  late final GeneratedColumn<String> fit = GeneratedColumn<String>(
+    'fit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tapsMeta = const VerificationMeta('taps');
+  @override
+  late final GeneratedColumn<String> taps = GeneratedColumn<String>(
+    'taps',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _invertTapsMeta = const VerificationMeta(
+    'invertTaps',
+  );
+  @override
+  late final GeneratedColumn<bool> invertTaps = GeneratedColumn<bool>(
+    'invert_taps',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("invert_taps" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _doubleTapZoomMeta = const VerificationMeta(
+    'doubleTapZoom',
+  );
+  @override
+  late final GeneratedColumn<bool> doubleTapZoom = GeneratedColumn<bool>(
+    'double_tap_zoom',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("double_tap_zoom" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _animatePageTurnMeta = const VerificationMeta(
+    'animatePageTurn',
+  );
+  @override
+  late final GeneratedColumn<bool> animatePageTurn = GeneratedColumn<bool>(
+    'animate_page_turn',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("animate_page_turn" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    seriesId,
+    mode,
+    fit,
+    taps,
+    invertTaps,
+    doubleTapZoom,
+    animatePageTurn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reader_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReaderSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesIdMeta);
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modeMeta);
+    }
+    if (data.containsKey('fit')) {
+      context.handle(
+        _fitMeta,
+        fit.isAcceptableOrUnknown(data['fit']!, _fitMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fitMeta);
+    }
+    if (data.containsKey('taps')) {
+      context.handle(
+        _tapsMeta,
+        taps.isAcceptableOrUnknown(data['taps']!, _tapsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tapsMeta);
+    }
+    if (data.containsKey('invert_taps')) {
+      context.handle(
+        _invertTapsMeta,
+        invertTaps.isAcceptableOrUnknown(data['invert_taps']!, _invertTapsMeta),
+      );
+    }
+    if (data.containsKey('double_tap_zoom')) {
+      context.handle(
+        _doubleTapZoomMeta,
+        doubleTapZoom.isAcceptableOrUnknown(
+          data['double_tap_zoom']!,
+          _doubleTapZoomMeta,
+        ),
+      );
+    }
+    if (data.containsKey('animate_page_turn')) {
+      context.handle(
+        _animatePageTurnMeta,
+        animatePageTurn.isAcceptableOrUnknown(
+          data['animate_page_turn']!,
+          _animatePageTurnMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, seriesId};
+  @override
+  ReaderSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReaderSettingsRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_id'],
+      )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
+      fit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fit'],
+      )!,
+      taps: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}taps'],
+      )!,
+      invertTaps: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}invert_taps'],
+      )!,
+      doubleTapZoom: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}double_tap_zoom'],
+      )!,
+      animatePageTurn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}animate_page_turn'],
+      )!,
+    );
+  }
+
+  @override
+  $ReaderSettingsTable createAlias(String alias) {
+    return $ReaderSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class ReaderSettingsRow extends DataClass
+    implements Insertable<ReaderSettingsRow> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// Komga series id these settings apply to.
+  final String seriesId;
+  final String mode;
+  final String fit;
+  final String taps;
+  final bool invertTaps;
+  final bool doubleTapZoom;
+  final bool animatePageTurn;
+  const ReaderSettingsRow({
+    required this.sourceId,
+    required this.seriesId,
+    required this.mode,
+    required this.fit,
+    required this.taps,
+    required this.invertTaps,
+    required this.doubleTapZoom,
+    required this.animatePageTurn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['series_id'] = Variable<String>(seriesId);
+    map['mode'] = Variable<String>(mode);
+    map['fit'] = Variable<String>(fit);
+    map['taps'] = Variable<String>(taps);
+    map['invert_taps'] = Variable<bool>(invertTaps);
+    map['double_tap_zoom'] = Variable<bool>(doubleTapZoom);
+    map['animate_page_turn'] = Variable<bool>(animatePageTurn);
+    return map;
+  }
+
+  ReaderSettingsCompanion toCompanion(bool nullToAbsent) {
+    return ReaderSettingsCompanion(
+      sourceId: Value(sourceId),
+      seriesId: Value(seriesId),
+      mode: Value(mode),
+      fit: Value(fit),
+      taps: Value(taps),
+      invertTaps: Value(invertTaps),
+      doubleTapZoom: Value(doubleTapZoom),
+      animatePageTurn: Value(animatePageTurn),
+    );
+  }
+
+  factory ReaderSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReaderSettingsRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      seriesId: serializer.fromJson<String>(json['seriesId']),
+      mode: serializer.fromJson<String>(json['mode']),
+      fit: serializer.fromJson<String>(json['fit']),
+      taps: serializer.fromJson<String>(json['taps']),
+      invertTaps: serializer.fromJson<bool>(json['invertTaps']),
+      doubleTapZoom: serializer.fromJson<bool>(json['doubleTapZoom']),
+      animatePageTurn: serializer.fromJson<bool>(json['animatePageTurn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'seriesId': serializer.toJson<String>(seriesId),
+      'mode': serializer.toJson<String>(mode),
+      'fit': serializer.toJson<String>(fit),
+      'taps': serializer.toJson<String>(taps),
+      'invertTaps': serializer.toJson<bool>(invertTaps),
+      'doubleTapZoom': serializer.toJson<bool>(doubleTapZoom),
+      'animatePageTurn': serializer.toJson<bool>(animatePageTurn),
+    };
+  }
+
+  ReaderSettingsRow copyWith({
+    String? sourceId,
+    String? seriesId,
+    String? mode,
+    String? fit,
+    String? taps,
+    bool? invertTaps,
+    bool? doubleTapZoom,
+    bool? animatePageTurn,
+  }) => ReaderSettingsRow(
+    sourceId: sourceId ?? this.sourceId,
+    seriesId: seriesId ?? this.seriesId,
+    mode: mode ?? this.mode,
+    fit: fit ?? this.fit,
+    taps: taps ?? this.taps,
+    invertTaps: invertTaps ?? this.invertTaps,
+    doubleTapZoom: doubleTapZoom ?? this.doubleTapZoom,
+    animatePageTurn: animatePageTurn ?? this.animatePageTurn,
+  );
+  ReaderSettingsRow copyWithCompanion(ReaderSettingsCompanion data) {
+    return ReaderSettingsRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      fit: data.fit.present ? data.fit.value : this.fit,
+      taps: data.taps.present ? data.taps.value : this.taps,
+      invertTaps: data.invertTaps.present
+          ? data.invertTaps.value
+          : this.invertTaps,
+      doubleTapZoom: data.doubleTapZoom.present
+          ? data.doubleTapZoom.value
+          : this.doubleTapZoom,
+      animatePageTurn: data.animatePageTurn.present
+          ? data.animatePageTurn.value
+          : this.animatePageTurn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReaderSettingsRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('mode: $mode, ')
+          ..write('fit: $fit, ')
+          ..write('taps: $taps, ')
+          ..write('invertTaps: $invertTaps, ')
+          ..write('doubleTapZoom: $doubleTapZoom, ')
+          ..write('animatePageTurn: $animatePageTurn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    seriesId,
+    mode,
+    fit,
+    taps,
+    invertTaps,
+    doubleTapZoom,
+    animatePageTurn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReaderSettingsRow &&
+          other.sourceId == this.sourceId &&
+          other.seriesId == this.seriesId &&
+          other.mode == this.mode &&
+          other.fit == this.fit &&
+          other.taps == this.taps &&
+          other.invertTaps == this.invertTaps &&
+          other.doubleTapZoom == this.doubleTapZoom &&
+          other.animatePageTurn == this.animatePageTurn);
+}
+
+class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
+  final Value<String> sourceId;
+  final Value<String> seriesId;
+  final Value<String> mode;
+  final Value<String> fit;
+  final Value<String> taps;
+  final Value<bool> invertTaps;
+  final Value<bool> doubleTapZoom;
+  final Value<bool> animatePageTurn;
+  final Value<int> rowid;
+  const ReaderSettingsCompanion({
+    this.sourceId = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.fit = const Value.absent(),
+    this.taps = const Value.absent(),
+    this.invertTaps = const Value.absent(),
+    this.doubleTapZoom = const Value.absent(),
+    this.animatePageTurn = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReaderSettingsCompanion.insert({
+    required String sourceId,
+    required String seriesId,
+    required String mode,
+    required String fit,
+    required String taps,
+    this.invertTaps = const Value.absent(),
+    this.doubleTapZoom = const Value.absent(),
+    this.animatePageTurn = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       seriesId = Value(seriesId),
+       mode = Value(mode),
+       fit = Value(fit),
+       taps = Value(taps);
+  static Insertable<ReaderSettingsRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? seriesId,
+    Expression<String>? mode,
+    Expression<String>? fit,
+    Expression<String>? taps,
+    Expression<bool>? invertTaps,
+    Expression<bool>? doubleTapZoom,
+    Expression<bool>? animatePageTurn,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (seriesId != null) 'series_id': seriesId,
+      if (mode != null) 'mode': mode,
+      if (fit != null) 'fit': fit,
+      if (taps != null) 'taps': taps,
+      if (invertTaps != null) 'invert_taps': invertTaps,
+      if (doubleTapZoom != null) 'double_tap_zoom': doubleTapZoom,
+      if (animatePageTurn != null) 'animate_page_turn': animatePageTurn,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReaderSettingsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? seriesId,
+    Value<String>? mode,
+    Value<String>? fit,
+    Value<String>? taps,
+    Value<bool>? invertTaps,
+    Value<bool>? doubleTapZoom,
+    Value<bool>? animatePageTurn,
+    Value<int>? rowid,
+  }) {
+    return ReaderSettingsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      seriesId: seriesId ?? this.seriesId,
+      mode: mode ?? this.mode,
+      fit: fit ?? this.fit,
+      taps: taps ?? this.taps,
+      invertTaps: invertTaps ?? this.invertTaps,
+      doubleTapZoom: doubleTapZoom ?? this.doubleTapZoom,
+      animatePageTurn: animatePageTurn ?? this.animatePageTurn,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (seriesId.present) {
+      map['series_id'] = Variable<String>(seriesId.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (fit.present) {
+      map['fit'] = Variable<String>(fit.value);
+    }
+    if (taps.present) {
+      map['taps'] = Variable<String>(taps.value);
+    }
+    if (invertTaps.present) {
+      map['invert_taps'] = Variable<bool>(invertTaps.value);
+    }
+    if (doubleTapZoom.present) {
+      map['double_tap_zoom'] = Variable<bool>(doubleTapZoom.value);
+    }
+    if (animatePageTurn.present) {
+      map['animate_page_turn'] = Variable<bool>(animatePageTurn.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReaderSettingsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('mode: $mode, ')
+          ..write('fit: $fit, ')
+          ..write('taps: $taps, ')
+          ..write('invertTaps: $invertTaps, ')
+          ..write('doubleTapZoom: $doubleTapZoom, ')
+          ..write('animatePageTurn: $animatePageTurn, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3450,6 +3980,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ThumbnailsTable thumbnails = $ThumbnailsTable(this);
   late final $CachedMetadataTable cachedMetadata = $CachedMetadataTable(this);
   late final $LibraryPrefsTable libraryPrefs = $LibraryPrefsTable(this);
+  late final $ReaderSettingsTable readerSettings = $ReaderSettingsTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -3471,6 +4002,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     thumbnails,
     cachedMetadata,
     libraryPrefs,
+    readerSettings,
     seriesKeyset,
     seriesKeysetLib,
   ];
@@ -5250,6 +5782,275 @@ typedef $$LibraryPrefsTableProcessedTableManager =
       LibraryPref,
       PrefetchHooks Function()
     >;
+typedef $$ReaderSettingsTableCreateCompanionBuilder =
+    ReaderSettingsCompanion Function({
+      required String sourceId,
+      required String seriesId,
+      required String mode,
+      required String fit,
+      required String taps,
+      Value<bool> invertTaps,
+      Value<bool> doubleTapZoom,
+      Value<bool> animatePageTurn,
+      Value<int> rowid,
+    });
+typedef $$ReaderSettingsTableUpdateCompanionBuilder =
+    ReaderSettingsCompanion Function({
+      Value<String> sourceId,
+      Value<String> seriesId,
+      Value<String> mode,
+      Value<String> fit,
+      Value<String> taps,
+      Value<bool> invertTaps,
+      Value<bool> doubleTapZoom,
+      Value<bool> animatePageTurn,
+      Value<int> rowid,
+    });
+
+class $$ReaderSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReaderSettingsTable> {
+  $$ReaderSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fit => $composableBuilder(
+    column: $table.fit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taps => $composableBuilder(
+    column: $table.taps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get invertTaps => $composableBuilder(
+    column: $table.invertTaps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get doubleTapZoom => $composableBuilder(
+    column: $table.doubleTapZoom,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get animatePageTurn => $composableBuilder(
+    column: $table.animatePageTurn,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReaderSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReaderSettingsTable> {
+  $$ReaderSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fit => $composableBuilder(
+    column: $table.fit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taps => $composableBuilder(
+    column: $table.taps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get invertTaps => $composableBuilder(
+    column: $table.invertTaps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get doubleTapZoom => $composableBuilder(
+    column: $table.doubleTapZoom,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get animatePageTurn => $composableBuilder(
+    column: $table.animatePageTurn,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReaderSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReaderSettingsTable> {
+  $$ReaderSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesId =>
+      $composableBuilder(column: $table.seriesId, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<String> get fit =>
+      $composableBuilder(column: $table.fit, builder: (column) => column);
+
+  GeneratedColumn<String> get taps =>
+      $composableBuilder(column: $table.taps, builder: (column) => column);
+
+  GeneratedColumn<bool> get invertTaps => $composableBuilder(
+    column: $table.invertTaps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get doubleTapZoom => $composableBuilder(
+    column: $table.doubleTapZoom,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get animatePageTurn => $composableBuilder(
+    column: $table.animatePageTurn,
+    builder: (column) => column,
+  );
+}
+
+class $$ReaderSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReaderSettingsTable,
+          ReaderSettingsRow,
+          $$ReaderSettingsTableFilterComposer,
+          $$ReaderSettingsTableOrderingComposer,
+          $$ReaderSettingsTableAnnotationComposer,
+          $$ReaderSettingsTableCreateCompanionBuilder,
+          $$ReaderSettingsTableUpdateCompanionBuilder,
+          (
+            ReaderSettingsRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ReaderSettingsTable,
+              ReaderSettingsRow
+            >,
+          ),
+          ReaderSettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$ReaderSettingsTableTableManager(
+    _$AppDatabase db,
+    $ReaderSettingsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReaderSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReaderSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReaderSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> seriesId = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<String> fit = const Value.absent(),
+                Value<String> taps = const Value.absent(),
+                Value<bool> invertTaps = const Value.absent(),
+                Value<bool> doubleTapZoom = const Value.absent(),
+                Value<bool> animatePageTurn = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReaderSettingsCompanion(
+                sourceId: sourceId,
+                seriesId: seriesId,
+                mode: mode,
+                fit: fit,
+                taps: taps,
+                invertTaps: invertTaps,
+                doubleTapZoom: doubleTapZoom,
+                animatePageTurn: animatePageTurn,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String seriesId,
+                required String mode,
+                required String fit,
+                required String taps,
+                Value<bool> invertTaps = const Value.absent(),
+                Value<bool> doubleTapZoom = const Value.absent(),
+                Value<bool> animatePageTurn = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReaderSettingsCompanion.insert(
+                sourceId: sourceId,
+                seriesId: seriesId,
+                mode: mode,
+                fit: fit,
+                taps: taps,
+                invertTaps: invertTaps,
+                doubleTapZoom: doubleTapZoom,
+                animatePageTurn: animatePageTurn,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReaderSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReaderSettingsTable,
+      ReaderSettingsRow,
+      $$ReaderSettingsTableFilterComposer,
+      $$ReaderSettingsTableOrderingComposer,
+      $$ReaderSettingsTableAnnotationComposer,
+      $$ReaderSettingsTableCreateCompanionBuilder,
+      $$ReaderSettingsTableUpdateCompanionBuilder,
+      (
+        ReaderSettingsRow,
+        BaseReferences<_$AppDatabase, $ReaderSettingsTable, ReaderSettingsRow>,
+      ),
+      ReaderSettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5270,4 +6071,6 @@ class $AppDatabaseManager {
       $$CachedMetadataTableTableManager(_db, _db.cachedMetadata);
   $$LibraryPrefsTableTableManager get libraryPrefs =>
       $$LibraryPrefsTableTableManager(_db, _db.libraryPrefs);
+  $$ReaderSettingsTableTableManager get readerSettings =>
+      $$ReaderSettingsTableTableManager(_db, _db.readerSettings);
 }

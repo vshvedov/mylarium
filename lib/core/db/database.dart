@@ -11,6 +11,7 @@ import 'tables/books.dart';
 import 'tables/cached_metadata.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
+import 'tables/reader_settings.dart';
 import 'tables/series.dart';
 import 'tables/sources.dart';
 import 'tables/thumbnails.dart';
@@ -26,12 +27,13 @@ part 'database.g.dart';
   Thumbnails,
   CachedMetadata,
   LibraryPrefs,
+  ReaderSettings,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -56,6 +58,10 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(libraryPrefs);
             await m.createIndex(seriesKeyset);
             await m.createIndex(seriesKeysetLib);
+          }
+          // v3 -> v4: per-series reader settings.
+          if (from < 4) {
+            await m.createTable(readerSettings);
           }
         },
       );
@@ -247,6 +253,20 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertLibraryPref(LibraryPrefsCompanion row) =>
       into(libraryPrefs).insertOnConflictUpdate(row);
+
+  // --- Reader settings (per series) ----------------------------------------
+
+  Future<ReaderSettingsRow?> getReaderSettings(
+    String sourceId,
+    String seriesId,
+  ) =>
+      (select(readerSettings)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.seriesId.equals(seriesId)))
+          .getSingleOrNull();
+
+  Future<void> upsertReaderSettings(ReaderSettingsCompanion row) =>
+      into(readerSettings).insertOnConflictUpdate(row);
 }
 
 LazyDatabase _open() => LazyDatabase(() async {

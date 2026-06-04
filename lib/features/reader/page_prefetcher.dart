@@ -1,0 +1,66 @@
+import 'package:flutter/widgets.dart';
+
+import 'page_source.dart';
+
+/// Drives precache-ahead / evict-behind for the page pipeline. The precache and
+/// evict callbacks are injected so the policy is unit-testable without a render
+/// tree; [PagePrefetcher.forContext] wires the real Flutter calls.
+class PagePrefetcher {
+  PagePrefetcher({
+    required this.source,
+    required this.precache,
+    required this.evict,
+    this.ahead = 3,
+  });
+
+  /// Wires `precacheImage` / `imageCache.evict` for a live widget.
+  factory PagePrefetcher.forContext(
+    PageSource source,
+    BuildContext context, {
+    int ahead = 3,
+  }) =>
+      PagePrefetcher(
+        source: source,
+        ahead: ahead,
+        precache: (p) => precacheImage(p, context),
+        evict: (p) => p.evict(),
+      );
+
+  final PageSource source;
+  final Future<void> Function(ImageProvider) precache;
+  final void Function(ImageProvider) evict;
+
+  /// Window precached ahead of the current page (PRD: precache 3-5).
+  final int ahead;
+
+  final Set<int> _live = {};
+
+  /// Visible-for-tests view of the currently-precached page indices.
+  @visibleForTesting
+  Set<int> get live => _live;
+
+  /// Precache the window `[index, index+ahead]` (plus one behind) and evict
+  /// everything outside it.
+  Future<void> onPage(int index) async {
+    final keep = <int>{};
+    for (var i = index; i <= index + ahead && i < source.pageCount; i++) {
+      keep.add(i);
+    }
+    if (index - 1 >= 0) keep.add(index - 1);
+
+    for (final i in keep) {
+      if (!_live.contains(i)) {
+        final provider = await source.page(i);
+        await precache(provider);
+      }
+    }
+    for (final i in _live.toList()) {
+      if (!keep.contains(i)) {
+        final provider = await source.page(i);
+        evict(provider);
+        _live.remove(i);
+      }
+    }
+    _live.addAll(keep);
+  }
+}
