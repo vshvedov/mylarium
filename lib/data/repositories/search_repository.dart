@@ -22,6 +22,17 @@ class SearchRepository {
         search: SeriesSearch(fullText: query),
       );
 
+  /// Search with structured filters (library, status, age, etc.). The age
+  /// filter here is an explicit user choice, distinct from the automatic
+  /// hide-restricted gate applied to the grid/rails.
+  Future<Page<SeriesDto>> searchSeriesWith(
+    SeriesSearch search, {
+    int page = 0,
+    int size = 50,
+    String? sort,
+  }) =>
+      _api.listSeries(page: page, size: size, sort: sort, search: search);
+
   Future<Page<BookDto>> searchBooks(
     String query, {
     int page = 0,

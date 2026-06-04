@@ -6,6 +6,9 @@ import 'package:drift/drift.dart';
 /// (it is never coerced to 0): T3's age-gating distinguishes "unset" from a
 /// real rating of 0.
 @DataClassName('SeriesRow')
+@TableIndex(name: 'series_keyset', columns: {#sourceId, #titleSort, #id})
+@TableIndex(
+    name: 'series_keyset_lib', columns: {#sourceId, #libraryId, #titleSort, #id})
 class Series extends Table {
   /// FK to `Sources.id`.
   TextColumn get sourceId => text()();

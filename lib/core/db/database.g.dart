@@ -2268,6 +2268,1177 @@ class BooksCompanion extends UpdateCompanion<Book> {
   }
 }
 
+class $ThumbnailsTable extends Thumbnails
+    with TableInfo<$ThumbnailsTable, Thumbnail> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ThumbnailsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerTypeMeta = const VerificationMeta(
+    'ownerType',
+  );
+  @override
+  late final GeneratedColumn<String> ownerType = GeneratedColumn<String>(
+    'owner_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bytesMeta = const VerificationMeta('bytes');
+  @override
+  late final GeneratedColumn<Uint8List> bytes = GeneratedColumn<Uint8List>(
+    'bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _diskPathMeta = const VerificationMeta(
+    'diskPath',
+  );
+  @override
+  late final GeneratedColumn<String> diskPath = GeneratedColumn<String>(
+    'disk_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _etagMeta = const VerificationMeta('etag');
+  @override
+  late final GeneratedColumn<String> etag = GeneratedColumn<String>(
+    'etag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<int> fetchedAt = GeneratedColumn<int>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    ownerType,
+    ownerId,
+    bytes,
+    diskPath,
+    etag,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'thumbnails';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Thumbnail> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('owner_type')) {
+      context.handle(
+        _ownerTypeMeta,
+        ownerType.isAcceptableOrUnknown(data['owner_type']!, _ownerTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerTypeMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('bytes')) {
+      context.handle(
+        _bytesMeta,
+        bytes.isAcceptableOrUnknown(data['bytes']!, _bytesMeta),
+      );
+    }
+    if (data.containsKey('disk_path')) {
+      context.handle(
+        _diskPathMeta,
+        diskPath.isAcceptableOrUnknown(data['disk_path']!, _diskPathMeta),
+      );
+    }
+    if (data.containsKey('etag')) {
+      context.handle(
+        _etagMeta,
+        etag.isAcceptableOrUnknown(data['etag']!, _etagMeta),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, ownerType, ownerId};
+  @override
+  Thumbnail map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Thumbnail(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      ownerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_type'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      bytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}bytes'],
+      ),
+      diskPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}disk_path'],
+      ),
+      etag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}etag'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ThumbnailsTable createAlias(String alias) {
+    return $ThumbnailsTable(attachedDatabase, alias);
+  }
+}
+
+class Thumbnail extends DataClass implements Insertable<Thumbnail> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// `series` or `book`.
+  final String ownerType;
+
+  /// Komga id of the owning series/book.
+  final String ownerId;
+  final Uint8List? bytes;
+
+  /// Path RELATIVE to applicationSupport when the image spilled to disk.
+  final String? diskPath;
+  final String? etag;
+  final int fetchedAt;
+  const Thumbnail({
+    required this.sourceId,
+    required this.ownerType,
+    required this.ownerId,
+    this.bytes,
+    this.diskPath,
+    this.etag,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['owner_type'] = Variable<String>(ownerType);
+    map['owner_id'] = Variable<String>(ownerId);
+    if (!nullToAbsent || bytes != null) {
+      map['bytes'] = Variable<Uint8List>(bytes);
+    }
+    if (!nullToAbsent || diskPath != null) {
+      map['disk_path'] = Variable<String>(diskPath);
+    }
+    if (!nullToAbsent || etag != null) {
+      map['etag'] = Variable<String>(etag);
+    }
+    map['fetched_at'] = Variable<int>(fetchedAt);
+    return map;
+  }
+
+  ThumbnailsCompanion toCompanion(bool nullToAbsent) {
+    return ThumbnailsCompanion(
+      sourceId: Value(sourceId),
+      ownerType: Value(ownerType),
+      ownerId: Value(ownerId),
+      bytes: bytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bytes),
+      diskPath: diskPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(diskPath),
+      etag: etag == null && nullToAbsent ? const Value.absent() : Value(etag),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory Thumbnail.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Thumbnail(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      ownerType: serializer.fromJson<String>(json['ownerType']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      bytes: serializer.fromJson<Uint8List?>(json['bytes']),
+      diskPath: serializer.fromJson<String?>(json['diskPath']),
+      etag: serializer.fromJson<String?>(json['etag']),
+      fetchedAt: serializer.fromJson<int>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'ownerType': serializer.toJson<String>(ownerType),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'bytes': serializer.toJson<Uint8List?>(bytes),
+      'diskPath': serializer.toJson<String?>(diskPath),
+      'etag': serializer.toJson<String?>(etag),
+      'fetchedAt': serializer.toJson<int>(fetchedAt),
+    };
+  }
+
+  Thumbnail copyWith({
+    String? sourceId,
+    String? ownerType,
+    String? ownerId,
+    Value<Uint8List?> bytes = const Value.absent(),
+    Value<String?> diskPath = const Value.absent(),
+    Value<String?> etag = const Value.absent(),
+    int? fetchedAt,
+  }) => Thumbnail(
+    sourceId: sourceId ?? this.sourceId,
+    ownerType: ownerType ?? this.ownerType,
+    ownerId: ownerId ?? this.ownerId,
+    bytes: bytes.present ? bytes.value : this.bytes,
+    diskPath: diskPath.present ? diskPath.value : this.diskPath,
+    etag: etag.present ? etag.value : this.etag,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  Thumbnail copyWithCompanion(ThumbnailsCompanion data) {
+    return Thumbnail(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      ownerType: data.ownerType.present ? data.ownerType.value : this.ownerType,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      bytes: data.bytes.present ? data.bytes.value : this.bytes,
+      diskPath: data.diskPath.present ? data.diskPath.value : this.diskPath,
+      etag: data.etag.present ? data.etag.value : this.etag,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Thumbnail(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('bytes: $bytes, ')
+          ..write('diskPath: $diskPath, ')
+          ..write('etag: $etag, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    ownerType,
+    ownerId,
+    $driftBlobEquality.hash(bytes),
+    diskPath,
+    etag,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Thumbnail &&
+          other.sourceId == this.sourceId &&
+          other.ownerType == this.ownerType &&
+          other.ownerId == this.ownerId &&
+          $driftBlobEquality.equals(other.bytes, this.bytes) &&
+          other.diskPath == this.diskPath &&
+          other.etag == this.etag &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class ThumbnailsCompanion extends UpdateCompanion<Thumbnail> {
+  final Value<String> sourceId;
+  final Value<String> ownerType;
+  final Value<String> ownerId;
+  final Value<Uint8List?> bytes;
+  final Value<String?> diskPath;
+  final Value<String?> etag;
+  final Value<int> fetchedAt;
+  final Value<int> rowid;
+  const ThumbnailsCompanion({
+    this.sourceId = const Value.absent(),
+    this.ownerType = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.bytes = const Value.absent(),
+    this.diskPath = const Value.absent(),
+    this.etag = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ThumbnailsCompanion.insert({
+    required String sourceId,
+    required String ownerType,
+    required String ownerId,
+    this.bytes = const Value.absent(),
+    this.diskPath = const Value.absent(),
+    this.etag = const Value.absent(),
+    required int fetchedAt,
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       ownerType = Value(ownerType),
+       ownerId = Value(ownerId),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<Thumbnail> custom({
+    Expression<String>? sourceId,
+    Expression<String>? ownerType,
+    Expression<String>? ownerId,
+    Expression<Uint8List>? bytes,
+    Expression<String>? diskPath,
+    Expression<String>? etag,
+    Expression<int>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (ownerType != null) 'owner_type': ownerType,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (bytes != null) 'bytes': bytes,
+      if (diskPath != null) 'disk_path': diskPath,
+      if (etag != null) 'etag': etag,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ThumbnailsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? ownerType,
+    Value<String>? ownerId,
+    Value<Uint8List?>? bytes,
+    Value<String?>? diskPath,
+    Value<String?>? etag,
+    Value<int>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return ThumbnailsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      ownerType: ownerType ?? this.ownerType,
+      ownerId: ownerId ?? this.ownerId,
+      bytes: bytes ?? this.bytes,
+      diskPath: diskPath ?? this.diskPath,
+      etag: etag ?? this.etag,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (ownerType.present) {
+      map['owner_type'] = Variable<String>(ownerType.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (bytes.present) {
+      map['bytes'] = Variable<Uint8List>(bytes.value);
+    }
+    if (diskPath.present) {
+      map['disk_path'] = Variable<String>(diskPath.value);
+    }
+    if (etag.present) {
+      map['etag'] = Variable<String>(etag.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<int>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ThumbnailsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('bytes: $bytes, ')
+          ..write('diskPath: $diskPath, ')
+          ..write('etag: $etag, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CachedMetadataTable extends CachedMetadata
+    with TableInfo<$CachedMetadataTable, CachedMetadataRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedMetadataTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerTypeMeta = const VerificationMeta(
+    'ownerType',
+  );
+  @override
+  late final GeneratedColumn<String> ownerType = GeneratedColumn<String>(
+    'owner_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _jsonMeta = const VerificationMeta('json');
+  @override
+  late final GeneratedColumn<String> json = GeneratedColumn<String>(
+    'json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<int> fetchedAt = GeneratedColumn<int>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    ownerType,
+    ownerId,
+    json,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_metadata';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedMetadataRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('owner_type')) {
+      context.handle(
+        _ownerTypeMeta,
+        ownerType.isAcceptableOrUnknown(data['owner_type']!, _ownerTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerTypeMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('json')) {
+      context.handle(
+        _jsonMeta,
+        json.isAcceptableOrUnknown(data['json']!, _jsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jsonMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, ownerType, ownerId};
+  @override
+  CachedMetadataRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedMetadataRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      ownerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_type'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      json: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}json'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CachedMetadataTable createAlias(String alias) {
+    return $CachedMetadataTable(attachedDatabase, alias);
+  }
+}
+
+class CachedMetadataRow extends DataClass
+    implements Insertable<CachedMetadataRow> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// `collections` or `readlists`.
+  final String ownerType;
+  final String ownerId;
+  final String json;
+  final int fetchedAt;
+  const CachedMetadataRow({
+    required this.sourceId,
+    required this.ownerType,
+    required this.ownerId,
+    required this.json,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['owner_type'] = Variable<String>(ownerType);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['json'] = Variable<String>(json);
+    map['fetched_at'] = Variable<int>(fetchedAt);
+    return map;
+  }
+
+  CachedMetadataCompanion toCompanion(bool nullToAbsent) {
+    return CachedMetadataCompanion(
+      sourceId: Value(sourceId),
+      ownerType: Value(ownerType),
+      ownerId: Value(ownerId),
+      json: Value(json),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory CachedMetadataRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedMetadataRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      ownerType: serializer.fromJson<String>(json['ownerType']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      json: serializer.fromJson<String>(json['json']),
+      fetchedAt: serializer.fromJson<int>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'ownerType': serializer.toJson<String>(ownerType),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'json': serializer.toJson<String>(json),
+      'fetchedAt': serializer.toJson<int>(fetchedAt),
+    };
+  }
+
+  CachedMetadataRow copyWith({
+    String? sourceId,
+    String? ownerType,
+    String? ownerId,
+    String? json,
+    int? fetchedAt,
+  }) => CachedMetadataRow(
+    sourceId: sourceId ?? this.sourceId,
+    ownerType: ownerType ?? this.ownerType,
+    ownerId: ownerId ?? this.ownerId,
+    json: json ?? this.json,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  CachedMetadataRow copyWithCompanion(CachedMetadataCompanion data) {
+    return CachedMetadataRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      ownerType: data.ownerType.present ? data.ownerType.value : this.ownerType,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      json: data.json.present ? data.json.value : this.json,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedMetadataRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('json: $json, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(sourceId, ownerType, ownerId, json, fetchedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedMetadataRow &&
+          other.sourceId == this.sourceId &&
+          other.ownerType == this.ownerType &&
+          other.ownerId == this.ownerId &&
+          other.json == this.json &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class CachedMetadataCompanion extends UpdateCompanion<CachedMetadataRow> {
+  final Value<String> sourceId;
+  final Value<String> ownerType;
+  final Value<String> ownerId;
+  final Value<String> json;
+  final Value<int> fetchedAt;
+  final Value<int> rowid;
+  const CachedMetadataCompanion({
+    this.sourceId = const Value.absent(),
+    this.ownerType = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.json = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CachedMetadataCompanion.insert({
+    required String sourceId,
+    required String ownerType,
+    required String ownerId,
+    required String json,
+    required int fetchedAt,
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       ownerType = Value(ownerType),
+       ownerId = Value(ownerId),
+       json = Value(json),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<CachedMetadataRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? ownerType,
+    Expression<String>? ownerId,
+    Expression<String>? json,
+    Expression<int>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (ownerType != null) 'owner_type': ownerType,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (json != null) 'json': json,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CachedMetadataCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? ownerType,
+    Value<String>? ownerId,
+    Value<String>? json,
+    Value<int>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return CachedMetadataCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      ownerType: ownerType ?? this.ownerType,
+      ownerId: ownerId ?? this.ownerId,
+      json: json ?? this.json,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (ownerType.present) {
+      map['owner_type'] = Variable<String>(ownerType.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (json.present) {
+      map['json'] = Variable<String>(json.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<int>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedMetadataCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('json: $json, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LibraryPrefsTable extends LibraryPrefs
+    with TableInfo<$LibraryPrefsTable, LibraryPref> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LibraryPrefsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _libraryIdMeta = const VerificationMeta(
+    'libraryId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryId = GeneratedColumn<String>(
+    'library_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lockedMeta = const VerificationMeta('locked');
+  @override
+  late final GeneratedColumn<bool> locked = GeneratedColumn<bool>(
+    'locked',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("locked" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _showRestrictedMeta = const VerificationMeta(
+    'showRestricted',
+  );
+  @override
+  late final GeneratedColumn<bool> showRestricted = GeneratedColumn<bool>(
+    'show_restricted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("show_restricted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    libraryId,
+    locked,
+    showRestricted,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'library_prefs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LibraryPref> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('library_id')) {
+      context.handle(
+        _libraryIdMeta,
+        libraryId.isAcceptableOrUnknown(data['library_id']!, _libraryIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_libraryIdMeta);
+    }
+    if (data.containsKey('locked')) {
+      context.handle(
+        _lockedMeta,
+        locked.isAcceptableOrUnknown(data['locked']!, _lockedMeta),
+      );
+    }
+    if (data.containsKey('show_restricted')) {
+      context.handle(
+        _showRestrictedMeta,
+        showRestricted.isAcceptableOrUnknown(
+          data['show_restricted']!,
+          _showRestrictedMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, libraryId};
+  @override
+  LibraryPref map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LibraryPref(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      libraryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_id'],
+      )!,
+      locked: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}locked'],
+      )!,
+      showRestricted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}show_restricted'],
+      )!,
+    );
+  }
+
+  @override
+  $LibraryPrefsTable createAlias(String alias) {
+    return $LibraryPrefsTable(attachedDatabase, alias);
+  }
+}
+
+class LibraryPref extends DataClass implements Insertable<LibraryPref> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// Komga library id.
+  final String libraryId;
+  final bool locked;
+  final bool showRestricted;
+  const LibraryPref({
+    required this.sourceId,
+    required this.libraryId,
+    required this.locked,
+    required this.showRestricted,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['library_id'] = Variable<String>(libraryId);
+    map['locked'] = Variable<bool>(locked);
+    map['show_restricted'] = Variable<bool>(showRestricted);
+    return map;
+  }
+
+  LibraryPrefsCompanion toCompanion(bool nullToAbsent) {
+    return LibraryPrefsCompanion(
+      sourceId: Value(sourceId),
+      libraryId: Value(libraryId),
+      locked: Value(locked),
+      showRestricted: Value(showRestricted),
+    );
+  }
+
+  factory LibraryPref.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LibraryPref(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      libraryId: serializer.fromJson<String>(json['libraryId']),
+      locked: serializer.fromJson<bool>(json['locked']),
+      showRestricted: serializer.fromJson<bool>(json['showRestricted']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'libraryId': serializer.toJson<String>(libraryId),
+      'locked': serializer.toJson<bool>(locked),
+      'showRestricted': serializer.toJson<bool>(showRestricted),
+    };
+  }
+
+  LibraryPref copyWith({
+    String? sourceId,
+    String? libraryId,
+    bool? locked,
+    bool? showRestricted,
+  }) => LibraryPref(
+    sourceId: sourceId ?? this.sourceId,
+    libraryId: libraryId ?? this.libraryId,
+    locked: locked ?? this.locked,
+    showRestricted: showRestricted ?? this.showRestricted,
+  );
+  LibraryPref copyWithCompanion(LibraryPrefsCompanion data) {
+    return LibraryPref(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      libraryId: data.libraryId.present ? data.libraryId.value : this.libraryId,
+      locked: data.locked.present ? data.locked.value : this.locked,
+      showRestricted: data.showRestricted.present
+          ? data.showRestricted.value
+          : this.showRestricted,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LibraryPref(')
+          ..write('sourceId: $sourceId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('locked: $locked, ')
+          ..write('showRestricted: $showRestricted')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sourceId, libraryId, locked, showRestricted);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LibraryPref &&
+          other.sourceId == this.sourceId &&
+          other.libraryId == this.libraryId &&
+          other.locked == this.locked &&
+          other.showRestricted == this.showRestricted);
+}
+
+class LibraryPrefsCompanion extends UpdateCompanion<LibraryPref> {
+  final Value<String> sourceId;
+  final Value<String> libraryId;
+  final Value<bool> locked;
+  final Value<bool> showRestricted;
+  final Value<int> rowid;
+  const LibraryPrefsCompanion({
+    this.sourceId = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.locked = const Value.absent(),
+    this.showRestricted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LibraryPrefsCompanion.insert({
+    required String sourceId,
+    required String libraryId,
+    this.locked = const Value.absent(),
+    this.showRestricted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       libraryId = Value(libraryId);
+  static Insertable<LibraryPref> custom({
+    Expression<String>? sourceId,
+    Expression<String>? libraryId,
+    Expression<bool>? locked,
+    Expression<bool>? showRestricted,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (libraryId != null) 'library_id': libraryId,
+      if (locked != null) 'locked': locked,
+      if (showRestricted != null) 'show_restricted': showRestricted,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LibraryPrefsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? libraryId,
+    Value<bool>? locked,
+    Value<bool>? showRestricted,
+    Value<int>? rowid,
+  }) {
+    return LibraryPrefsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      libraryId: libraryId ?? this.libraryId,
+      locked: locked ?? this.locked,
+      showRestricted: showRestricted ?? this.showRestricted,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (libraryId.present) {
+      map['library_id'] = Variable<String>(libraryId.value);
+    }
+    if (locked.present) {
+      map['locked'] = Variable<bool>(locked.value);
+    }
+    if (showRestricted.present) {
+      map['show_restricted'] = Variable<bool>(showRestricted.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LibraryPrefsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('locked: $locked, ')
+          ..write('showRestricted: $showRestricted, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2276,6 +3447,17 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LibrariesTable libraries = $LibrariesTable(this);
   late final $SeriesTable series = $SeriesTable(this);
   late final $BooksTable books = $BooksTable(this);
+  late final $ThumbnailsTable thumbnails = $ThumbnailsTable(this);
+  late final $CachedMetadataTable cachedMetadata = $CachedMetadataTable(this);
+  late final $LibraryPrefsTable libraryPrefs = $LibraryPrefsTable(this);
+  late final Index seriesKeyset = Index(
+    'series_keyset',
+    'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
+  );
+  late final Index seriesKeysetLib = Index(
+    'series_keyset_lib',
+    'CREATE INDEX series_keyset_lib ON series (source_id, library_id, title_sort, id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2286,6 +3468,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     libraries,
     series,
     books,
+    thumbnails,
+    cachedMetadata,
+    libraryPrefs,
+    seriesKeyset,
+    seriesKeysetLib,
   ];
 }
 
@@ -3439,6 +4626,630 @@ typedef $$BooksTableProcessedTableManager =
       Book,
       PrefetchHooks Function()
     >;
+typedef $$ThumbnailsTableCreateCompanionBuilder =
+    ThumbnailsCompanion Function({
+      required String sourceId,
+      required String ownerType,
+      required String ownerId,
+      Value<Uint8List?> bytes,
+      Value<String?> diskPath,
+      Value<String?> etag,
+      required int fetchedAt,
+      Value<int> rowid,
+    });
+typedef $$ThumbnailsTableUpdateCompanionBuilder =
+    ThumbnailsCompanion Function({
+      Value<String> sourceId,
+      Value<String> ownerType,
+      Value<String> ownerId,
+      Value<Uint8List?> bytes,
+      Value<String?> diskPath,
+      Value<String?> etag,
+      Value<int> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $$ThumbnailsTableFilterComposer
+    extends Composer<_$AppDatabase, $ThumbnailsTable> {
+  $$ThumbnailsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get diskPath => $composableBuilder(
+    column: $table.diskPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ThumbnailsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ThumbnailsTable> {
+  $$ThumbnailsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get bytes => $composableBuilder(
+    column: $table.bytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get diskPath => $composableBuilder(
+    column: $table.diskPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get etag => $composableBuilder(
+    column: $table.etag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ThumbnailsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ThumbnailsTable> {
+  $$ThumbnailsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerType =>
+      $composableBuilder(column: $table.ownerType, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get bytes =>
+      $composableBuilder(column: $table.bytes, builder: (column) => column);
+
+  GeneratedColumn<String> get diskPath =>
+      $composableBuilder(column: $table.diskPath, builder: (column) => column);
+
+  GeneratedColumn<String> get etag =>
+      $composableBuilder(column: $table.etag, builder: (column) => column);
+
+  GeneratedColumn<int> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$ThumbnailsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ThumbnailsTable,
+          Thumbnail,
+          $$ThumbnailsTableFilterComposer,
+          $$ThumbnailsTableOrderingComposer,
+          $$ThumbnailsTableAnnotationComposer,
+          $$ThumbnailsTableCreateCompanionBuilder,
+          $$ThumbnailsTableUpdateCompanionBuilder,
+          (
+            Thumbnail,
+            BaseReferences<_$AppDatabase, $ThumbnailsTable, Thumbnail>,
+          ),
+          Thumbnail,
+          PrefetchHooks Function()
+        > {
+  $$ThumbnailsTableTableManager(_$AppDatabase db, $ThumbnailsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ThumbnailsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ThumbnailsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ThumbnailsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> ownerType = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<Uint8List?> bytes = const Value.absent(),
+                Value<String?> diskPath = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                Value<int> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ThumbnailsCompanion(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                bytes: bytes,
+                diskPath: diskPath,
+                etag: etag,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String ownerType,
+                required String ownerId,
+                Value<Uint8List?> bytes = const Value.absent(),
+                Value<String?> diskPath = const Value.absent(),
+                Value<String?> etag = const Value.absent(),
+                required int fetchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ThumbnailsCompanion.insert(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                bytes: bytes,
+                diskPath: diskPath,
+                etag: etag,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ThumbnailsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ThumbnailsTable,
+      Thumbnail,
+      $$ThumbnailsTableFilterComposer,
+      $$ThumbnailsTableOrderingComposer,
+      $$ThumbnailsTableAnnotationComposer,
+      $$ThumbnailsTableCreateCompanionBuilder,
+      $$ThumbnailsTableUpdateCompanionBuilder,
+      (Thumbnail, BaseReferences<_$AppDatabase, $ThumbnailsTable, Thumbnail>),
+      Thumbnail,
+      PrefetchHooks Function()
+    >;
+typedef $$CachedMetadataTableCreateCompanionBuilder =
+    CachedMetadataCompanion Function({
+      required String sourceId,
+      required String ownerType,
+      required String ownerId,
+      required String json,
+      required int fetchedAt,
+      Value<int> rowid,
+    });
+typedef $$CachedMetadataTableUpdateCompanionBuilder =
+    CachedMetadataCompanion Function({
+      Value<String> sourceId,
+      Value<String> ownerType,
+      Value<String> ownerId,
+      Value<String> json,
+      Value<int> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $$CachedMetadataTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedMetadataTable> {
+  $$CachedMetadataTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CachedMetadataTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedMetadataTable> {
+  $$CachedMetadataTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get json => $composableBuilder(
+    column: $table.json,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedMetadataTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedMetadataTable> {
+  $$CachedMetadataTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerType =>
+      $composableBuilder(column: $table.ownerType, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get json =>
+      $composableBuilder(column: $table.json, builder: (column) => column);
+
+  GeneratedColumn<int> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$CachedMetadataTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedMetadataTable,
+          CachedMetadataRow,
+          $$CachedMetadataTableFilterComposer,
+          $$CachedMetadataTableOrderingComposer,
+          $$CachedMetadataTableAnnotationComposer,
+          $$CachedMetadataTableCreateCompanionBuilder,
+          $$CachedMetadataTableUpdateCompanionBuilder,
+          (
+            CachedMetadataRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CachedMetadataTable,
+              CachedMetadataRow
+            >,
+          ),
+          CachedMetadataRow,
+          PrefetchHooks Function()
+        > {
+  $$CachedMetadataTableTableManager(
+    _$AppDatabase db,
+    $CachedMetadataTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedMetadataTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedMetadataTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedMetadataTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> ownerType = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> json = const Value.absent(),
+                Value<int> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CachedMetadataCompanion(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                json: json,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String ownerType,
+                required String ownerId,
+                required String json,
+                required int fetchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CachedMetadataCompanion.insert(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                json: json,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedMetadataTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedMetadataTable,
+      CachedMetadataRow,
+      $$CachedMetadataTableFilterComposer,
+      $$CachedMetadataTableOrderingComposer,
+      $$CachedMetadataTableAnnotationComposer,
+      $$CachedMetadataTableCreateCompanionBuilder,
+      $$CachedMetadataTableUpdateCompanionBuilder,
+      (
+        CachedMetadataRow,
+        BaseReferences<_$AppDatabase, $CachedMetadataTable, CachedMetadataRow>,
+      ),
+      CachedMetadataRow,
+      PrefetchHooks Function()
+    >;
+typedef $$LibraryPrefsTableCreateCompanionBuilder =
+    LibraryPrefsCompanion Function({
+      required String sourceId,
+      required String libraryId,
+      Value<bool> locked,
+      Value<bool> showRestricted,
+      Value<int> rowid,
+    });
+typedef $$LibraryPrefsTableUpdateCompanionBuilder =
+    LibraryPrefsCompanion Function({
+      Value<String> sourceId,
+      Value<String> libraryId,
+      Value<bool> locked,
+      Value<bool> showRestricted,
+      Value<int> rowid,
+    });
+
+class $$LibraryPrefsTableFilterComposer
+    extends Composer<_$AppDatabase, $LibraryPrefsTable> {
+  $$LibraryPrefsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get locked => $composableBuilder(
+    column: $table.locked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get showRestricted => $composableBuilder(
+    column: $table.showRestricted,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LibraryPrefsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LibraryPrefsTable> {
+  $$LibraryPrefsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get locked => $composableBuilder(
+    column: $table.locked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get showRestricted => $composableBuilder(
+    column: $table.showRestricted,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LibraryPrefsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LibraryPrefsTable> {
+  $$LibraryPrefsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryId =>
+      $composableBuilder(column: $table.libraryId, builder: (column) => column);
+
+  GeneratedColumn<bool> get locked =>
+      $composableBuilder(column: $table.locked, builder: (column) => column);
+
+  GeneratedColumn<bool> get showRestricted => $composableBuilder(
+    column: $table.showRestricted,
+    builder: (column) => column,
+  );
+}
+
+class $$LibraryPrefsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LibraryPrefsTable,
+          LibraryPref,
+          $$LibraryPrefsTableFilterComposer,
+          $$LibraryPrefsTableOrderingComposer,
+          $$LibraryPrefsTableAnnotationComposer,
+          $$LibraryPrefsTableCreateCompanionBuilder,
+          $$LibraryPrefsTableUpdateCompanionBuilder,
+          (
+            LibraryPref,
+            BaseReferences<_$AppDatabase, $LibraryPrefsTable, LibraryPref>,
+          ),
+          LibraryPref,
+          PrefetchHooks Function()
+        > {
+  $$LibraryPrefsTableTableManager(_$AppDatabase db, $LibraryPrefsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LibraryPrefsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LibraryPrefsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LibraryPrefsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> libraryId = const Value.absent(),
+                Value<bool> locked = const Value.absent(),
+                Value<bool> showRestricted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LibraryPrefsCompanion(
+                sourceId: sourceId,
+                libraryId: libraryId,
+                locked: locked,
+                showRestricted: showRestricted,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String libraryId,
+                Value<bool> locked = const Value.absent(),
+                Value<bool> showRestricted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LibraryPrefsCompanion.insert(
+                sourceId: sourceId,
+                libraryId: libraryId,
+                locked: locked,
+                showRestricted: showRestricted,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LibraryPrefsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LibraryPrefsTable,
+      LibraryPref,
+      $$LibraryPrefsTableFilterComposer,
+      $$LibraryPrefsTableOrderingComposer,
+      $$LibraryPrefsTableAnnotationComposer,
+      $$LibraryPrefsTableCreateCompanionBuilder,
+      $$LibraryPrefsTableUpdateCompanionBuilder,
+      (
+        LibraryPref,
+        BaseReferences<_$AppDatabase, $LibraryPrefsTable, LibraryPref>,
+      ),
+      LibraryPref,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3453,4 +5264,10 @@ class $AppDatabaseManager {
       $$SeriesTableTableManager(_db, _db.series);
   $$BooksTableTableManager get books =>
       $$BooksTableTableManager(_db, _db.books);
+  $$ThumbnailsTableTableManager get thumbnails =>
+      $$ThumbnailsTableTableManager(_db, _db.thumbnails);
+  $$CachedMetadataTableTableManager get cachedMetadata =>
+      $$CachedMetadataTableTableManager(_db, _db.cachedMetadata);
+  $$LibraryPrefsTableTableManager get libraryPrefs =>
+      $$LibraryPrefsTableTableManager(_db, _db.libraryPrefs);
 }

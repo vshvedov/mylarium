@@ -1,73 +1,208 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
-import '../../app/widgets/app_button.dart';
-import '../../app/widgets/app_card.dart';
-import '../../app/widgets/app_grid.dart';
+import '../../data/source/source_providers.dart';
+import '../library/library_browse_controllers.dart';
+import '../library/widgets/library_tiles.dart';
+import '../library/widgets/rail.dart';
 
+/// The home shelf: Keep-Reading (On-Deck) plus Recently Added/Updated rails,
+/// over the active source. A "Browse" action opens the full virtualized grid.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final mode = ref.watch(themeControllerProvider);
-    final tokens = Theme.of(context).extension<DesignTokens>()!;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mylarium')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          SegmentedButton<AppThemeMode>(
-            segments: const [
-              ButtonSegment(value: AppThemeMode.light, label: Text('Light')),
-              ButtonSegment(value: AppThemeMode.dark, label: Text('Dark')),
-              ButtonSegment(value: AppThemeMode.system, label: Text('Auto')),
-            ],
-            selected: {mode},
-            multiSelectionEnabled: false,
-            showSelectedIcon: false,
-            onSelectionChanged: (s) =>
-                ref.read(themeControllerProvider.notifier).set(s.first),
-          ),
-          const SizedBox(height: 16),
-          AppGrid(
-            children: [
-              for (var i = 1; i <= 6; i++)
-                AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Spacer(),
-                      Text('Series $i', style: tokens.coverTitleStyle),
-                      Text('Vol. 1', style: tokens.coverSubtitleStyle),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          AppButton(
-            label: 'Open sheet',
-            onPressed: () => AppBottomSheet.show<void>(
-              context,
-              builder: (_) => const SizedBox(
-                height: 160,
-                child: Center(child: Text('Sheet')),
-              ),
+    final sourceId = ref.watch(activeSourceIdProvider).valueOrNull;
+    final onDeck = ref.watch(onDeckProvider);
+    final added = ref.watch(recentlyAddedSeriesProvider);
+    final updated = ref.watch(recentlyUpdatedSeriesProvider);
+
+    List<Widget> seriesTiles(List<dynamic> series) => [
+          for (final s in series)
+            CoverTile(
+              sourceId: sourceId ?? '',
+              ownerType: 'series',
+              ownerId: s.id as String,
+              title: s.title as String,
+              onTap: () =>
+                  context.push('/series/$sourceId/${s.id}'),
             ),
+        ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mylarium'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push('/search'),
           ),
-          const SizedBox(height: 8),
-          AppButton(
-            label: 'Continue',
-            kind: AppButtonKind.tonal,
-            onPressed: () {},
+          IconButton(
+            icon: const Icon(Icons.grid_view),
+            tooltip: 'Browse all',
+            onPressed: sourceId == null
+                ? null
+                : () => context.push('/browse/$sourceId'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () => _openSettings(context, ref),
           ),
         ],
       ),
+      body: sourceId == null
+          ? const _NoSource()
+          : RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(onDeckProvider);
+                ref.invalidate(recentlyAddedSeriesProvider);
+                ref.invalidate(recentlyUpdatedSeriesProvider);
+              },
+              child: ListView(
+                children: [
+                  Rail(
+                    title: 'Keep reading',
+                    children: [
+                      for (final b in onDeck.valueOrNull ?? const [])
+                        CoverTile(
+                          sourceId: sourceId,
+                          ownerType: 'book',
+                          ownerId: b.id,
+                          title: b.title,
+                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                          onTap: () =>
+                              context.push('/reader/$sourceId/${b.id}'),
+                        ),
+                    ],
+                  ),
+                  Rail(
+                    title: 'Recently added',
+                    children: seriesTiles(added.valueOrNull ?? const []),
+                  ),
+                  Rail(
+                    title: 'Recently updated',
+                    children: seriesTiles(updated.valueOrNull ?? const []),
+                  ),
+                  if ((onDeck.valueOrNull ?? const []).isEmpty &&
+                      (added.valueOrNull ?? const []).isEmpty &&
+                      (updated.valueOrNull ?? const []).isEmpty)
+                    const _EmptyHome(),
+                ],
+              ),
+            ),
     );
   }
+
+  void _openSettings(BuildContext context, WidgetRef ref) {
+    AppBottomSheet.show<void>(
+      context,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Appearance',
+                style: Theme.of(sheetContext).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Consumer(
+              builder: (context, ref, _) {
+                final mode = ref.watch(themeControllerProvider);
+                return SegmentedButton<AppThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                        value: AppThemeMode.light, label: Text('Light')),
+                    ButtonSegment(
+                        value: AppThemeMode.dark, label: Text('Dark')),
+                    ButtonSegment(
+                        value: AppThemeMode.system, label: Text('Auto')),
+                  ],
+                  selected: {mode},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (s) => ref
+                      .read(themeControllerProvider.notifier)
+                      .set(s.first),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            Consumer(
+              builder: (context, ref, _) {
+                final sourceId =
+                    ref.watch(activeSourceIdProvider).valueOrNull;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.collections_bookmark_outlined),
+                  title: const Text('Libraries'),
+                  enabled: sourceId != null,
+                  onTap: sourceId == null
+                      ? null
+                      : () {
+                          Navigator.of(sheetContext).pop();
+                          context.push('/libraries/$sourceId');
+                        },
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.lock_outline),
+              title: const Text('Library locks'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/settings/library-lock');
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.dns_outlined),
+              title: const Text('Sources (debug)'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/debug/sources');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoSource extends StatelessWidget {
+  const _NoSource();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off, size: 48),
+              const SizedBox(height: 12),
+              const Text('No source connected.'),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => context.push('/onboarding'),
+                child: const Text('Connect a server'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _EmptyHome extends StatelessWidget {
+  const _EmptyHome();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+        padding: EdgeInsets.all(48),
+        child: Center(child: Text('Nothing to show yet. Pull to refresh.')),
+      );
 }

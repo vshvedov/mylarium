@@ -3,7 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/home/home_screen.dart';
+import '../features/library/book_detail.dart';
+import '../features/library/libraries_screen.dart';
+import '../features/library/search.dart';
+import '../features/library/series_detail.dart';
+import '../features/library/series_grid.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/settings/library_lock.dart';
 import '../features/sources/debug_sources_screen.dart';
 
 /// The route the app boots to. Overridden in main() to `/onboarding` when no
@@ -24,6 +30,51 @@ final appRouterProvider = Provider<GoRouter>(
             OnboardingScreen(initialUrl: state.uri.queryParameters['url']),
       ),
       GoRoute(
+        path: '/browse/:sourceId',
+        builder: (_, state) => SeriesGridScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          title: 'All series',
+        ),
+      ),
+      GoRoute(
+        path: '/libraries/:sourceId',
+        builder: (_, state) =>
+            LibrariesScreen(sourceId: state.pathParameters['sourceId']!),
+      ),
+      GoRoute(
+        path: '/library/:sourceId/:libraryId',
+        builder: (_, state) => LibraryGridScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          libraryId: state.pathParameters['libraryId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/series/:sourceId/:seriesId',
+        builder: (_, state) => SeriesDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          seriesId: state.pathParameters['seriesId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/book/:sourceId/:bookId',
+        builder: (_, state) => BookDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          bookId: state.pathParameters['bookId']!,
+        ),
+      ),
+      GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
+      GoRoute(
+        path: '/settings/library-lock',
+        builder: (_, _) => const LibraryLockScreen(),
+      ),
+      GoRoute(
+        path: '/reader/:sourceId/:bookId',
+        builder: (_, state) => _ReaderPlaceholder(
+          sourceId: state.pathParameters['sourceId']!,
+          bookId: state.pathParameters['bookId']!,
+        ),
+      ),
+      GoRoute(
         path: '/debug/sources',
         builder: (_, _) => const DebugSourcesScreen(),
       ),
@@ -33,3 +84,17 @@ final appRouterProvider = Provider<GoRouter>(
     ),
   ),
 );
+
+/// Placeholder until the reader engine (T4) replaces this route.
+class _ReaderPlaceholder extends StatelessWidget {
+  const _ReaderPlaceholder({required this.sourceId, required this.bookId});
+
+  final String sourceId;
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Reader')),
+        body: const Center(child: Text('Reader coming in T4.')),
+      );
+}

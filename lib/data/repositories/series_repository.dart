@@ -12,18 +12,35 @@ class SeriesRepository {
 
   /// Refreshes one page of series for [sourceId]; returns the server's total
   /// element count (so callers know how many exist beyond this page).
+  ///
+  /// The demand-driven grid sync pins a STABLE server sort
+  /// (`metadata.titleSort,asc`) so OFFSET paging covers every row exactly once.
+  /// When [libraryId] is set the page is scoped to that library.
   Future<int> refresh(
     String sourceId, {
     int page = 0,
     int size = 50,
-    String? sort,
+    String? sort = 'metadata.titleSort,asc',
+    String? libraryId,
     SeriesSearch? search,
   }) async {
+    final effectiveSearch = libraryId == null
+        ? search
+        : SeriesSearch(
+            fullText: search?.fullText,
+            libraryIds: [libraryId],
+            status: search?.status,
+            readStatus: search?.readStatus,
+            genres: search?.genres,
+            tags: search?.tags,
+            publishers: search?.publishers,
+            ageRatings: search?.ageRatings,
+          );
     final result = await _api.listSeries(
       page: page,
       size: size,
       sort: sort,
-      search: search,
+      search: effectiveSearch,
     );
     for (final dto in result.content) {
       await _db.upsertSeries(seriesToRow(sourceId, dto));

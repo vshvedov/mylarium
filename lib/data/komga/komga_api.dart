@@ -210,6 +210,49 @@ class KomgaApi {
             data: {'page': page, 'completed': completed});
       });
 
+  /// One book by id (used by the reader to resolve a book's `seriesId` when the
+  /// book was opened without a cached row, e.g. from an On-Deck card).
+  Future<BookDto> getBook(String bookId) => _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/books/$bookId');
+        return BookDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
+  /// Recently added series (Komga `series/new`). Returns the same `Page<Series>`
+  /// envelope as the list endpoints; consumed online by the home rails.
+  Future<Page<SeriesDto>> listSeriesNew({int page = 0, int size = 20}) =>
+      _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/series/new',
+            queryParameters: {'page': page, 'size': size});
+        return Page.fromJson(
+            res.data! as Map<String, Object?>, SeriesDto.fromJson);
+      });
+
+  /// Recently updated series (Komga `series/updated`).
+  Future<Page<SeriesDto>> listSeriesUpdated({int page = 0, int size = 20}) =>
+      _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/series/updated',
+            queryParameters: {'page': page, 'size': size});
+        return Page.fromJson(
+            res.data! as Map<String, Object?>, SeriesDto.fromJson);
+      });
+
+  /// Cover thumbnail bytes for a series, plus the response ETag when present.
+  Future<(Uint8List, String?)> seriesThumbnail(String seriesId) =>
+      _thumbnail('$_v1/series/$seriesId/thumbnail');
+
+  /// Cover thumbnail bytes for a book, plus the response ETag when present.
+  Future<(Uint8List, String?)> bookThumbnail(String bookId) =>
+      _thumbnail('$_v1/books/$bookId/thumbnail');
+
+  Future<(Uint8List, String?)> _thumbnail(String path) => _guard(() async {
+        final res = await _dio.get<List<int>>(
+          path,
+          options: Options(responseType: ResponseType.bytes),
+        );
+        final etag = res.headers.value('etag');
+        return (Uint8List.fromList(res.data ?? const []), etag);
+      });
+
   Future<Page<BookDto>> onDeck({int page = 0, int size = 20}) =>
       _guard(() async {
         final res = await _dio.get<Object?>('$_v1/books/ondeck',
