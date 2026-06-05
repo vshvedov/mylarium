@@ -1,150 +1,93 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/widgets/app_button.dart';
-import 'connection_result.dart';
-import 'onboarding_controller.dart';
+import '../../app/theme/app_icons.dart';
+import 'widgets/brand_mark.dart';
+import 'widgets/source_option_card.dart';
 
-/// First-run screen: enter a Komga server URL and credentials, validate, and
-/// persist the connection. On success it routes to the debug source list.
-class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key, this.initialUrl});
-
-  /// Prefilled when re-authenticating a source whose secret went missing.
-  final String? initialUrl;
-
-  @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  late final TextEditingController _url =
-      TextEditingController(text: widget.initialUrl ?? '');
-  final TextEditingController _apiKey = TextEditingController();
-  final TextEditingController _username = TextEditingController();
-  final TextEditingController _password = TextEditingController();
-  AuthMethod _method = AuthMethod.apiKey;
-
-  @override
-  void dispose() {
-    _url.dispose();
-    _apiKey.dispose();
-    _username.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  void _connect() {
-    ref.read(onboardingControllerProvider.notifier).connect(
-          url: _url.text,
-          method: _method,
-          apiKey: _apiKey.text,
-          username: _username.text,
-          password: _password.text,
-        );
-  }
-
-  String _errorFor(ConnectionResult r) => switch (r) {
-        ConnInvalidUrl() =>
-          'Enter a valid server URL (for example https://komga.example.com).',
-        ConnUnreachable() =>
-          'Could not reach the server. Check the URL and your network.',
-        ConnUnauthorized() => 'Incorrect credentials.',
-        ConnMissingRoles(:final missing) =>
-          'Your Komga account is missing the ${missing.join(' and ')} '
-              'role. Ask your server admin to enable it.',
-        ConnVersionTooOldForApiKey(:final version) =>
-          'This server${version == null ? '' : ' (v$version)'} is too old for '
-              'API keys. Use a username and password instead.',
-        ConnTlsError() =>
-          'The server security certificate could not be verified.',
-        ConnUnknown(:final message) => message,
-        ConnSuccess() => '',
-      };
+/// First-run welcome and source picker. The brand mark and wordmark continue
+/// the launch screen; below them the user chooses where their comics come from.
+/// Komga is connectable today; Kavita and local files are flagged coming-soon
+/// until their sources land (the "More sources" phase). Connecting Komga opens
+/// the dedicated connect form at `/onboarding/komga`.
+class OnboardingScreen extends StatelessWidget {
+  const OnboardingScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(onboardingControllerProvider);
-
-    ref.listen(onboardingControllerProvider, (_, next) {
-      final result = next.valueOrNull;
-      if (result is ConnSuccess) {
-        // Land on the library home after connecting (the debug sources screen
-        // is reachable from home -> settings).
-        context.go('/');
-      }
-    });
-
-    final busy = state.isLoading;
-    final result = state.valueOrNull;
-    final error = (result == null || result is ConnSuccess)
-        ? null
-        : _errorFor(result);
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Connect to Komga')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextField(
-            controller: _url,
-            enabled: !busy,
-            keyboardType: TextInputType.url,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'Server URL',
-              hintText: 'https://komga.example.com',
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+              children: [
+                const Center(child: BrandMark(size: 76)),
+                const SizedBox(height: 20),
+                Text(
+                  'Mylarium',
+                  textAlign: TextAlign.center,
+                  style: text.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your comics and manga, beautifully offline.',
+                  textAlign: TextAlign.center,
+                  style: text.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 36),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 10),
+                  child: Text(
+                    'Choose a source',
+                    style: text.labelLarge?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SourceOptionCard(
+                  icon: AppIcons.sourceKomga,
+                  title: 'Komga',
+                  subtitle: 'Connect to your self-hosted server',
+                  onTap: () => context.push('/onboarding/komga'),
+                ),
+                const SizedBox(height: 12),
+                const SourceOptionCard(
+                  icon: AppIcons.sourceKavita,
+                  title: 'Kavita',
+                  subtitle: 'Another self-hosted library server',
+                  comingSoon: true,
+                ),
+                const SizedBox(height: 12),
+                const SourceOptionCard(
+                  icon: AppIcons.sourceLocal,
+                  title: 'Local files',
+                  subtitle: 'Read comics stored on this device',
+                  comingSoon: true,
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  'More sources are on the way. You can add or switch '
+                  'sources anytime in Settings.',
+                  textAlign: TextAlign.center,
+                  style: text.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          SegmentedButton<AuthMethod>(
-            segments: const [
-              ButtonSegment(value: AuthMethod.apiKey, label: Text('API key')),
-              ButtonSegment(value: AuthMethod.basic, label: Text('Password')),
-            ],
-            selected: {_method},
-            showSelectedIcon: false,
-            onSelectionChanged:
-                busy ? null : (s) => setState(() => _method = s.first),
-          ),
-          const SizedBox(height: 16),
-          if (_method == AuthMethod.apiKey)
-            TextField(
-              controller: _apiKey,
-              enabled: !busy,
-              obscureText: true,
-              autocorrect: false,
-              decoration: const InputDecoration(labelText: 'API key'),
-            )
-          else ...[
-            TextField(
-              controller: _username,
-              enabled: !busy,
-              autocorrect: false,
-              decoration: const InputDecoration(labelText: 'Username'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _password,
-              enabled: !busy,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
-            ),
-          ],
-          if (error != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              error,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-          const SizedBox(height: 24),
-          AppButton(
-            label: busy ? 'Connecting...' : 'Connect',
-            onPressed: busy ? null : _connect,
-          ),
-        ],
+        ),
       ),
     );
   }

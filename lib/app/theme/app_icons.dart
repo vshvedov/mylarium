@@ -25,6 +25,14 @@ abstract final class AppIcons {
   static const settings =
       IconData(0xe272, fontFamily: _family, fontPackage: _package); // gearSix
 
+  // Source kinds (onboarding picker)
+  static const sourceKomga =
+      IconData(0xe1aa, fontFamily: _family, fontPackage: _package); // cloud
+  static const sourceKavita =
+      IconData(0xe1de, fontFamily: _family, fontPackage: _package); // database
+  static const sourceLocal = IconData(0xe2a0,
+      fontFamily: _family, fontPackage: _package); // hardDrives
+
   // Library areas
   static const libraries =
       IconData(0xe758, fontFamily: _family, fontPackage: _package); // books

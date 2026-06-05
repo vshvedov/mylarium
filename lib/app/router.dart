@@ -10,6 +10,7 @@ import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
 import '../features/offline/storage_screen.dart';
+import '../features/onboarding/komga_connect_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
@@ -30,8 +31,12 @@ final appRouterProvider = Provider<GoRouter>(
       GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
       GoRoute(
         path: '/onboarding',
+        builder: (_, _) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding/komga',
         builder: (_, state) =>
-            OnboardingScreen(initialUrl: state.uri.queryParameters['url']),
+            KomgaConnectScreen(initialUrl: state.uri.queryParameters['url']),
       ),
       GoRoute(
         path: '/browse/:sourceId',

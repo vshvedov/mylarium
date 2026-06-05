@@ -40,7 +40,7 @@ class _DebugSourcesScreenState extends ConsumerState<DebugSourcesScreen> {
         // Row-without-secret: send the user back to re-authenticate.
         if (mounted) {
           context.go(Uri(
-            path: '/onboarding',
+            path: '/onboarding/komga',
             queryParameters: {'url': source.baseUrl ?? ''},
           ).toString());
         }

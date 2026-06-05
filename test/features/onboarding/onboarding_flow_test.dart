@@ -89,7 +89,13 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Onboarding is the first screen.
+    // Onboarding opens on the source picker.
+    expect(find.text('Mylarium'), findsOneWidget);
+    expect(find.text('Komga'), findsOneWidget);
+
+    // Choose Komga -> the connect form.
+    await tester.tap(find.text('Komga'));
+    await tester.pumpAndSettle();
     expect(find.text('Connect to Komga'), findsOneWidget);
 
     // Fill the form (default method is API key: url field + key field).
