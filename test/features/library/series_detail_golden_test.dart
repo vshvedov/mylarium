@@ -7,6 +7,7 @@ import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/series_detail.dart';
+import 'package:mylarium/features/offline/offline_providers.dart';
 
 import '../../support/test_scope.dart';
 
@@ -62,6 +63,13 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
             .overrideWith((ref) => Stream.value(const <BookStateRow>[])),
         seriesDetailDtoProvider('s1', 'se1').overrideWith((ref) async => null),
         seriesRatingProvider('s1', 'se1').overrideWith((ref) async => null),
+        // Offline providers: stub the live db streams so the golden is stable.
+        seriesDownloadStatusProvider('s1', 'se1').overrideWith(
+          (ref) => Stream.value((total: 0, downloaded: 0)),
+        ),
+        for (var i = 0; i < 4; i++)
+          cachedAssetProvider('s1', 'bk$i')
+              .overrideWith((ref) => Stream.value(null)),
       ],
       child: MaterialApp(
         theme: theme,

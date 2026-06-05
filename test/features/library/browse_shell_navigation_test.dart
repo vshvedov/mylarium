@@ -13,6 +13,7 @@ import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
+import 'package:mylarium/features/offline/offline_providers.dart';
 
 import '../../support/test_scope.dart';
 
@@ -141,6 +142,9 @@ void main() {
               .overrideWith((ref) => Stream.value(const <BookStateRow>[])),
           seriesDetailDtoProvider('s1', 'ida').overrideWith((ref) async => null),
           seriesRatingProvider('s1', 'ida').overrideWith((ref) async => null),
+          seriesDownloadStatusProvider('s1', 'ida').overrideWith(
+            (ref) => Stream.value((total: 0, downloaded: 0)),
+          ),
         ],
       );
 

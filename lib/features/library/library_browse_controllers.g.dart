@@ -6,26 +6,29 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$onDeckHash() => r'0c5df2f436ff63dd572224e5e9672939587cf8c0';
+String _$keepReadingHash() => r'c0f42a37cb39c1a08362a9ebb3a6bd1fd14e657b';
 
-/// On-Deck / Keep-Reading books for the active source. NOT age-gated: this is
-/// the user's own in-progress reading.
+/// Keep-reading books for the active source: the user's in-progress books first
+/// (most recently read), then on-deck (the next book in a series with a
+/// completed book) appended and de-duplicated. NOT age-gated (the user's own
+/// reading). Komga's `/books/ondeck` alone only surfaces next-after-completed,
+/// so a reader mid-book would see an empty rail; the in-progress query fixes it.
 ///
-/// Copied from [onDeck].
-@ProviderFor(onDeck)
-final onDeckProvider = AutoDisposeFutureProvider<List<BookDto>>.internal(
-  onDeck,
-  name: r'onDeckProvider',
+/// Copied from [keepReading].
+@ProviderFor(keepReading)
+final keepReadingProvider = AutoDisposeFutureProvider<List<BookDto>>.internal(
+  keepReading,
+  name: r'keepReadingProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$onDeckHash,
+      : _$keepReadingHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef OnDeckRef = AutoDisposeFutureProviderRef<List<BookDto>>;
+typedef KeepReadingRef = AutoDisposeFutureProviderRef<List<BookDto>>;
 String _$recentlyAddedSeriesHash() =>
     r'8047f2bfa7df4ceb29d1c9890109dfb48a409be5';
 

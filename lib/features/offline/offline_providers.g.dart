@@ -392,5 +392,187 @@ class _DownloadProgressProviderElement
   String get bookId => (origin as DownloadProgressProvider).bookId;
 }
 
+String _$downloadedBooksHash() => r'617d20d3dc6a4ba25d8567cb96b4fc9e48734795';
+
+/// Books available offline for the active source, most-recent first (the
+/// "Downloaded" home rail). Empty when there is no active source.
+///
+/// Copied from [downloadedBooks].
+@ProviderFor(downloadedBooks)
+final downloadedBooksProvider = AutoDisposeStreamProvider<List<Book>>.internal(
+  downloadedBooks,
+  name: r'downloadedBooksProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$downloadedBooksHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef DownloadedBooksRef = AutoDisposeStreamProviderRef<List<Book>>;
+String _$seriesDownloadStatusHash() =>
+    r'92f7e5b949e2696e63f58ca32ff648c5148a0f98';
+
+/// Live (total, downloaded) book counts for a series (the series-detail download
+/// control). Reactive to both the books cache and cached assets.
+///
+/// Copied from [seriesDownloadStatus].
+@ProviderFor(seriesDownloadStatus)
+const seriesDownloadStatusProvider = SeriesDownloadStatusFamily();
+
+/// Live (total, downloaded) book counts for a series (the series-detail download
+/// control). Reactive to both the books cache and cached assets.
+///
+/// Copied from [seriesDownloadStatus].
+class SeriesDownloadStatusFamily
+    extends Family<AsyncValue<({int total, int downloaded})>> {
+  /// Live (total, downloaded) book counts for a series (the series-detail download
+  /// control). Reactive to both the books cache and cached assets.
+  ///
+  /// Copied from [seriesDownloadStatus].
+  const SeriesDownloadStatusFamily();
+
+  /// Live (total, downloaded) book counts for a series (the series-detail download
+  /// control). Reactive to both the books cache and cached assets.
+  ///
+  /// Copied from [seriesDownloadStatus].
+  SeriesDownloadStatusProvider call(String sourceId, String seriesId) {
+    return SeriesDownloadStatusProvider(sourceId, seriesId);
+  }
+
+  @override
+  SeriesDownloadStatusProvider getProviderOverride(
+    covariant SeriesDownloadStatusProvider provider,
+  ) {
+    return call(provider.sourceId, provider.seriesId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'seriesDownloadStatusProvider';
+}
+
+/// Live (total, downloaded) book counts for a series (the series-detail download
+/// control). Reactive to both the books cache and cached assets.
+///
+/// Copied from [seriesDownloadStatus].
+class SeriesDownloadStatusProvider
+    extends AutoDisposeStreamProvider<({int total, int downloaded})> {
+  /// Live (total, downloaded) book counts for a series (the series-detail download
+  /// control). Reactive to both the books cache and cached assets.
+  ///
+  /// Copied from [seriesDownloadStatus].
+  SeriesDownloadStatusProvider(String sourceId, String seriesId)
+    : this._internal(
+        (ref) => seriesDownloadStatus(
+          ref as SeriesDownloadStatusRef,
+          sourceId,
+          seriesId,
+        ),
+        from: seriesDownloadStatusProvider,
+        name: r'seriesDownloadStatusProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$seriesDownloadStatusHash,
+        dependencies: SeriesDownloadStatusFamily._dependencies,
+        allTransitiveDependencies:
+            SeriesDownloadStatusFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+        seriesId: seriesId,
+      );
+
+  SeriesDownloadStatusProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+    required this.seriesId,
+  }) : super.internal();
+
+  final String sourceId;
+  final String seriesId;
+
+  @override
+  Override overrideWith(
+    Stream<({int total, int downloaded})> Function(
+      SeriesDownloadStatusRef provider,
+    )
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SeriesDownloadStatusProvider._internal(
+        (ref) => create(ref as SeriesDownloadStatusRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+        seriesId: seriesId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<({int total, int downloaded})>
+  createElement() {
+    return _SeriesDownloadStatusProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SeriesDownloadStatusProvider &&
+        other.sourceId == sourceId &&
+        other.seriesId == seriesId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+    hash = _SystemHash.combine(hash, seriesId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin SeriesDownloadStatusRef
+    on AutoDisposeStreamProviderRef<({int total, int downloaded})> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+
+  /// The parameter `seriesId` of this provider.
+  String get seriesId;
+}
+
+class _SeriesDownloadStatusProviderElement
+    extends AutoDisposeStreamProviderElement<({int total, int downloaded})>
+    with SeriesDownloadStatusRef {
+  _SeriesDownloadStatusProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as SeriesDownloadStatusProvider).sourceId;
+  @override
+  String get seriesId => (origin as SeriesDownloadStatusProvider).seriesId;
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

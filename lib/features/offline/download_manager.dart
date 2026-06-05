@@ -148,6 +148,14 @@ class DownloadManager {
     }
   }
 
+  /// Enqueues every cached book of a series for permanent offline download
+  /// (each as a manual download, so they are pinned against LRU eviction).
+  Future<void> enqueueSeries(String sourceId, String seriesId) async {
+    for (final b in await _db.getBooksForSeries(sourceId, seriesId)) {
+      await enqueueBook(sourceId, b.id, manual: true);
+    }
+  }
+
   Future<void> _enqueue({
     required String sourceId,
     required String bookId,

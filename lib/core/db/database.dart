@@ -475,6 +475,45 @@ class AppDatabase extends _$AppDatabase {
                 t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
           .go();
 
+  /// Books available offline for a source, most-recently-downloaded/opened
+  /// first (the "Downloaded" home rail). Joins cached assets to their book row.
+  Stream<List<Book>> watchDownloadedBooks(String sourceId) {
+    final query = select(books).join([
+      innerJoin(
+        cachedAssets,
+        cachedAssets.sourceId.equalsExp(books.sourceId) &
+            cachedAssets.bookId.equalsExp(books.id),
+      ),
+    ])
+      ..where(cachedAssets.sourceId.equals(sourceId))
+      ..orderBy([OrderingTerm.desc(cachedAssets.lastAccessedAt)]);
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.readTable(books)).toList());
+  }
+
+  /// Live (total books, downloaded books) for a series, for the series-detail
+  /// download control. Reactive to both the books cache and cached assets.
+  Stream<({int total, int downloaded})> watchSeriesDownloadCounts(
+    String sourceId,
+    String seriesId,
+  ) =>
+      customSelect(
+        'SELECT '
+        '(SELECT COUNT(*) FROM books WHERE source_id = ?1 AND series_id = ?2) '
+        'AS total, '
+        '(SELECT COUNT(*) FROM cached_assets ca JOIN books b '
+        'ON b.source_id = ca.source_id AND b.id = ca.book_id '
+        'WHERE b.source_id = ?1 AND b.series_id = ?2) AS downloaded',
+        variables: [Variable.withString(sourceId), Variable.withString(seriesId)],
+        readsFrom: {books, cachedAssets},
+      ).watchSingle().map(
+            (row) => (
+              total: row.read<int>('total'),
+              downloaded: row.read<int>('downloaded'),
+            ),
+          );
+
   Future<void> touchCachedAsset(
     String sourceId,
     String bookId,

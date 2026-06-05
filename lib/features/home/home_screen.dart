@@ -11,6 +11,7 @@ import '../../data/source/source_providers.dart';
 import '../library/library_browse_controllers.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
+import '../offline/offline_providers.dart';
 
 /// The home shelf: Keep-Reading (On-Deck) plus Recently Added/Updated rails,
 /// over the active source. A "Browse" action opens the full virtualized grid.
@@ -20,7 +21,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull;
-    final onDeck = ref.watch(onDeckProvider);
+    final keepReading = ref.watch(keepReadingProvider);
+    final downloaded = ref.watch(downloadedBooksProvider);
     final added = ref.watch(recentlyAddedSeriesProvider);
     final updated = ref.watch(recentlyUpdatedSeriesProvider);
 
@@ -66,7 +68,7 @@ class HomeScreen extends ConsumerWidget {
           ? const _NoSource()
           : RefreshIndicator(
               onRefresh: () async {
-                ref.invalidate(onDeckProvider);
+                ref.invalidate(keepReadingProvider);
                 ref.invalidate(recentlyAddedSeriesProvider);
                 ref.invalidate(recentlyUpdatedSeriesProvider);
               },
@@ -78,7 +80,26 @@ class HomeScreen extends ConsumerWidget {
                   Rail(
                     title: 'Keep reading',
                     children: [
-                      for (final b in onDeck.valueOrNull ?? const [])
+                      for (final b in keepReading.valueOrNull ?? const [])
+                        CoverTile(
+                          sourceId: sourceId,
+                          ownerType: 'book',
+                          ownerId: b.id,
+                          title: b.title,
+                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                          leadingBadge: OfflineBadge(
+                            sourceId: sourceId,
+                            bookId: b.id,
+                          ),
+                          onTap: () =>
+                              context.push('/reader/$sourceId/${b.id}'),
+                        ),
+                    ],
+                  ),
+                  Rail(
+                    title: 'Downloaded',
+                    children: [
+                      for (final b in downloaded.valueOrNull ?? const [])
                         CoverTile(
                           sourceId: sourceId,
                           ownerType: 'book',
@@ -98,7 +119,8 @@ class HomeScreen extends ConsumerWidget {
                     title: 'Recently updated',
                     children: seriesTiles(updated.valueOrNull ?? const []),
                   ),
-                  if ((onDeck.valueOrNull ?? const []).isEmpty &&
+                  if ((keepReading.valueOrNull ?? const []).isEmpty &&
+                      (downloaded.valueOrNull ?? const []).isEmpty &&
                       (added.valueOrNull ?? const []).isEmpty &&
                       (updated.valueOrNull ?? const []).isEmpty)
                     const _EmptyHome(),

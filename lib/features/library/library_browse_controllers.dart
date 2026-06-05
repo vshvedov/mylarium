@@ -10,18 +10,35 @@ import '../../data/komga/models/book_dto.dart';
 import '../../data/komga/models/collection_dto.dart';
 import '../../data/komga/models/readlist_dto.dart';
 import '../../data/komga/models/series_dto.dart';
+import '../../data/komga/models/series_search.dart';
 import '../../data/source/source_providers.dart';
 
 part 'library_browse_controllers.g.dart';
 
-/// On-Deck / Keep-Reading books for the active source. NOT age-gated: this is
-/// the user's own in-progress reading.
+/// Keep-reading books for the active source: the user's in-progress books first
+/// (most recently read), then on-deck (the next book in a series with a
+/// completed book) appended and de-duplicated. NOT age-gated (the user's own
+/// reading). Komga's `/books/ondeck` alone only surfaces next-after-completed,
+/// so a reader mid-book would see an empty rail; the in-progress query fixes it.
 @riverpod
-Future<List<BookDto>> onDeck(Ref ref) async {
+Future<List<BookDto>> keepReading(Ref ref) async {
   final api = await ref.watch(activeKomgaApiProvider.future);
   if (api == null) return const [];
   try {
-    return (await api.onDeck(size: 20)).content;
+    final inProgress = (await api.listBooks(
+      page: 0,
+      size: 20,
+      sort: 'readDate,desc',
+      search: const SeriesSearch(readStatus: ['IN_PROGRESS']),
+    ))
+        .content;
+    final deck = (await api.onDeck(size: 20)).content;
+    final seen = {for (final b in inProgress) b.id};
+    return [
+      ...inProgress,
+      for (final b in deck)
+        if (seen.add(b.id)) b,
+    ].take(20).toList();
   } on KomgaException {
     return const [];
   }

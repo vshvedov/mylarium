@@ -52,3 +52,25 @@ Stream<DownloadProgress> downloadProgress(
   String bookId,
 ) =>
     ref.watch(downloadManagerProvider).watch(sourceId, bookId);
+
+/// Books available offline for the active source, most-recent first (the
+/// "Downloaded" home rail). Empty when there is no active source.
+@riverpod
+Stream<List<Book>> downloadedBooks(Ref ref) async* {
+  final sourceId = await ref.watch(activeSourceIdProvider.future);
+  if (sourceId == null) {
+    yield const [];
+    return;
+  }
+  yield* ref.watch(appDatabaseProvider).watchDownloadedBooks(sourceId);
+}
+
+/// Live (total, downloaded) book counts for a series (the series-detail download
+/// control). Reactive to both the books cache and cached assets.
+@riverpod
+Stream<({int total, int downloaded})> seriesDownloadStatus(
+  Ref ref,
+  String sourceId,
+  String seriesId,
+) =>
+    ref.watch(appDatabaseProvider).watchSeriesDownloadCounts(sourceId, seriesId);

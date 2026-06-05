@@ -53,6 +53,14 @@ class OfflineCacheManager {
     if (asset != null) await _delete(asset);
   }
 
+  /// Deletes every cached book of a series (the series-detail "Remove downloads"
+  /// action).
+  Future<void> deleteSeries(String sourceId, String seriesId) async {
+    for (final b in await _db.getBooksForSeries(sourceId, seriesId)) {
+      await delete(sourceId, b.id);
+    }
+  }
+
   Future<CacheUsage> usage() async {
     final assets = await _db.allCachedAssets();
     var total = 0, pinned = 0;

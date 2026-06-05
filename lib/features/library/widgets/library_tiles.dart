@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/pressable_scale.dart';
+import '../../offline/offline_providers.dart';
 import 'cover_image.dart';
 
 /// A cover tile: rounded cover image with a title/subtitle beneath. Used in
@@ -19,6 +22,7 @@ class CoverTile extends StatelessWidget {
     this.subtitle,
     this.onTap,
     this.badge,
+    this.leadingBadge,
   });
 
   final String sourceId;
@@ -27,7 +31,13 @@ class CoverTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
+
+  /// Top-right overlay (e.g. the completed check).
   final Widget? badge;
+
+  /// Top-left overlay (e.g. the offline indicator), kept opposite [badge] so the
+  /// two never collide.
+  final Widget? leadingBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +72,8 @@ class CoverTile extends StatelessWidget {
                     ),
                     if (badge != null)
                       Positioned(top: 6, right: 6, child: badge!),
+                    if (leadingBadge != null)
+                      Positioned(top: 6, left: 6, child: leadingBadge!),
                   ],
                 ),
               ),
@@ -85,6 +97,30 @@ class CoverTile extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// A small "available offline" indicator for a book cover, shown only when the
+/// book has a cached archive. Pass as [CoverTile.leadingBadge] for book tiles.
+class OfflineBadge extends ConsumerWidget {
+  const OfflineBadge({super.key, required this.sourceId, required this.bookId});
+
+  final String sourceId;
+  final String bookId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cached =
+        ref.watch(cachedAssetProvider(sourceId, bookId)).valueOrNull;
+    if (cached == null) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: const BoxDecoration(
+        color: Color(0x99000000),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(AppIcons.downloaded, size: 13, color: Colors.white),
     );
   }
 }

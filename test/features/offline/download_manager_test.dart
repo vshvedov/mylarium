@@ -178,6 +178,32 @@ void main() {
     expect((await db.getDownloadTask('s1', 'b1'))?.state, 'complete');
   });
 
+  test('enqueueSeries downloads every book of the series as permanent',
+      () async {
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'b1',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'B1',
+        number: '1'));
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'b2',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'B2',
+        number: '2'));
+
+    final dl = _FakeDownloader([1, 2, 3]);
+    await manager(dl).enqueueSeries('s1', 'ser1');
+    await waitForAsset('b1');
+    await waitForAsset('b2');
+
+    expect((await db.getCachedAsset('s1', 'b1'))!.permanent, isTrue);
+    expect((await db.getCachedAsset('s1', 'b2'))!.permanent, isTrue);
+  });
+
   test('enqueue is idempotent once cached', () async {
     final dl = _FakeDownloader([1]);
     final m = manager(dl);

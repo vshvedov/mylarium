@@ -7,6 +7,7 @@ import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
 import '../../features/sync/sync_providers.dart';
 import '../integrations/comic_vine/comic_vine_panel.dart';
+import '../offline/offline_providers.dart';
 import 'library_browse_controllers.dart';
 import 'widgets/add_to_collection_sheet.dart';
 import 'widgets/detail_header.dart';
@@ -95,6 +96,11 @@ class SeriesDetailScreen extends ConsumerWidget {
                               itemId: seriesId,
                             ),
                           ),
+                          const SizedBox(height: 12),
+                          _SeriesDownloadControl(
+                            sourceId: sourceId,
+                            seriesId: seriesId,
+                          ),
                         ],
                       ),
                       summary: (summary != null && summary.isNotEmpty)
@@ -149,6 +155,10 @@ class SeriesDetailScreen extends ConsumerWidget {
                           title: b.title,
                           subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
                           badge: isCompleted(b) ? const _CheckBadge() : null,
+                          leadingBadge: OfflineBadge(
+                            sourceId: sourceId,
+                            bookId: b.id,
+                          ),
                           onTap: () => context.push('/book/$sourceId/${b.id}'),
                         );
                       }, childCount: bookRows.length),
@@ -208,6 +218,51 @@ class _MarkSeriesControl extends ConsumerWidget {
                 }
               },
       );
+}
+
+/// Download / remove the whole series. Permanent (pinned) downloads, so they
+/// are never auto-evicted. Three states: none -> Download, partial -> a disabled
+/// progress label, all -> Remove.
+class _SeriesDownloadControl extends ConsumerWidget {
+  const _SeriesDownloadControl({required this.sourceId, required this.seriesId});
+
+  final String sourceId;
+  final String seriesId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status =
+        ref.watch(seriesDownloadStatusProvider(sourceId, seriesId)).valueOrNull;
+    if (status == null) return const SizedBox.shrink();
+    final total = status.total;
+    final downloaded = status.downloaded;
+
+    if (total > 0 && downloaded >= total) {
+      return HeroAction(
+        label: 'Remove downloads',
+        icon: AppIcons.delete,
+        style: HeroActionStyle.ghost,
+        onPressed: () => ref
+            .read(offlineCacheManagerProvider)
+            .deleteSeries(sourceId, seriesId),
+      );
+    }
+    if (downloaded > 0 && downloaded < total) {
+      return HeroAction(
+        label: 'Downloading $downloaded/$total...',
+        icon: AppIcons.download,
+        style: HeroActionStyle.ghost,
+        onPressed: null,
+      );
+    }
+    return HeroAction(
+      label: 'Download series',
+      icon: AppIcons.download,
+      style: HeroActionStyle.ghost,
+      onPressed: () =>
+          ref.read(downloadManagerProvider).enqueueSeries(sourceId, seriesId),
+    );
+  }
 }
 
 class _CheckBadge extends StatelessWidget {
