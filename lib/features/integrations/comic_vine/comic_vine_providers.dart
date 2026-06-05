@@ -6,9 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../../core/db/database.dart';
 import '../../../core/network/connectivity.dart';
+import '../../../core/network/komga_exception.dart';
 import '../../../data/comicvine/comic_vine_api.dart';
 import '../../../data/comicvine/comic_vine_models.dart';
 import '../../../data/komga/komga_providers.dart' show secureStoreProvider;
+import '../../../data/komga/models/mappers.dart';
+import '../../../data/source/source_providers.dart';
 
 const _kComicVineApiKey = 'comicvine.apiKey';
 const _kComicVineDismissed = 'comicvine.dismissed';
@@ -127,7 +130,21 @@ final comicVineVolumeProvider =
       if (api == null) return null;
 
       try {
-        final series = await db.getSeries(sourceId, seriesId);
+        // Resolve the series row, fetching + caching it when it is not in the
+        // local cache yet (the common case when a detail is opened from a home
+        // rail, and every case on a fresh install). Reading the local row
+        // directly would lose the race against the detail screen's own fetch
+        // and return "no match" without ever querying Comic Vine.
+        var series = await db.getSeries(sourceId, seriesId);
+        if (series == null) {
+          final repo = await ref.watch(seriesRepositoryProvider.future);
+          if (repo == null) return null;
+          try {
+            series = await repo.fetchSeries(sourceId, seriesId);
+          } on KomgaException {
+            return null;
+          }
+        }
         if (series == null) return null;
         final matches = await api.searchVolumes(
           comicVineSearchQuery(series.title),
@@ -188,7 +205,20 @@ final comicVineIssueProvider =
       if (api == null) return null;
 
       try {
-        final book = await db.getBook(sourceId, bookId);
+        // Resolve the book row, fetching + caching it when it is not cached yet
+        // (e.g. opened straight from On-Deck), for the same race reason as the
+        // volume provider above.
+        var book = await db.getBook(sourceId, bookId);
+        if (book == null) {
+          final komgaApi = await ref.watch(komgaApiForProvider(sourceId).future);
+          if (komgaApi == null) return null;
+          try {
+            await db.upsertBook(bookToRow(sourceId, await komgaApi.getBook(bookId)));
+            book = await db.getBook(sourceId, bookId);
+          } on KomgaException {
+            return null;
+          }
+        }
         if (book == null) return null;
         final volume = await ref.watch(
           comicVineVolumeProvider((sourceId, book.seriesId)).future,

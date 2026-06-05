@@ -8,6 +8,9 @@ import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/core/network/connectivity.dart';
 import 'package:mylarium/data/comicvine/comic_vine_api.dart';
 import 'package:mylarium/data/comicvine/comic_vine_models.dart';
+import 'package:mylarium/data/komga/komga_api.dart';
+import 'package:mylarium/data/repositories/series_repository.dart';
+import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 
 /// A ComicVineApi stand-in that records calls and can simulate a network
@@ -38,6 +41,30 @@ class _FakeApi extends ComicVineApi {
 
   @override
   Future<CvIssue> getIssue(int id) async => CvIssue(id: id, name: 'Saga #1');
+}
+
+/// A SeriesRepository whose [fetchSeries] caches a row, standing in for the real
+/// fetch-and-cache path so the volume provider can resolve a not-yet-cached
+/// series (the race the fix addresses).
+class _FakeSeriesRepo extends SeriesRepository {
+  _FakeSeriesRepo(AppDatabase db)
+      : _db = db,
+        super(db, KomgaApi(Dio()));
+
+  final AppDatabase _db;
+
+  @override
+  Future<SeriesRow?> fetchSeries(String sourceId, String seriesId) async {
+    await _db.upsertSeries(SeriesCompanion(
+      sourceId: Value(sourceId),
+      id: Value(seriesId),
+      libraryId: const Value('lib'),
+      title: const Value('Saga'),
+      titleSort: const Value('saga'),
+      booksCount: const Value(60),
+    ));
+    return _db.getSeries(sourceId, seriesId);
+  }
 }
 
 void main() {
@@ -114,6 +141,38 @@ void main() {
     await expectLater(
       c.read(comicVineVolumeProvider(('s', 'se1')).future),
       throwsA(isA<ComicVineOffline>()),
+    );
+  });
+
+  test('matches a series that is NOT pre-cached by fetching it (race fix)',
+      () async {
+    // A fresh db with NO series row: reproduces a detail opened from a home rail
+    // / a fresh install, where the row is not cached when the CV provider runs.
+    final freshDb = AppDatabase(NativeDatabase.memory());
+    addTearDown(freshDb.close);
+    final api = _FakeApi();
+    final c = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(freshDb),
+        comicVineApiProvider.overrideWith((ref) => api),
+        isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+        seriesRepositoryProvider.overrideWith(
+          (ref) async => _FakeSeriesRepo(freshDb),
+        ),
+      ],
+    );
+    addTearDown(c.dispose);
+    await c.read(isOnlineProvider.future);
+
+    final data = await c.read(comicVineVolumeProvider(('s', 'se1')).future);
+
+    // Before the fix this returned null (db.getSeries was null -> bail) and
+    // searchVolumes was never called.
+    expect(data?.matchedId, 1, reason: 'matched despite no pre-cached row');
+    expect(api.searchCalls, 1);
+    expect(
+      await freshDb.getCachedMetadata('s', 'comicvine.volume', 'se1'),
+      isNotNull,
     );
   });
 
