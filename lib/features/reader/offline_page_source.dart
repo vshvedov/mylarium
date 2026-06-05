@@ -41,6 +41,17 @@ class OfflinePageSource implements PageSource {
       );
 
   @override
+  ImageProvider thumbnail(int i) => OfflinePageImageProvider(
+        extractor: extractor,
+        sourceId: sourceId,
+        bookId: bookId,
+        archivePath: archivePath,
+        entry: entries[i],
+        entryIndex: i,
+        cacheWidth: kScrubberThumbWidth,
+      );
+
+  @override
   Future<ImageProvider> page(int i) async => imageProvider(i);
 
   // Page dimensions are unknown offline without decoding; webtoon uses the

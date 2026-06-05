@@ -30,6 +30,7 @@ class ReaderSettingsRepository {
       invertTaps: row.invertTaps,
       doubleTapZoom: row.doubleTapZoom,
       animatePageTurn: row.animatePageTurn,
+      direction: row.direction,
     );
   }
 
@@ -47,5 +48,6 @@ class ReaderSettingsRepository {
         invertTaps: Value(s.invertTaps),
         doubleTapZoom: Value(s.doubleTapZoom),
         animatePageTurn: Value(s.animatePageTurn),
+        direction: Value(s.direction.name),
       ));
 }

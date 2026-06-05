@@ -92,6 +92,14 @@ abstract final class AppIcons {
       IconData(0xe18c, fontFamily: _family, fontPackage: _package); // circleHalf
   static const nudge =
       IconData(0xe83c, fontFamily: _family, fontPackage: _package); // swap
+  static const prevChapter =
+      IconData(0xe5a4, fontFamily: _family, fontPackage: _package); // skipBack
+  static const nextChapter = IconData(0xe5a6,
+      fontFamily: _family, fontPackage: _package); // skipForward
+  static const readingDirection = IconData(0xe0a0,
+      fontFamily: _family, fontPackage: _package); // arrowsLeftRight
+  static const close =
+      IconData(0xe4f6, fontFamily: _family, fontPackage: _package); // x
 
   // Offline / downloads
   static const download = IconData(0xe20c,

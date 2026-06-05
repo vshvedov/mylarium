@@ -25,7 +25,10 @@ void main() {
     await oldDb.close();
 
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 4);
+    // Validate at head (11): adding `direction` to reader_settings means the
+    // from<4 createTable now emits the v11 shape, so this chained path must reach
+    // head to match (same precedent as download_tasks.permanent's v4->v5 at v6).
+    await verifier.migrateAndValidate(db, 11);
 
     // v3 data survived.
     final series = await db.watchSeries('s1').first;
@@ -51,7 +54,10 @@ void main() {
     final db = AppDatabase(schema.newConnection());
     // Validates the cumulative path AND that the migrated schema matches the
     // committed v4 snapshot (which onCreate/createAll also produces).
-    await verifier.migrateAndValidate(db, 4);
+    // Validate at head (11): adding `direction` to reader_settings means the
+    // from<4 createTable now emits the v11 shape, so this chained path must reach
+    // head to match (same precedent as download_tasks.permanent's v4->v5 at v6).
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

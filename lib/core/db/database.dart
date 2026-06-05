@@ -48,7 +48,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -137,6 +137,21 @@ class AppDatabase extends _$AppDatabase {
             if (from >= 7) {
               await m.addColumn(syncQueue, syncQueue.op);
               await m.addColumn(seriesMeta, seriesMeta.rating);
+            }
+          }
+          // v10 -> v11: per-series reading direction (T4), the source of truth for
+          // double-page RTL. reader_settings is created in the from<7 (actually
+          // from<4) block, where createTable already emits the v11 shape including
+          // `direction`; only a real v4..v10 install has the table WITHOUT it, so
+          // the addColumn is guarded on from >= 4. The backfill keeps a series that
+          // read pagedRtl in RTL when it later switches to double-page.
+          if (from < 11 && to >= 11) {
+            if (from >= 4) {
+              await m.addColumn(readerSettings, readerSettings.direction);
+              await customStatement(
+                "UPDATE reader_settings SET direction = 'rtl' "
+                "WHERE mode = 'pagedRtl'",
+              );
             }
           }
         },
@@ -336,6 +351,19 @@ class AppDatabase extends _$AppDatabase {
       (select(books)
             ..where((t) =>
                 t.sourceId.equals(sourceId) & t.seriesId.equals(seriesId)))
+          .get();
+
+  /// Cached books of a series, ordered exactly like [watchBooksForSeries]
+  /// (numberSort, then number) but awaitable. Backs the reader's next/prev book
+  /// resolution (T4), so "next in the reader" matches "next in the series list".
+  Future<List<Book>> getBooksForSeriesOrdered(String sourceId, String seriesId) =>
+      (select(books)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.seriesId.equals(seriesId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.numberSort),
+              (t) => OrderingTerm(expression: t.number),
+            ]))
           .get();
 
   /// Optimistically updates a cached book's read fields after a local mark

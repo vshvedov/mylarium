@@ -43,6 +43,15 @@ class KomgaPageSource implements PageSource {
       );
 
   @override
+  ImageProvider thumbnail(int i) => KomgaPageImageProvider(
+        api: api,
+        sourceId: sourceId,
+        bookId: bookId,
+        pageNumber: pages[i].number,
+        cacheWidth: kScrubberThumbWidth,
+      );
+
+  @override
   double? aspectRatio(int i) {
     final p = pages[i];
     final w = p.width, h = p.height;

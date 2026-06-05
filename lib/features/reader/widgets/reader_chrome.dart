@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/cover_palette.dart';
 import '../reader_models.dart';
+import '../reader_navigation.dart';
 
 /// Immersive reader chrome: a top bar (back, title, mode/fit/options menus, and
 /// a double-page nudge) plus a bottom thumbnail scrubber. The scrubber works in
@@ -20,12 +22,17 @@ class ReaderChrome extends ConsumerStatefulWidget {
     required this.settings,
     required this.pageCount,
     required this.currentPage,
-    required this.previewImage,
+    required this.thumbnailImage,
+    required this.rtl,
+    required this.neighbors,
     required this.onClose,
     required this.onSettings,
     required this.onSeekPage,
+    required this.onJumpToPage,
+    required this.onOpenBook,
     required this.onImageQuality,
     required this.onColorCorrection,
+    this.onToggleDirection,
     this.onNudge,
     this.nudged = false,
   });
@@ -45,18 +52,33 @@ class ReaderChrome extends ConsumerStatefulWidget {
   /// Current page (0-based).
   final int currentPage;
 
-  /// Provides a page's image for the scrubber preview thumbnail.
-  final ImageProvider Function(int page) previewImage;
+  /// Provides a small-decode page image for the scrubber preview thumbnail (T4).
+  final ImageProvider Function(int page) thumbnailImage;
+
+  /// Effective horizontal reading direction (drives the scrubber + toggle icon).
+  final bool rtl;
+
+  /// Previous/next book in the series, for the chapter-nav buttons (T4).
+  final BookNeighbors neighbors;
 
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
   final void Function(int page) onSeekPage;
+
+  /// Jump directly to a page (0-based), from the jump-to-page dialog.
+  final void Function(int page) onJumpToPage;
+
+  /// Open a sibling book (prev/next chapter navigation).
+  final void Function(String bookId) onOpenBook;
 
   /// Opens the global image-quality controls.
   final VoidCallback onImageQuality;
 
   /// Opens the page color-correction controls.
   final VoidCallback onColorCorrection;
+
+  /// Flip reading direction (shown only when non-null; null hides it in webtoon).
+  final VoidCallback? onToggleDirection;
 
   /// Double-page single-page nudge (shown only when non-null).
   final VoidCallback? onNudge;
@@ -95,8 +117,10 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
               color: barColor,
               offline: widget.offline,
               settings: widget.settings,
+              rtl: widget.rtl,
               onClose: widget.onClose,
               onSettings: widget.onSettings,
+              onToggleDirection: widget.onToggleDirection,
               onImageQuality: widget.onImageQuality,
               onColorCorrection: widget.onColorCorrection,
               onNudge: widget.onNudge,
@@ -104,7 +128,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
             ),
             const Spacer(),
             if (_dragPage != null) _PreviewThumb(
-              image: widget.previewImage(_dragPage!),
+              image: widget.thumbnailImage(_dragPage!),
               label: '${_dragPage! + 1}',
             ),
             _scrubber(context, barColor),
@@ -115,7 +139,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
   }
 
   Widget _scrubber(BuildContext context, Color barColor) {
-    final rtl = widget.settings.mode.isRtl;
+    final rtl = widget.rtl;
     final count = widget.pageCount;
     final value = (_dragPage ?? widget.currentPage).clamp(0, count - 1);
     return Material(
@@ -126,8 +150,25 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Row(
             children: [
-              Text('${value + 1}/$count',
-                  style: Theme.of(context).textTheme.labelMedium),
+              // Previous chapter (logical book order, not page direction).
+              IconButton(
+                icon: const Icon(AppIcons.prevChapter),
+                iconSize: 20,
+                tooltip: 'Previous book',
+                onPressed: widget.neighbors.hasPrev
+                    ? () => widget.onOpenBook(widget.neighbors.prevId!)
+                    : null,
+              ),
+              InkWell(
+                onTap: count <= 1 ? null : () => _openJumpToPage(context, count),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  child: Text('${value + 1}/$count',
+                      style: Theme.of(context).textTheme.labelMedium),
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: count <= 1
@@ -151,12 +192,77 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
                         ),
                       ),
               ),
+              // Next chapter.
+              IconButton(
+                icon: const Icon(AppIcons.nextChapter),
+                iconSize: 20,
+                tooltip: 'Next book',
+                onPressed: widget.neighbors.hasNext
+                    ? () => widget.onOpenBook(widget.neighbors.nextId!)
+                    : null,
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  /// Jump-to-page dialog. Empty/non-integer entry cancels (no seek); a valid
+  /// integer is clamped to 1..count and seeked via [ReaderChrome.onJumpToPage].
+  Future<void> _openJumpToPage(BuildContext context, int count) async {
+    final page = await showDialog<int>(
+      context: context,
+      builder: (_) => _JumpToPageDialog(count: count),
+    );
+    if (page == null) return; // cancelled / non-numeric
+    widget.onJumpToPage(page.clamp(1, count) - 1);
+  }
+}
+
+/// A small dialog that owns its [TextEditingController] for its own lifetime, so
+/// the controller is disposed only after the dialog's exit animation finishes
+/// (disposing it synchronously after `showDialog` returns throws "used after
+/// being disposed" while the route is still animating out).
+class _JumpToPageDialog extends StatefulWidget {
+  const _JumpToPageDialog({required this.count});
+
+  final int count;
+
+  @override
+  State<_JumpToPageDialog> createState() => _JumpToPageDialogState();
+}
+
+class _JumpToPageDialogState extends State<_JumpToPageDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.of(context).pop(int.tryParse(_controller.text));
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Go to page'),
+        content: TextField(
+          controller: _controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(hintText: '1 - ${widget.count}'),
+          onSubmitted: (_) => _submit(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(onPressed: _submit, child: const Text('Go')),
+        ],
+      );
 }
 
 class _PreviewThumb extends StatelessWidget {
@@ -211,8 +317,10 @@ class _TopBar extends StatelessWidget {
     required this.color,
     required this.offline,
     required this.settings,
+    required this.rtl,
     required this.onClose,
     required this.onSettings,
+    required this.onToggleDirection,
     required this.onImageQuality,
     required this.onColorCorrection,
     required this.onNudge,
@@ -223,8 +331,10 @@ class _TopBar extends StatelessWidget {
   final Color color;
   final bool offline;
   final ReaderSettings settings;
+  final bool rtl;
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
+  final VoidCallback? onToggleDirection;
   final VoidCallback onImageQuality;
   final VoidCallback onColorCorrection;
   final VoidCallback? onNudge;
@@ -258,6 +368,13 @@ class _TopBar extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
+              if (onToggleDirection != null)
+                IconButton(
+                  icon: const Icon(AppIcons.readingDirection),
+                  tooltip: rtl ? 'Right to left' : 'Left to right',
+                  isSelected: rtl,
+                  onPressed: onToggleDirection,
+                ),
               if (onNudge != null)
                 IconButton(
                   icon: const Icon(AppIcons.nudge),

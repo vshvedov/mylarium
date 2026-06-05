@@ -8,11 +8,14 @@ import 'app/app.dart';
 import 'app/router.dart';
 import 'app/theme/theme_controller.dart';
 import 'core/db/database.dart';
+import 'core/platform/system_ui.dart';
 import 'features/offline/offline_providers.dart';
 import 'features/sync/sync_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Run edge to edge with the top status bar hidden (cover-forward fullscreen).
+  unawaited(setAppFullscreen());
   late final AppDatabase db;
   late final AppSetting settings;
   try {

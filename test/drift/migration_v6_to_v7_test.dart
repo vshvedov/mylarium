@@ -86,10 +86,12 @@ void main() {
     await db.close();
   });
 
-  test('v2 -> v10 chained migration reaches the v10 schema', () async {
+  test('v2 -> head chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 10);
+    // Validates at head (11): the from<4 createTable now emits the v11
+    // reader_settings shape (with `direction`).
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

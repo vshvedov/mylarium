@@ -43,6 +43,7 @@ class ReaderData {
     required this.sourceId,
     required this.bookId,
     required this.seriesId,
+    required this.title,
     required this.settings,
     required this.source,
     required this.initialPage,
@@ -52,6 +53,9 @@ class ReaderData {
   final String sourceId;
   final String bookId;
   final String seriesId;
+
+  /// The current book's display title, shown by the end-of-book seam (T4).
+  final String title;
   final ReaderSettings settings;
   final ReaderPages source;
 
@@ -68,6 +72,7 @@ class ReaderData {
         sourceId: sourceId,
         bookId: bookId,
         seriesId: seriesId,
+        title: title,
         settings: settings ?? this.settings,
         source: source,
         initialPage: initialPage,
@@ -96,7 +101,9 @@ class ReaderController extends _$ReaderController {
       try {
         final entries =
             await ref.watch(archiveExtractorProvider).entries(archivePath);
-        final seriesId = (await db.getBook(sourceId, bookId))?.seriesId ?? '';
+        final book = await db.getBook(sourceId, bookId);
+        final seriesId = book?.seriesId ?? '';
+        final title = book?.title ?? '';
         final settings = await settingsRepo.load(sourceId, seriesId);
         final colorAdjustments =
             await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
@@ -104,6 +111,7 @@ class ReaderController extends _$ReaderController {
           sourceId: sourceId,
           bookId: bookId,
           seriesId: seriesId,
+          title: title,
           settings: settings,
           source: OfflinePages(archivePath, entries),
           initialPage: initialPage,
@@ -123,11 +131,14 @@ class ReaderController extends _$ReaderController {
 
     final cached = await db.getBook(sourceId, bookId);
     String seriesId;
+    String title;
     if (cached != null) {
       seriesId = cached.seriesId;
+      title = cached.title;
     } else {
       final dto = await api.getBook(bookId);
       seriesId = dto.seriesId;
+      title = dto.title;
       await db.upsertBook(bookToRow(sourceId, dto));
     }
 
@@ -156,6 +167,7 @@ class ReaderController extends _$ReaderController {
       sourceId: sourceId,
       bookId: bookId,
       seriesId: seriesId,
+      title: title,
       settings: settings,
       source: OnlinePages(api, pages),
       initialPage: initialPage,
@@ -163,12 +175,45 @@ class ReaderController extends _$ReaderController {
     );
   }
 
-  /// Persists and applies new reader settings for this book's series.
+  /// Persists and applies new reader settings for this book's series. The
+  /// direction normalizer keeps the paged-mode suffix and [ReaderSettings.direction]
+  /// in lockstep (the single write path; see the T4 design doc).
   Future<void> updateSettings(ReaderSettings settings) async {
     final data = state.valueOrNull;
     if (data == null) return;
+    final normalized = _normalizeDirection(settings);
     await ReaderSettingsRepository(ref.read(appDatabaseProvider))
-        .save(data.sourceId, data.seriesId, settings);
-    state = AsyncData(data.copyWith(settings: settings));
+        .save(data.sourceId, data.seriesId, normalized);
+    state = AsyncData(data.copyWith(settings: normalized));
   }
+
+  /// Flips horizontal reading direction and persists it (T4). Paged modes flip the
+  /// mode suffix (the normalizer mirrors `direction`); double-page flips `direction`
+  /// directly; webtoon is a no-op (the toggle is hidden there).
+  Future<void> toggleDirection() async {
+    final data = state.valueOrNull;
+    if (data == null) return;
+    final s = data.settings;
+    final next = switch (s.mode) {
+      ReadingMode.pagedLtr => s.copyWith(mode: ReadingMode.pagedRtl),
+      ReadingMode.pagedRtl => s.copyWith(mode: ReadingMode.pagedLtr),
+      ReadingMode.doublePage => s.copyWith(
+          direction: s.direction == ReadingDirection.rtl
+              ? ReadingDirection.ltr
+              : ReadingDirection.rtl,
+        ),
+      ReadingMode.webtoon || ReadingMode.webtoonGaps => s,
+    };
+    if (identical(next, s)) return;
+    await updateSettings(next);
+  }
+
+  /// Keeps the paged-mode suffix and [ReaderSettings.direction] coherent: a paged
+  /// mode is authoritative for direction (sets it); double-page/webtoon inherit the
+  /// current direction unchanged.
+  ReaderSettings _normalizeDirection(ReaderSettings s) => switch (s.mode) {
+        ReadingMode.pagedLtr => s.copyWith(direction: ReadingDirection.ltr),
+        ReadingMode.pagedRtl => s.copyWith(direction: ReadingDirection.rtl),
+        _ => s,
+      };
 }

@@ -47,10 +47,11 @@ void main() {
     await db.close();
   });
 
-  test('v2 -> v6 chained migration reaches the v6 schema', () async {
+  test('v2 -> head chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 6);
+    // Validates at head (11): see migration_v3_to_v4_test for the rationale.
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

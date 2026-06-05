@@ -64,4 +64,43 @@ void main() {
     final other = await repo.load('s1', 'ser2');
     expect(other.mode, ReadingMode.pagedLtr);
   });
+
+  test('direction round-trips and defaults to ltr', () async {
+    expect(const ReaderSettings().direction, ReadingDirection.ltr);
+    await repo.save('s1', 'ser1',
+        const ReaderSettings(direction: ReadingDirection.rtl));
+    expect((await repo.load('s1', 'ser1')).direction, ReadingDirection.rtl);
+  });
+
+  test('defaults seed direction from the manga hint', () async {
+    expect(ReaderSettings.defaults(mangaDirection: 'RIGHT_TO_LEFT').direction,
+        ReadingDirection.rtl);
+    expect(ReaderSettings.defaults(mangaDirection: 'LEFT_TO_RIGHT').direction,
+        ReadingDirection.ltr);
+    expect(ReaderSettings.defaults(mangaDirection: 'WEBTOON').direction,
+        ReadingDirection.ltr);
+  });
+
+  test('effectiveRtl across all modes', () {
+    expect(effectiveRtl(const ReaderSettings(mode: ReadingMode.pagedLtr)),
+        isFalse);
+    expect(effectiveRtl(const ReaderSettings(mode: ReadingMode.pagedRtl)),
+        isTrue);
+    expect(
+        effectiveRtl(const ReaderSettings(
+            mode: ReadingMode.doublePage, direction: ReadingDirection.rtl)),
+        isTrue);
+    expect(
+        effectiveRtl(const ReaderSettings(
+            mode: ReadingMode.doublePage, direction: ReadingDirection.ltr)),
+        isFalse);
+    expect(
+        effectiveRtl(const ReaderSettings(
+            mode: ReadingMode.webtoon, direction: ReadingDirection.rtl)),
+        isFalse);
+    expect(
+        effectiveRtl(const ReaderSettings(
+            mode: ReadingMode.webtoonGaps, direction: ReadingDirection.rtl)),
+        isFalse);
+  });
 }

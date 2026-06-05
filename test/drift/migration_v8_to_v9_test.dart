@@ -36,9 +36,12 @@ void main() {
     expect(s.themeMode, 'dark');
     expect(s.cacheCapBytes, 999);
     expect(s.imageQualityManualLevel, 2);
-    final rs = await db.getReaderSettings('s1', 'ser1');
-    expect(rs, isNotNull);
-    expect(rs!.mode, 'pagedRtl');
+    // Read via a raw select (not the head getReaderSettings, which expects the
+    // v11 `direction` column this v9-validated db does not have yet).
+    final rs = await db
+        .customSelect("SELECT mode FROM reader_settings WHERE series_id = 'ser1'")
+        .getSingle();
+    expect(rs.data['mode'], 'pagedRtl');
 
     // The new table is usable.
     await db.upsertColorSettings(ColorSettingsCompanion(
@@ -64,10 +67,10 @@ void main() {
   // in their current (v10) shape (with op / rating), so this chain matches the
   // v10 snapshot, not the v9 one. See migration_v9_to_v10_test for the v9->v10
   // step and the T3 op/rating assertions.
-  test('v2 -> v10 chained migration reaches the v10 schema', () async {
+  test('v2 -> head chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 10);
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

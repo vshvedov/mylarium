@@ -22,6 +22,11 @@ class ReaderSettings extends Table {
   BoolColumn get animatePageTurn =>
       boolean().withDefault(const Constant(true))();
 
+  /// Horizontal reading direction (`ltr` / `rtl`), `.name`-encoded. Added in v11
+  /// (T4): the source of truth for double-page direction; paged modes also carry
+  /// it in `mode`, kept in lockstep by the settings normalizer.
+  TextColumn get direction => text().withDefault(const Constant('ltr'))();
+
   @override
   Set<Column> get primaryKey => {sourceId, seriesId};
 }

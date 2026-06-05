@@ -43,11 +43,12 @@ void main() {
   });
 
   // Validated at head (v10): a from<7 chain createTable's sync_queue / series_meta
-  // in their current (v10) shape, so this chain can only match the v10 snapshot.
-  test('v2 -> v10 chained migration reaches the v10 schema', () async {
+  // in their current (head) shape (reader_settings now also carries `direction`),
+  // so this chain can only match the head snapshot.
+  test('v2 -> head chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 10);
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

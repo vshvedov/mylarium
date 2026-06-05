@@ -58,10 +58,12 @@ void main() {
     await db.close();
   });
 
-  test('v2 -> v6 chained migration reaches the head schema', () async {
+  test('v2 -> head chained migration reaches the head schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 6);
+    // Validates at head (11): the from<4 createTable now emits reader_settings
+    // with the v11 `direction` column, so this path must reach head to match.
+    await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
 }

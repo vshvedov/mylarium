@@ -9,6 +9,7 @@ import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../core/network/komga_exception.dart';
+import '../../core/platform/system_ui.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
 import '../sync/sync_models.dart';
@@ -28,11 +29,13 @@ import 'paged_view.dart';
 import 'page_prefetcher.dart';
 import 'reader_controller.dart';
 import 'reader_models.dart';
+import 'reader_navigation.dart';
 import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
 import 'widgets/color_correction_sheet.dart';
 import 'widgets/image_quality_sheet.dart';
 import 'widgets/reader_chrome.dart';
+import 'widgets/reader_seam.dart';
 
 /// The reader. Loads the book online, then renders the current mode's view with
 /// immersive chrome, tap-zone gestures, and a precache-ahead pipeline.
@@ -58,7 +61,15 @@ class ReaderScreen extends ConsumerWidget {
         ),
         data: (data) => _readerPageCount(data) == 0
             ? const _ErrorState(title: 'This book has no pages')
-            : _ReaderBody(sourceId: sourceId, bookId: bookId, data: data),
+            // Key on bookId so navigating to a sibling chapter (pushReplacement to
+            // the same route with a different bookId) tears down and recreates the
+            // reader state (PageController, page index, session recorder).
+            : _ReaderBody(
+                key: ValueKey(bookId),
+                sourceId: sourceId,
+                bookId: bookId,
+                data: data,
+              ),
       ),
     );
   }
@@ -69,8 +80,17 @@ int _readerPageCount(ReaderData data) => switch (data.source) {
       OfflinePages(:final entries) => entries.length,
     };
 
+/// Decode headroom over the viewport so pinch-zoom stays sharp: a page is
+/// decoded up to this multiple of the viewport width (every reading mode is
+/// pinch-zoomable, up to `maxScale` = 4x). The decode is still bounded by the
+/// image-quality ceiling and clamped to the page's intrinsic width in the page
+/// sources (never upscaled), so a normal page costs no more than its native
+/// resolution and zoom reveals real detail instead of a stretched thumbnail.
+const double kReaderZoomHeadroom = 4.0;
+
 class _ReaderBody extends ConsumerStatefulWidget {
   const _ReaderBody({
+    super.key,
     required this.sourceId,
     required this.bookId,
     required this.data,
@@ -126,6 +146,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Canonical current page index (0-based).
   int _page = 0;
 
+  /// End-of-book seam: true once the last page/spread is reached; [_seamDismissed]
+  /// hides it after the user closes it (re-armed by leaving and returning to the
+  /// end, or by trying to page past it).
+  bool _atEnd = false;
+  bool _seamDismissed = false;
+
   /// Per-page decode-width ceiling from the global image-quality preference.
   /// Seeded in [initState] and kept current via [build]'s listener so changing
   /// the setting re-decodes pages live.
@@ -148,13 +174,25 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _recorder.onPage(_page, _nowMs());
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onWebtoonScroll);
+    // Distraction-free, full-bleed reading: hide the system bars and claim the
+    // screen edges from the Android back/switch gesture (no-op on iOS).
+    unawaited(enterReaderImmersive());
   }
 
   int _nowMs() => DateTime.now().millisecondsSinceEpoch;
 
   int get _pageCount => _source?.pageCount ?? _readerPageCount(widget.data);
 
-  bool _isLastPage(int page) => _pageCount > 0 && page >= _pageCount - 1;
+  /// Whether [page] is at the end of the book in the current mode. In double-page
+  /// the final spread shows two pages, so any page in that spread counts as the
+  /// end (otherwise finishing a spread-read book would never mark it completed).
+  bool _isLastPage(int page) {
+    if (_pageCount <= 0) return false;
+    if (_mode == ReadingMode.doublePage && _pairs.isNotEmpty) {
+      return _pairs.last.contains(page);
+    }
+    return page >= _pageCount - 1;
+  }
 
   /// Records a page change: feeds the session recorder and schedules a debounced
   /// progress write-back. The last page flushes immediately (marks completion).
@@ -209,6 +247,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       case AppLifecycleState.resumed:
         // Start a fresh session segment at the current page.
         _recorder.onPage(_page, _nowMs());
+        // Re-assert immersion + gesture exclusion (the OS can restore the bars
+        // and clear exclusion rects while backgrounded).
+        unawaited(enterReaderImmersive());
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
@@ -220,6 +261,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final offsets = _webtoonOffsets();
     final page = webtoonPageAt(offsets, _scrollController.offset);
     if (page != _page) {
+      _setAtEnd(page >= _pageCount - 1);
       setState(() => _page = page);
       _prefetcher?.onPage(page);
       _reportPage(page);
@@ -245,7 +287,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   @override
   void didUpdateWidget(_ReaderBody old) {
     super.didUpdateWidget(old);
-    if (old.data.settings.mode != _mode) {
+    // Reset the controller on a mode change OR an effective-direction flip: in
+    // double-page a direction toggle changes only `direction` (not `mode`), but
+    // the spread `reverse:` flips, so the controller must be rebuilt at the
+    // current page to land on the right spread.
+    if (old.data.settings.mode != _mode ||
+        effectiveRtl(old.data.settings) != effectiveRtl(widget.data.settings)) {
       _resetControllerForMode();
     }
   }
@@ -253,14 +300,15 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _rebuildSource({bool force = false}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
-    // Decode to the viewport's physical width, but cap it: on a large hi-DPI
-    // tablet the raw value (e.g. ~2560px) yields ~40 MB bitmaps that blow the
-    // image-cache budget and hitch the GPU upload on every page. Capping bounds
-    // per-page memory so the prefetch window fits with headroom; pinch-zoom
-    // past this is a deliberate, rare path, not the per-turn cost. The decode
-    // is additionally clamped to each page's intrinsic width (never upscaled)
-    // inside the page sources.
-    final cacheWidth = (width * dpr).round().clamp(1, _decodeCeiling);
+    // Decode with zoom headroom over the viewport so pinch-zoom stays sharp
+    // (decoding only to the viewport width left a zoomed page as a stretched
+    // thumbnail). The target is bounded by the image-quality ceiling (so memory
+    // stays in budget on large hi-DPI tablets) and clamped to each page's
+    // intrinsic width inside the page sources (never upscaled), so a normal page
+    // costs at most its native resolution. Raise Image Quality to Native to
+    // unlock full-resolution zoom on sources wider than the ceiling.
+    final cacheWidth =
+        (width * dpr * kReaderZoomHeadroom).round().clamp(1, _decodeCeiling);
     // Only rebuild when the decode sizing actually changes (e.g. rotation), so
     // a metrics/theme dependency change does not reset the prefetch window.
     // [force] is used when a color change must rebuild the source even though
@@ -326,6 +374,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final target = _controllerIndexFor(_page);
     _pageController?.dispose();
     _pageController = PageController(initialPage: target);
+    // A new controller does not fire onPageChanged, so recompute end-ness here
+    // (e.g. switching mode while the seam is showing on the last page).
+    _setAtEnd(_isEndController(target));
     setState(() {});
   }
 
@@ -345,9 +396,28 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     return _pairs[index].first;
   }
 
+  /// Whether [controllerIndex] is the last position in the current paged mode
+  /// (the last spread in double-page, the last page otherwise).
+  bool _isEndController(int controllerIndex) {
+    final source = _source;
+    if (source == null) return false;
+    final maxIndex =
+        (_mode == ReadingMode.doublePage ? _pairs.length : source.pageCount) - 1;
+    return maxIndex >= 0 && controllerIndex >= maxIndex;
+  }
+
+  /// Updates [_atEnd]; leaving the end re-arms the seam (clears the dismissal).
+  void _setAtEnd(bool atEnd) {
+    if (atEnd == _atEnd) return;
+    _atEnd = atEnd;
+    if (!atEnd) _seamDismissed = false;
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // Leave the reader: restore the app-wide chrome and clear gesture exclusion.
+    unawaited(exitReaderImmersive());
     _progressDebounce?.cancel();
     // Push the final position (durable) and append the session (best-effort;
     // the SyncEngine + database are app-lifetime, so the write survives this
@@ -364,6 +434,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _page = _pageForControllerIndex(index);
     _prefetcher?.onPage(_page);
     _reportPage(_page);
+    _setAtEnd(_isEndController(index));
     setState(() {});
   }
 
@@ -391,7 +462,18 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final next = (controller.page?.round() ?? 0) + delta;
     final maxIndex =
         (_mode == ReadingMode.doublePage ? _pairs.length : _source!.pageCount) - 1;
-    if (next < 0 || next > maxIndex) return;
+    if (next < 0) return;
+    if (next > maxIndex) {
+      // Trying to advance past the last page raises the seam (re-arming it even
+      // if it was dismissed).
+      if (delta > 0) {
+        setState(() {
+          _atEnd = true;
+          _seamDismissed = false;
+        });
+      }
+      return;
+    }
     if (widget.data.settings.animatePageTurn) {
       controller.animateToPage(next,
           duration: const Duration(milliseconds: 220), curve: Curves.easeOut);
@@ -406,7 +488,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       normalized: normalized,
       preset: s.taps,
       invert: s.invertTaps,
-      rtl: s.mode.isRtl,
+      rtl: effectiveRtl(s),
     );
     switch (action) {
       case TapAction.prev:
@@ -489,21 +571,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           aspectRatioOf: source.aspectRatio,
           fit: s.fit,
           viewportAspect: viewportAspect,
-          rtl: s.mode.isRtl,
+          rtl: effectiveRtl(s),
           doubleTapZoom: s.doubleTapZoom,
           zoomed: _zoomed,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
         ),
-      // Double-page is LTR in T4: the reading-mode enum has no RTL spread
-      // variant and ReaderSettings carries no separate direction field, so
-      // RTL (manga) double-page is a follow-up that needs a model addition.
+      // Double-page direction follows the per-series reading direction (T4):
+      // effectiveRtl reads the `direction` field for double-page mode.
       ReadingMode.doublePage => DoublePageView(
           pageController: _pageController!,
           pairs: _pairs,
           imageBuilder: source.imageProvider,
           fit: s.fit,
-          rtl: false,
+          rtl: effectiveRtl(s),
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
         ),
@@ -524,9 +605,23 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final filter = _colorFilter;
     final filteredView =
         filter == null ? view : ColorFiltered(colorFilter: filter, child: view);
+    final neighbors = ref
+            .watch(bookNeighborsProvider(
+                widget.sourceId, widget.data.seriesId, widget.bookId))
+            .valueOrNull ??
+        const BookNeighbors();
     return Stack(
       children: [
         Positioned.fill(child: filteredView),
+        if (_atEnd && !_seamDismissed)
+          Positioned.fill(
+            child: ReaderSeam(
+              title: widget.data.title,
+              neighbors: neighbors,
+              onOpenBook: _openBook,
+              onDismiss: () => setState(() => _seamDismissed = true),
+            ),
+          ),
         Positioned.fill(
           child: ReaderChrome(
             visible: _chrome,
@@ -537,12 +632,23 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             settings: s,
             pageCount: source.pageCount,
             currentPage: _page,
-            previewImage: source.imageProvider,
+            thumbnailImage: source.thumbnail,
+            rtl: effectiveRtl(s),
+            neighbors: neighbors,
             onClose: () => context.pop(),
             onSettings: (next) =>
                 ref.read(readerControllerProvider(widget.sourceId, widget.bookId)
                     .notifier).updateSettings(next),
             onSeekPage: _seekPage,
+            onJumpToPage: _seekPage,
+            onOpenBook: _openBook,
+            onToggleDirection: s.mode.isWebtoon
+                ? null
+                : () => ref
+                    .read(readerControllerProvider(
+                            widget.sourceId, widget.bookId)
+                        .notifier)
+                    .toggleDirection(),
             onImageQuality: _openImageQuality,
             onColorCorrection: _openColorCorrection,
             onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
@@ -552,6 +658,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       ],
     );
   }
+
+  /// Opens a sibling book in place (replaces the current reader route so back
+  /// returns to the series, not a chain of chapters).
+  void _openBook(String bookId) =>
+      context.pushReplacement('/reader/${widget.sourceId}/$bookId');
 }
 
 class _ErrorState extends StatelessWidget {

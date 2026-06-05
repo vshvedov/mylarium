@@ -3829,6 +3829,18 @@ class $ReaderSettingsTable extends ReaderSettings
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _directionMeta = const VerificationMeta(
+    'direction',
+  );
+  @override
+  late final GeneratedColumn<String> direction = GeneratedColumn<String>(
+    'direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ltr'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     sourceId,
@@ -3839,6 +3851,7 @@ class $ReaderSettingsTable extends ReaderSettings
     invertTaps,
     doubleTapZoom,
     animatePageTurn,
+    direction,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3916,6 +3929,12 @@ class $ReaderSettingsTable extends ReaderSettings
         ),
       );
     }
+    if (data.containsKey('direction')) {
+      context.handle(
+        _directionMeta,
+        direction.isAcceptableOrUnknown(data['direction']!, _directionMeta),
+      );
+    }
     return context;
   }
 
@@ -3957,6 +3976,10 @@ class $ReaderSettingsTable extends ReaderSettings
         DriftSqlType.bool,
         data['${effectivePrefix}animate_page_turn'],
       )!,
+      direction: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}direction'],
+      )!,
     );
   }
 
@@ -3979,6 +4002,11 @@ class ReaderSettingsRow extends DataClass
   final bool invertTaps;
   final bool doubleTapZoom;
   final bool animatePageTurn;
+
+  /// Horizontal reading direction (`ltr` / `rtl`), `.name`-encoded. Added in v11
+  /// (T4): the source of truth for double-page direction; paged modes also carry
+  /// it in `mode`, kept in lockstep by the settings normalizer.
+  final String direction;
   const ReaderSettingsRow({
     required this.sourceId,
     required this.seriesId,
@@ -3988,6 +4016,7 @@ class ReaderSettingsRow extends DataClass
     required this.invertTaps,
     required this.doubleTapZoom,
     required this.animatePageTurn,
+    required this.direction,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4000,6 +4029,7 @@ class ReaderSettingsRow extends DataClass
     map['invert_taps'] = Variable<bool>(invertTaps);
     map['double_tap_zoom'] = Variable<bool>(doubleTapZoom);
     map['animate_page_turn'] = Variable<bool>(animatePageTurn);
+    map['direction'] = Variable<String>(direction);
     return map;
   }
 
@@ -4013,6 +4043,7 @@ class ReaderSettingsRow extends DataClass
       invertTaps: Value(invertTaps),
       doubleTapZoom: Value(doubleTapZoom),
       animatePageTurn: Value(animatePageTurn),
+      direction: Value(direction),
     );
   }
 
@@ -4030,6 +4061,7 @@ class ReaderSettingsRow extends DataClass
       invertTaps: serializer.fromJson<bool>(json['invertTaps']),
       doubleTapZoom: serializer.fromJson<bool>(json['doubleTapZoom']),
       animatePageTurn: serializer.fromJson<bool>(json['animatePageTurn']),
+      direction: serializer.fromJson<String>(json['direction']),
     );
   }
   @override
@@ -4044,6 +4076,7 @@ class ReaderSettingsRow extends DataClass
       'invertTaps': serializer.toJson<bool>(invertTaps),
       'doubleTapZoom': serializer.toJson<bool>(doubleTapZoom),
       'animatePageTurn': serializer.toJson<bool>(animatePageTurn),
+      'direction': serializer.toJson<String>(direction),
     };
   }
 
@@ -4056,6 +4089,7 @@ class ReaderSettingsRow extends DataClass
     bool? invertTaps,
     bool? doubleTapZoom,
     bool? animatePageTurn,
+    String? direction,
   }) => ReaderSettingsRow(
     sourceId: sourceId ?? this.sourceId,
     seriesId: seriesId ?? this.seriesId,
@@ -4065,6 +4099,7 @@ class ReaderSettingsRow extends DataClass
     invertTaps: invertTaps ?? this.invertTaps,
     doubleTapZoom: doubleTapZoom ?? this.doubleTapZoom,
     animatePageTurn: animatePageTurn ?? this.animatePageTurn,
+    direction: direction ?? this.direction,
   );
   ReaderSettingsRow copyWithCompanion(ReaderSettingsCompanion data) {
     return ReaderSettingsRow(
@@ -4082,6 +4117,7 @@ class ReaderSettingsRow extends DataClass
       animatePageTurn: data.animatePageTurn.present
           ? data.animatePageTurn.value
           : this.animatePageTurn,
+      direction: data.direction.present ? data.direction.value : this.direction,
     );
   }
 
@@ -4095,7 +4131,8 @@ class ReaderSettingsRow extends DataClass
           ..write('taps: $taps, ')
           ..write('invertTaps: $invertTaps, ')
           ..write('doubleTapZoom: $doubleTapZoom, ')
-          ..write('animatePageTurn: $animatePageTurn')
+          ..write('animatePageTurn: $animatePageTurn, ')
+          ..write('direction: $direction')
           ..write(')'))
         .toString();
   }
@@ -4110,6 +4147,7 @@ class ReaderSettingsRow extends DataClass
     invertTaps,
     doubleTapZoom,
     animatePageTurn,
+    direction,
   );
   @override
   bool operator ==(Object other) =>
@@ -4122,7 +4160,8 @@ class ReaderSettingsRow extends DataClass
           other.taps == this.taps &&
           other.invertTaps == this.invertTaps &&
           other.doubleTapZoom == this.doubleTapZoom &&
-          other.animatePageTurn == this.animatePageTurn);
+          other.animatePageTurn == this.animatePageTurn &&
+          other.direction == this.direction);
 }
 
 class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
@@ -4134,6 +4173,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
   final Value<bool> invertTaps;
   final Value<bool> doubleTapZoom;
   final Value<bool> animatePageTurn;
+  final Value<String> direction;
   final Value<int> rowid;
   const ReaderSettingsCompanion({
     this.sourceId = const Value.absent(),
@@ -4144,6 +4184,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
     this.invertTaps = const Value.absent(),
     this.doubleTapZoom = const Value.absent(),
     this.animatePageTurn = const Value.absent(),
+    this.direction = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ReaderSettingsCompanion.insert({
@@ -4155,6 +4196,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
     this.invertTaps = const Value.absent(),
     this.doubleTapZoom = const Value.absent(),
     this.animatePageTurn = const Value.absent(),
+    this.direction = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : sourceId = Value(sourceId),
        seriesId = Value(seriesId),
@@ -4170,6 +4212,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
     Expression<bool>? invertTaps,
     Expression<bool>? doubleTapZoom,
     Expression<bool>? animatePageTurn,
+    Expression<String>? direction,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4181,6 +4224,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
       if (invertTaps != null) 'invert_taps': invertTaps,
       if (doubleTapZoom != null) 'double_tap_zoom': doubleTapZoom,
       if (animatePageTurn != null) 'animate_page_turn': animatePageTurn,
+      if (direction != null) 'direction': direction,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4194,6 +4238,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
     Value<bool>? invertTaps,
     Value<bool>? doubleTapZoom,
     Value<bool>? animatePageTurn,
+    Value<String>? direction,
     Value<int>? rowid,
   }) {
     return ReaderSettingsCompanion(
@@ -4205,6 +4250,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
       invertTaps: invertTaps ?? this.invertTaps,
       doubleTapZoom: doubleTapZoom ?? this.doubleTapZoom,
       animatePageTurn: animatePageTurn ?? this.animatePageTurn,
+      direction: direction ?? this.direction,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4236,6 +4282,9 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
     if (animatePageTurn.present) {
       map['animate_page_turn'] = Variable<bool>(animatePageTurn.value);
     }
+    if (direction.present) {
+      map['direction'] = Variable<String>(direction.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4253,6 +4302,7 @@ class ReaderSettingsCompanion extends UpdateCompanion<ReaderSettingsRow> {
           ..write('invertTaps: $invertTaps, ')
           ..write('doubleTapZoom: $doubleTapZoom, ')
           ..write('animatePageTurn: $animatePageTurn, ')
+          ..write('direction: $direction, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10614,6 +10664,7 @@ typedef $$ReaderSettingsTableCreateCompanionBuilder =
       Value<bool> invertTaps,
       Value<bool> doubleTapZoom,
       Value<bool> animatePageTurn,
+      Value<String> direction,
       Value<int> rowid,
     });
 typedef $$ReaderSettingsTableUpdateCompanionBuilder =
@@ -10626,6 +10677,7 @@ typedef $$ReaderSettingsTableUpdateCompanionBuilder =
       Value<bool> invertTaps,
       Value<bool> doubleTapZoom,
       Value<bool> animatePageTurn,
+      Value<String> direction,
       Value<int> rowid,
     });
 
@@ -10675,6 +10727,11 @@ class $$ReaderSettingsTableFilterComposer
 
   ColumnFilters<bool> get animatePageTurn => $composableBuilder(
     column: $table.animatePageTurn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get direction => $composableBuilder(
+    column: $table.direction,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10727,6 +10784,11 @@ class $$ReaderSettingsTableOrderingComposer
     column: $table.animatePageTurn,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ReaderSettingsTableAnnotationComposer
@@ -10767,6 +10829,9 @@ class $$ReaderSettingsTableAnnotationComposer
     column: $table.animatePageTurn,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
 }
 
 class $$ReaderSettingsTableTableManager
@@ -10814,6 +10879,7 @@ class $$ReaderSettingsTableTableManager
                 Value<bool> invertTaps = const Value.absent(),
                 Value<bool> doubleTapZoom = const Value.absent(),
                 Value<bool> animatePageTurn = const Value.absent(),
+                Value<String> direction = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ReaderSettingsCompanion(
                 sourceId: sourceId,
@@ -10824,6 +10890,7 @@ class $$ReaderSettingsTableTableManager
                 invertTaps: invertTaps,
                 doubleTapZoom: doubleTapZoom,
                 animatePageTurn: animatePageTurn,
+                direction: direction,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10836,6 +10903,7 @@ class $$ReaderSettingsTableTableManager
                 Value<bool> invertTaps = const Value.absent(),
                 Value<bool> doubleTapZoom = const Value.absent(),
                 Value<bool> animatePageTurn = const Value.absent(),
+                Value<String> direction = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ReaderSettingsCompanion.insert(
                 sourceId: sourceId,
@@ -10846,6 +10914,7 @@ class $$ReaderSettingsTableTableManager
                 invertTaps: invertTaps,
                 doubleTapZoom: doubleTapZoom,
                 animatePageTurn: animatePageTurn,
+                direction: direction,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

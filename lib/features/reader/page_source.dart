@@ -12,6 +12,11 @@ abstract class PageSource {
   /// The reader views use this directly.
   ImageProvider imageProvider(int i);
 
+  /// A small-[kScrubberThumbWidth] provider for the scrubber drag preview. Reuses
+  /// the same decode path as [imageProvider] (the byte fetch is unchanged; only
+  /// the decode is shrunk), keyed distinctly in the image cache by its cacheWidth.
+  ImageProvider thumbnail(int i);
+
   /// An [ImageProvider] for page [i], as a resolved future (used by the
   /// precache pipeline). Defaults to wrapping [imageProvider].
   Future<ImageProvider> page(int i);
@@ -29,3 +34,9 @@ abstract class PageSource {
 /// dimensions are unknown. Webtoon never reflows after a real decode, so this
 /// preserves the no-scroll-jump guarantee.
 const double kDefaultPageAspect = 0.66;
+
+/// Physical-pixel decode width for scrubber-preview thumbnails (T4). Small so the
+/// decode and GPU upload are cheap and the thumbnail is cache-light; the byte
+/// fetch is still the full page (a smaller fetch would need a server thumbnail API
+/// we do not have).
+const int kScrubberThumbWidth = 220;

@@ -1,6 +1,11 @@
 /// Reading layout mode. Stored as `.name`.
 enum ReadingMode { pagedLtr, pagedRtl, webtoon, webtoonGaps, doublePage }
 
+/// Horizontal reading direction. The single source of truth for direction across
+/// modes: paged modes also encode it in their enum suffix (kept in lockstep by the
+/// settings normalizer), double-page reads this field. Stored as `.name`.
+enum ReadingDirection { ltr, rtl }
+
 /// How a page is fitted to the viewport.
 enum FitMode { width, height, screen, original }
 
@@ -21,6 +26,14 @@ extension ReadingModeX on ReadingMode {
   bool get isRtl => this == ReadingMode.pagedRtl;
 }
 
+/// The effective horizontal reading direction for rendering and gestures. Paged
+/// modes carry it in the enum; double-page reads [ReaderSettings.direction]. Both
+/// agree for paged modes because the settings normalizer keeps them in lockstep.
+/// Webtoon variants are never RTL here (direction is moot for vertical scroll).
+bool effectiveRtl(ReaderSettings s) =>
+    s.mode.isRtl ||
+    (s.mode == ReadingMode.doublePage && s.direction == ReadingDirection.rtl);
+
 T _enumByName<T extends Enum>(List<T> values, String? name, T fallback) {
   for (final v in values) {
     if (v.name == name) return v;
@@ -38,6 +51,7 @@ class ReaderSettings {
     this.invertTaps = false,
     this.doubleTapZoom = true,
     this.animatePageTurn = true,
+    this.direction = ReadingDirection.ltr,
   });
 
   final ReadingMode mode;
@@ -47,6 +61,9 @@ class ReaderSettings {
   final bool doubleTapZoom;
   final bool animatePageTurn;
 
+  /// Horizontal reading direction (single source of truth; see [effectiveRtl]).
+  final ReadingDirection direction;
+
   ReaderSettings copyWith({
     ReadingMode? mode,
     FitMode? fit,
@@ -54,6 +71,7 @@ class ReaderSettings {
     bool? invertTaps,
     bool? doubleTapZoom,
     bool? animatePageTurn,
+    ReadingDirection? direction,
   }) =>
       ReaderSettings(
         mode: mode ?? this.mode,
@@ -62,6 +80,7 @@ class ReaderSettings {
         invertTaps: invertTaps ?? this.invertTaps,
         doubleTapZoom: doubleTapZoom ?? this.doubleTapZoom,
         animatePageTurn: animatePageTurn ?? this.animatePageTurn,
+        direction: direction ?? this.direction,
       );
 
   /// Defaults for a series. [mangaDirection] is the source's reading-direction
@@ -73,7 +92,10 @@ class ReaderSettings {
       'VERTICAL' || 'WEBTOON' => ReadingMode.webtoon,
       _ => ReadingMode.pagedLtr,
     };
-    return ReaderSettings(mode: mode);
+    final direction = mangaDirection == 'RIGHT_TO_LEFT'
+        ? ReadingDirection.rtl
+        : ReadingDirection.ltr;
+    return ReaderSettings(mode: mode, direction: direction);
   }
 
   static ReaderSettings fromColumns({
@@ -83,6 +105,7 @@ class ReaderSettings {
     required bool invertTaps,
     required bool doubleTapZoom,
     required bool animatePageTurn,
+    required String direction,
   }) =>
       ReaderSettings(
         mode: _enumByName(ReadingMode.values, mode, ReadingMode.pagedLtr),
@@ -91,5 +114,7 @@ class ReaderSettings {
         invertTaps: invertTaps,
         doubleTapZoom: doubleTapZoom,
         animatePageTurn: animatePageTurn,
+        direction:
+            _enumByName(ReadingDirection.values, direction, ReadingDirection.ltr),
       );
 }
