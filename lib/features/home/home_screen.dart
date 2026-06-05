@@ -97,6 +97,14 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                   Rail(
+                    title: 'Recently added',
+                    children: seriesTiles(added.valueOrNull ?? const []),
+                  ),
+                  Rail(
+                    title: 'Recently updated',
+                    children: seriesTiles(updated.valueOrNull ?? const []),
+                  ),
+                  Rail(
                     title: 'Downloaded',
                     children: [
                       for (final b in downloaded.valueOrNull ?? const [])
@@ -110,14 +118,6 @@ class HomeScreen extends ConsumerWidget {
                               context.push('/reader/$sourceId/${b.id}'),
                         ),
                     ],
-                  ),
-                  Rail(
-                    title: 'Recently added',
-                    children: seriesTiles(added.valueOrNull ?? const []),
-                  ),
-                  Rail(
-                    title: 'Recently updated',
-                    children: seriesTiles(updated.valueOrNull ?? const []),
                   ),
                   if ((keepReading.valueOrNull ?? const []).isEmpty &&
                       (downloaded.valueOrNull ?? const []).isEmpty &&
