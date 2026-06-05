@@ -50,4 +50,14 @@ class SeriesRepository {
   }
 
   Stream<List<SeriesRow>> watch(String sourceId) => _db.watchSeries(sourceId);
+
+  /// Fetches one series by id from the server and upserts it, returning the
+  /// stored row. Used by the detail screen when a series was opened without its
+  /// row already in the local cache (so the real title shows, not a fallback).
+  Future<SeriesRow?> fetchSeries(String sourceId, String seriesId) async {
+    final dto = await _api.getSeries(seriesId);
+    await _db.upsertSeries(seriesToRow(sourceId, dto));
+    await _db.upsertSeriesMeta(seriesMetaToRow(sourceId, dto));
+    return _db.getSeries(sourceId, seriesId);
+  }
 }

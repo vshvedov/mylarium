@@ -188,6 +188,14 @@ class HomeScreen extends ConsumerWidget {
             ),
             AppListRow(
               icon: AppIcons.sources,
+              title: 'Comic Vine',
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/settings/comic-vine');
+              },
+            ),
+            AppListRow(
+              icon: AppIcons.sources,
               title: 'Sources (debug)',
               onTap: () {
                 Navigator.of(sheetContext).pop();

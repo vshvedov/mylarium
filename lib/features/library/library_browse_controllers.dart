@@ -142,6 +142,22 @@ Stream<List<Book>> seriesBooks(Ref ref, String sourceId, String seriesId) async*
 
 /// A single cached series row (for the series-detail header).
 @riverpod
-Future<SeriesRow?> seriesDetail(Ref ref, String sourceId, String seriesId) {
-  return ref.watch(appDatabaseProvider).getSeries(sourceId, seriesId);
+Future<SeriesRow?> seriesDetail(
+  Ref ref,
+  String sourceId,
+  String seriesId,
+) async {
+  final db = ref.watch(appDatabaseProvider);
+  final cached = await db.getSeries(sourceId, seriesId);
+  if (cached != null) return cached;
+  // Cache miss (series opened without its row synced, e.g. via search or a deep
+  // link): fetch the single series so the real Komga title/metadata shows
+  // instead of a fallback. Offline stays graceful (returns null).
+  final repo = await ref.watch(seriesRepositoryProvider.future);
+  if (repo == null) return null;
+  try {
+    return await repo.fetchSeries(sourceId, seriesId);
+  } on KomgaException {
+    return null;
+  }
 }

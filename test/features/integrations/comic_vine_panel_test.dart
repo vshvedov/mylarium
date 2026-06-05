@@ -9,7 +9,10 @@ import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.d
 Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: overrides,
+      overrides: [
+        comicVineDismissedProvider.overrideWith((ref) async => false),
+        ...overrides,
+      ],
       child: const MaterialApp(
         home: Scaffold(
           body: ComicVineDetailsPanel(
@@ -33,6 +36,30 @@ void main() {
     ]);
     expect(find.text('Comic Vine details'), findsOneWidget);
     expect(find.text('Add API key'), findsOneWidget);
+    expect(find.text('Never show again'), findsOneWidget);
+  });
+
+  testWidgets('dismissed hides the section entirely', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          comicVineDismissedProvider.overrideWith((ref) async => true),
+          comicVineApiKeyProvider.overrideWith((ref) async => null),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ComicVineDetailsPanel(
+              ownerKind: 'series',
+              sourceId: 's',
+              ownerId: 'x',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Comic Vine details'), findsNothing);
+    expect(find.text('Add API key'), findsNothing);
   });
 
   testWidgets('a match renders the structured details', (tester) async {

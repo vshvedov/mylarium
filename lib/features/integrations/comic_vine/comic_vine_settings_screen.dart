@@ -103,6 +103,19 @@ class _ComicVineSettingsScreenState
                 onPressed: _clear,
               ),
             ],
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Show on detail pages'),
+              subtitle: const Text(
+                'Turn off to hide the Comic Vine section everywhere.',
+              ),
+              value:
+                  !(ref.watch(comicVineDismissedProvider).valueOrNull ?? false),
+              onChanged: (show) => ref
+                  .read(comicVineKeyControllerProvider)
+                  .setDismissed(!show),
+            ),
           ],
         ),
       ),

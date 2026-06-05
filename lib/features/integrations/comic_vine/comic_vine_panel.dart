@@ -28,8 +28,12 @@ class ComicVineDetailsPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Hidden by the user ("Never show again"): omit the section entirely.
+    if (ref.watch(comicVineDismissedProvider).valueOrNull ?? false) {
+      return const SizedBox.shrink();
+    }
     final keyAsync = ref.watch(comicVineApiKeyProvider);
-    if (keyAsync.isLoading) return const ComicVineLoadingView();
+    if (keyAsync.isLoading) return const SizedBox.shrink();
     if (keyAsync.valueOrNull == null) return const _ConnectPlaceholder();
     return ownerKind == 'series'
         ? _VolumeSection(sourceId: sourceId, seriesId: ownerId)
@@ -102,11 +106,11 @@ class _IssueSection extends ConsumerWidget {
   }
 }
 
-class _ConnectPlaceholder extends StatelessWidget {
+class _ConnectPlaceholder extends ConsumerWidget {
   const _ConnectPlaceholder();
 
   @override
-  Widget build(BuildContext context) => _DashedPanel(
+  Widget build(BuildContext context, WidgetRef ref) => _DashedPanel(
     icon: AppIcons.sources,
     accent: true,
     title: 'Comic Vine details',
@@ -119,6 +123,14 @@ class _ConnectPlaceholder extends StatelessWidget {
       compact: true,
       onPressed: () => context.push('/settings/comic-vine'),
     ),
+    secondary: TextButton(
+      onPressed: () =>
+          ref.read(comicVineKeyControllerProvider).setDismissed(true),
+      child: Text(
+        'Never show again',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+    ),
   );
 }
 
@@ -130,6 +142,7 @@ class _DashedPanel extends StatelessWidget {
     required this.title,
     required this.body,
     this.action,
+    this.secondary,
   });
 
   final IconData icon;
@@ -137,6 +150,7 @@ class _DashedPanel extends StatelessWidget {
   final String title;
   final String body;
   final Widget? action;
+  final Widget? secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +191,7 @@ class _DashedPanel extends StatelessWidget {
               ),
             ),
             if (action != null) ...[const SizedBox(height: 18), action!],
+            if (secondary != null) ...[const SizedBox(height: 4), secondary!],
           ],
         ),
       ),

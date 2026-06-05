@@ -34,10 +34,13 @@ class HeroBackButton extends StatelessWidget {
   );
 }
 
-/// Full-bleed cinematic backdrop for a detail hero: the cover blurred behind a
-/// palette gradient (via [CoverBackground]), fading into the page background at
-/// the bottom so the hero blends into the body instead of ending on a hard seam.
-/// Fills its parent; the caller gives it a bounded box (e.g. via Positioned.fill).
+/// The cover-derived hero: the blurred cover + palette glow ([CoverBackground])
+/// over a solid page-background base, with its ALPHA masked to fade to fully
+/// transparent toward the bottom. Because the art dissolves to transparent
+/// (revealing the exact page colour beneath) rather than blending its colour
+/// toward the background, there is no residual tint, no structure and no knee to
+/// read as a seam: the texture stays beautiful at the top and vanishes into the
+/// page with zero visible transition. Fills its parent (e.g. via Positioned.fill).
 class CoverHeroBackdrop extends StatelessWidget {
   const CoverHeroBackdrop({
     super.key,
@@ -56,25 +59,21 @@ class CoverHeroBackdrop extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        CoverBackground(
-          sourceId: sourceId,
-          ownerType: ownerType,
-          ownerId: ownerId,
-          showBlurredCover: true,
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                bg.withValues(alpha: 0.0),
-                bg.withValues(alpha: 0.6),
-                bg,
-              ],
-              stops: const [0.0, 0.45, 0.78, 1.0],
-            ),
+        ColoredBox(color: bg),
+        ShaderMask(
+          blendMode: BlendMode.dstIn,
+          shaderCallback: (rect) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, Colors.white, Colors.transparent],
+            stops: [0.0, 0.35, 1.0],
+          ).createShader(rect),
+          child: CoverBackground(
+            sourceId: sourceId,
+            ownerType: ownerType,
+            ownerId: ownerId,
+            showBlurredCover: true,
+            showScrim: false,
           ),
         ),
       ],
@@ -364,9 +363,9 @@ class DetailHeader extends StatelessWidget {
                 ],
               );
 
-        // The light leak: a tall blurred backdrop that bleeds well below the
-        // title band, behind the top of the body, fading into the page.
-        final leakHeight = topInset + (wide ? 380.0 : 320.0);
+        // The light leak: a blurred backdrop behind the title and the top of the
+        // cover, fading fully into the page above the dense metadata content.
+        final leakHeight = topInset + (wide ? 340.0 : 300.0);
 
         return Stack(
           children: [

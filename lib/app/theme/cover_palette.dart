@@ -152,6 +152,7 @@ class CoverBackground extends ConsumerWidget {
     required this.ownerId,
     this.child,
     this.showBlurredCover = false,
+    this.showScrim = true,
   });
 
   final String sourceId;
@@ -162,6 +163,12 @@ class CoverBackground extends ConsumerWidget {
   /// Optional blurred cover layer under the scrim. Off by default (cheaper and
   /// deterministic for goldens); on-device tuning may enable it.
   final bool showBlurredCover;
+
+  /// The top-to-bottom legibility scrim (darkens toward the bottom). On by
+  /// default for callers that place text over the art. Turn off where the art
+  /// must instead fade cleanly into the page (e.g. the detail hero leak), since
+  /// the scrim otherwise leaves a dark band below the page background.
+  final bool showScrim;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -200,11 +207,12 @@ class CoverBackground extends ConsumerWidget {
       children: [
         Positioned.fill(child: DecoratedBox(decoration: base)),
         ?blurred,
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(gradient: tokens.gradients.scrim),
+        if (showScrim)
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: tokens.gradients.scrim),
+            ),
           ),
-        ),
         ?child,
       ],
     );

@@ -11,6 +11,14 @@ import '../../../data/comicvine/comic_vine_models.dart';
 import '../../../data/komga/komga_providers.dart' show secureStoreProvider;
 
 const _kComicVineApiKey = 'comicvine.apiKey';
+const _kComicVineDismissed = 'comicvine.dismissed';
+
+/// Whether the user has hidden the Comic Vine section ("Never show again"). When
+/// true the section is omitted from detail screens entirely; re-enabled from the
+/// Comic Vine settings screen.
+final comicVineDismissedProvider = FutureProvider<bool>((ref) async {
+  return await ref.watch(secureStoreProvider).read(_kComicVineDismissed) == '1';
+});
 
 /// The stored Comic Vine API key, or null when Comic Vine is not connected.
 ///
@@ -37,6 +45,18 @@ class ComicVineKeyController {
   Future<void> clear() async {
     await _ref.read(secureStoreProvider).delete(_kComicVineApiKey);
     _ref.invalidate(comicVineApiKeyProvider);
+  }
+
+  /// Hides ([dismissed] true) or restores the Comic Vine section on detail
+  /// screens.
+  Future<void> setDismissed(bool dismissed) async {
+    final store = _ref.read(secureStoreProvider);
+    if (dismissed) {
+      await store.write(_kComicVineDismissed, '1');
+    } else {
+      await store.delete(_kComicVineDismissed);
+    }
+    _ref.invalidate(comicVineDismissedProvider);
   }
 }
 
