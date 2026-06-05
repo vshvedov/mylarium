@@ -13,6 +13,20 @@ import 'widgets/library_tiles.dart';
 /// themes so cover-derived art reads as the hero with legible light text.
 const _heroBarColor = Color(0xFF1A1820);
 
+/// Title ink used in the rare case a cover yields a light hero band, so the
+/// title stays legible there too (normally the scrim keeps the band dark and
+/// the title resolves to white).
+const _heroInk = Color(0xFF15131A);
+
+/// Picks a legible hero-title ink for [background]: white on a dark band,
+/// [_heroInk] on a light one. The hero is normally dark (so this returns white),
+/// but it adapts if a cover ever yields a light band. Exposed for tests.
+@visibleForTesting
+Color heroTitleColorFor(Color background) =>
+    ThemeData.estimateBrightnessForColor(background) == Brightness.dark
+    ? Colors.white
+    : _heroInk;
+
 /// Series detail: a cover-derived hero, a metadata header, then the series'
 /// books as a grid. Books are streamed from the cache (refreshed online on
 /// open). Runs [embedded] (no back button) inside the two-pane browse shell.
@@ -36,13 +50,27 @@ class SeriesDetailScreen extends ConsumerWidget {
     final series = detail.valueOrNull;
     final bookRows = books.valueOrNull ?? const [];
 
+    // The pinned hero title must read against the cover-derived band, not the
+    // theme's default onSurface ink (which washes out on the dark hero). Decide
+    // from the *composited* background behind the title (the palette's muted
+    // color under the legibility scrim), so it flips to dark ink if a cover ever
+    // yields a light band.
+    final palette = ref
+        .watch(coverPaletteProvider(sourceId, 'series', seriesId))
+        .valueOrNull;
+    final heroBg = palette == null
+        ? _heroBarColor
+        : Color.alphaBlend(const Color(0x99000000), palette.muted);
+    final titleColor = heroTitleColorFor(heroBg);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
             expandedHeight: 168,
-            automaticallyImplyLeading: !embedded,
+            automaticallyImplyLeading: false,
+            leading: embedded ? null : const _HeroBackButton(),
             backgroundColor: _heroBarColor,
             foregroundColor: Colors.white,
             elevation: 0,
@@ -55,6 +83,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                 series?.title ?? 'Series',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: titleColor),
               ),
               background: CoverBackground(
                 sourceId: sourceId,
@@ -150,6 +179,30 @@ class SeriesDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Back affordance for the hero: a light icon on a subtle dark scrim so it
+/// reads over any cover when the bar is expanded and over the dark bar once it
+/// collapses (where the title itself is hidden).
+class _HeroBackButton extends StatelessWidget {
+  const _HeroBackButton();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0x66000000),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        iconSize: 20,
+        color: Colors.white,
+        icon: const Icon(AppIcons.back),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: () => Navigator.maybePop(context),
+      ),
+    ),
+  );
 }
 
 class _CheckBadge extends StatelessWidget {

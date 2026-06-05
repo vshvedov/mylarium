@@ -192,6 +192,11 @@ class BrowseShell extends ConsumerWidget {
   final String sourceId;
   final String title;
 
+  /// Below this width [AdaptiveLayout] hides the detail pane and shows only the
+  /// master grid, so a tap must push the detail route instead of selecting into
+  /// an invisible pane. Kept in sync with the [AdaptiveLayout.breakpoint] below.
+  static const double _detailBreakpoint = 840;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -204,25 +209,37 @@ class BrowseShell extends ConsumerWidget {
           ),
         ],
       ),
-      body: AdaptiveLayout(
-        master: SeriesGridScreen(
-          sourceId: sourceId,
-          embedded: true,
-          onSelectSeries: (id) =>
-              ref.read(selectedSeriesProvider(sourceId).notifier).state = id,
-        ),
-        detail: Consumer(
-          builder: (context, ref, _) {
-            final selected = ref.watch(selectedSeriesProvider(sourceId));
-            return selected == null
-                ? const _SelectSeriesPlaceholder()
-                : SeriesDetailScreen(
-                    sourceId: sourceId,
-                    seriesId: selected,
-                    embedded: true,
-                  );
-          },
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Only wire in-pane selection when the detail pane is actually shown.
+          // On phone widths the pane is collapsed, so taps fall through to a
+          // route push (the null callback path in SeriesGridScreen._onTap).
+          final showsDetail = constraints.maxWidth >= _detailBreakpoint;
+          return AdaptiveLayout(
+            breakpoint: _detailBreakpoint,
+            master: SeriesGridScreen(
+              sourceId: sourceId,
+              embedded: true,
+              onSelectSeries: showsDetail
+                  ? (id) => ref
+                      .read(selectedSeriesProvider(sourceId).notifier)
+                      .state = id
+                  : null,
+            ),
+            detail: Consumer(
+              builder: (context, ref, _) {
+                final selected = ref.watch(selectedSeriesProvider(sourceId));
+                return selected == null
+                    ? const _SelectSeriesPlaceholder()
+                    : SeriesDetailScreen(
+                        sourceId: sourceId,
+                        seriesId: selected,
+                        embedded: true,
+                      );
+              },
+            ),
+          );
+        },
       ),
     );
   }
