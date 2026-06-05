@@ -112,15 +112,38 @@ class ColorScope {
   int get hashCode => Object.hash(kind, sourceId, id);
 }
 
-/// Resolves the effective adjustments by precedence: the most specific
-/// non-null scope wins as a whole record (no field-level merge). Pure and
+/// A persisted scope's adjustments plus its per-scope enable flag.
+@immutable
+class ScopedColor {
+  const ScopedColor(this.adjustments, this.enabled);
+
+  final ColorAdjustments adjustments;
+  final bool enabled;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ScopedColor &&
+      other.adjustments == adjustments &&
+      other.enabled == enabled;
+
+  @override
+  int get hashCode => Object.hash(adjustments, enabled);
+}
+
+/// Resolves the effective adjustments by precedence: the most specific scope
+/// that has a saved row wins as a whole record (no field-level merge). If that
+/// winning scope is disabled, correction is off (identity) - a disabled
+/// most-specific row is an explicit "no correction here" override. Pure and
 /// unit-tested.
-ColorAdjustments resolveColorSettings(
-  ColorAdjustments? global,
-  ColorAdjustments? series,
-  ColorAdjustments? chapter,
-) =>
-    chapter ?? series ?? global ?? ColorAdjustments.identity;
+ColorAdjustments resolveScopedColor(
+  ScopedColor? global,
+  ScopedColor? series,
+  ScopedColor? chapter,
+) {
+  final winner = chapter ?? series ?? global;
+  if (winner == null || !winner.enabled) return ColorAdjustments.identity;
+  return winner.adjustments;
+}
 
 /// Splits [adj] into the part applied per-frame on the GPU (affine: contrast,
 /// brightness, mode) and the part baked at decode time off the UI isolate
@@ -143,34 +166,35 @@ ColorAdjustments resolveColorSettings(
       ),
     );
 
-/// Reader-session color state held by the controller. [resolved] is the active
-/// effective adjustment; [editing] is the value shown/edited at [editingScope]
-/// (the inherited [resolved] when that scope has no row); [enabled] is the
-/// session-only quick on/off.
+/// Reader color state held by the controller. [resolved] is the active
+/// effective adjustment the reader renders (updated live while editing);
+/// [editing] is the value shown/edited at [editingScope] (the inherited
+/// effective value when that scope has no row); [editingEnabled] is that
+/// scope's persisted on/off.
 @immutable
 class ColorState {
   const ColorState({
     required this.resolved,
     required this.editing,
     required this.editingScope,
-    required this.enabled,
+    required this.editingEnabled,
   });
 
   final ColorAdjustments resolved;
   final ColorAdjustments editing;
   final ColorScopeKind editingScope;
-  final bool enabled;
+  final bool editingEnabled;
 
   ColorState copyWith({
     ColorAdjustments? resolved,
     ColorAdjustments? editing,
     ColorScopeKind? editingScope,
-    bool? enabled,
+    bool? editingEnabled,
   }) =>
       ColorState(
         resolved: resolved ?? this.resolved,
         editing: editing ?? this.editing,
         editingScope: editingScope ?? this.editingScope,
-        enabled: enabled ?? this.enabled,
+        editingEnabled: editingEnabled ?? this.editingEnabled,
       );
 }

@@ -8033,6 +8033,21 @@ class $ColorSettingsTable extends ColorSettings
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _brightnessMeta = const VerificationMeta(
     'brightness',
   );
@@ -8097,6 +8112,7 @@ class $ColorSettingsTable extends ColorSettings
     sourceId,
     scope,
     scopeId,
+    enabled,
     brightness,
     contrast,
     gamma,
@@ -8138,6 +8154,12 @@ class $ColorSettingsTable extends ColorSettings
       );
     } else if (isInserting) {
       context.missing(_scopeIdMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
     }
     if (data.containsKey('brightness')) {
       context.handle(
@@ -8190,6 +8212,10 @@ class $ColorSettingsTable extends ColorSettings
         DriftSqlType.string,
         data['${effectivePrefix}scope_id'],
       )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
       brightness: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}brightness'],
@@ -8230,6 +8256,11 @@ class ColorSettingsRow extends DataClass
   /// The owning id for the scope: empty for global, seriesId for series,
   /// bookId for book.
   final String scopeId;
+
+  /// Whether correction is enabled at this scope. Persisted per scope so the
+  /// user can independently toggle global / series / chapter. A disabled
+  /// most-specific row acts as an explicit "no correction here" override.
+  final bool enabled;
   final double brightness;
   final double contrast;
   final double gamma;
@@ -8239,6 +8270,7 @@ class ColorSettingsRow extends DataClass
     required this.sourceId,
     required this.scope,
     required this.scopeId,
+    required this.enabled,
     required this.brightness,
     required this.contrast,
     required this.gamma,
@@ -8251,6 +8283,7 @@ class ColorSettingsRow extends DataClass
     map['source_id'] = Variable<String>(sourceId);
     map['scope'] = Variable<String>(scope);
     map['scope_id'] = Variable<String>(scopeId);
+    map['enabled'] = Variable<bool>(enabled);
     map['brightness'] = Variable<double>(brightness);
     map['contrast'] = Variable<double>(contrast);
     map['gamma'] = Variable<double>(gamma);
@@ -8264,6 +8297,7 @@ class ColorSettingsRow extends DataClass
       sourceId: Value(sourceId),
       scope: Value(scope),
       scopeId: Value(scopeId),
+      enabled: Value(enabled),
       brightness: Value(brightness),
       contrast: Value(contrast),
       gamma: Value(gamma),
@@ -8281,6 +8315,7 @@ class ColorSettingsRow extends DataClass
       sourceId: serializer.fromJson<String>(json['sourceId']),
       scope: serializer.fromJson<String>(json['scope']),
       scopeId: serializer.fromJson<String>(json['scopeId']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
       brightness: serializer.fromJson<double>(json['brightness']),
       contrast: serializer.fromJson<double>(json['contrast']),
       gamma: serializer.fromJson<double>(json['gamma']),
@@ -8295,6 +8330,7 @@ class ColorSettingsRow extends DataClass
       'sourceId': serializer.toJson<String>(sourceId),
       'scope': serializer.toJson<String>(scope),
       'scopeId': serializer.toJson<String>(scopeId),
+      'enabled': serializer.toJson<bool>(enabled),
       'brightness': serializer.toJson<double>(brightness),
       'contrast': serializer.toJson<double>(contrast),
       'gamma': serializer.toJson<double>(gamma),
@@ -8307,6 +8343,7 @@ class ColorSettingsRow extends DataClass
     String? sourceId,
     String? scope,
     String? scopeId,
+    bool? enabled,
     double? brightness,
     double? contrast,
     double? gamma,
@@ -8316,6 +8353,7 @@ class ColorSettingsRow extends DataClass
     sourceId: sourceId ?? this.sourceId,
     scope: scope ?? this.scope,
     scopeId: scopeId ?? this.scopeId,
+    enabled: enabled ?? this.enabled,
     brightness: brightness ?? this.brightness,
     contrast: contrast ?? this.contrast,
     gamma: gamma ?? this.gamma,
@@ -8327,6 +8365,7 @@ class ColorSettingsRow extends DataClass
       sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
       scope: data.scope.present ? data.scope.value : this.scope,
       scopeId: data.scopeId.present ? data.scopeId.value : this.scopeId,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
       brightness: data.brightness.present
           ? data.brightness.value
           : this.brightness,
@@ -8345,6 +8384,7 @@ class ColorSettingsRow extends DataClass
           ..write('sourceId: $sourceId, ')
           ..write('scope: $scope, ')
           ..write('scopeId: $scopeId, ')
+          ..write('enabled: $enabled, ')
           ..write('brightness: $brightness, ')
           ..write('contrast: $contrast, ')
           ..write('gamma: $gamma, ')
@@ -8359,6 +8399,7 @@ class ColorSettingsRow extends DataClass
     sourceId,
     scope,
     scopeId,
+    enabled,
     brightness,
     contrast,
     gamma,
@@ -8372,6 +8413,7 @@ class ColorSettingsRow extends DataClass
           other.sourceId == this.sourceId &&
           other.scope == this.scope &&
           other.scopeId == this.scopeId &&
+          other.enabled == this.enabled &&
           other.brightness == this.brightness &&
           other.contrast == this.contrast &&
           other.gamma == this.gamma &&
@@ -8383,6 +8425,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
   final Value<String> sourceId;
   final Value<String> scope;
   final Value<String> scopeId;
+  final Value<bool> enabled;
   final Value<double> brightness;
   final Value<double> contrast;
   final Value<double> gamma;
@@ -8393,6 +8436,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
     this.sourceId = const Value.absent(),
     this.scope = const Value.absent(),
     this.scopeId = const Value.absent(),
+    this.enabled = const Value.absent(),
     this.brightness = const Value.absent(),
     this.contrast = const Value.absent(),
     this.gamma = const Value.absent(),
@@ -8404,6 +8448,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
     required String sourceId,
     required String scope,
     required String scopeId,
+    this.enabled = const Value.absent(),
     this.brightness = const Value.absent(),
     this.contrast = const Value.absent(),
     this.gamma = const Value.absent(),
@@ -8417,6 +8462,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
     Expression<String>? sourceId,
     Expression<String>? scope,
     Expression<String>? scopeId,
+    Expression<bool>? enabled,
     Expression<double>? brightness,
     Expression<double>? contrast,
     Expression<double>? gamma,
@@ -8428,6 +8474,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
       if (sourceId != null) 'source_id': sourceId,
       if (scope != null) 'scope': scope,
       if (scopeId != null) 'scope_id': scopeId,
+      if (enabled != null) 'enabled': enabled,
       if (brightness != null) 'brightness': brightness,
       if (contrast != null) 'contrast': contrast,
       if (gamma != null) 'gamma': gamma,
@@ -8441,6 +8488,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
     Value<String>? sourceId,
     Value<String>? scope,
     Value<String>? scopeId,
+    Value<bool>? enabled,
     Value<double>? brightness,
     Value<double>? contrast,
     Value<double>? gamma,
@@ -8452,6 +8500,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
       sourceId: sourceId ?? this.sourceId,
       scope: scope ?? this.scope,
       scopeId: scopeId ?? this.scopeId,
+      enabled: enabled ?? this.enabled,
       brightness: brightness ?? this.brightness,
       contrast: contrast ?? this.contrast,
       gamma: gamma ?? this.gamma,
@@ -8472,6 +8521,9 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
     }
     if (scopeId.present) {
       map['scope_id'] = Variable<String>(scopeId.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
     }
     if (brightness.present) {
       map['brightness'] = Variable<double>(brightness.value);
@@ -8500,6 +8552,7 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
           ..write('sourceId: $sourceId, ')
           ..write('scope: $scope, ')
           ..write('scopeId: $scopeId, ')
+          ..write('enabled: $enabled, ')
           ..write('brightness: $brightness, ')
           ..write('contrast: $contrast, ')
           ..write('gamma: $gamma, ')
@@ -12535,6 +12588,7 @@ typedef $$ColorSettingsTableCreateCompanionBuilder =
       required String sourceId,
       required String scope,
       required String scopeId,
+      Value<bool> enabled,
       Value<double> brightness,
       Value<double> contrast,
       Value<double> gamma,
@@ -12547,6 +12601,7 @@ typedef $$ColorSettingsTableUpdateCompanionBuilder =
       Value<String> sourceId,
       Value<String> scope,
       Value<String> scopeId,
+      Value<bool> enabled,
       Value<double> brightness,
       Value<double> contrast,
       Value<double> gamma,
@@ -12576,6 +12631,11 @@ class $$ColorSettingsTableFilterComposer
 
   ColumnFilters<String> get scopeId => $composableBuilder(
     column: $table.scopeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12629,6 +12689,11 @@ class $$ColorSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get brightness => $composableBuilder(
     column: $table.brightness,
     builder: (column) => ColumnOrderings(column),
@@ -12672,6 +12737,9 @@ class $$ColorSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get scopeId =>
       $composableBuilder(column: $table.scopeId, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
 
   GeneratedColumn<double> get brightness => $composableBuilder(
     column: $table.brightness,
@@ -12731,6 +12799,7 @@ class $$ColorSettingsTableTableManager
                 Value<String> sourceId = const Value.absent(),
                 Value<String> scope = const Value.absent(),
                 Value<String> scopeId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
                 Value<double> brightness = const Value.absent(),
                 Value<double> contrast = const Value.absent(),
                 Value<double> gamma = const Value.absent(),
@@ -12741,6 +12810,7 @@ class $$ColorSettingsTableTableManager
                 sourceId: sourceId,
                 scope: scope,
                 scopeId: scopeId,
+                enabled: enabled,
                 brightness: brightness,
                 contrast: contrast,
                 gamma: gamma,
@@ -12753,6 +12823,7 @@ class $$ColorSettingsTableTableManager
                 required String sourceId,
                 required String scope,
                 required String scopeId,
+                Value<bool> enabled = const Value.absent(),
                 Value<double> brightness = const Value.absent(),
                 Value<double> contrast = const Value.absent(),
                 Value<double> gamma = const Value.absent(),
@@ -12763,6 +12834,7 @@ class $$ColorSettingsTableTableManager
                 sourceId: sourceId,
                 scope: scope,
                 scopeId: scopeId,
+                enabled: enabled,
                 brightness: brightness,
                 contrast: contrast,
                 gamma: gamma,

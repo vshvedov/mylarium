@@ -97,14 +97,14 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   bool _chrome = true;
   int? _cacheWidth;
 
-  /// Live page color correction. [_adj] is seeded from the resolved value on
-  /// [ReaderData] (correct first paint) and kept current by the color-settings
-  /// listener; [_colorEnabled] is the session quick on/off. The non-linear
-  /// residual (gamma/auto-levels) is baked into [_source] via a corrected
-  /// provider; the affine layer (brightness/contrast/mode) is applied at render
-  /// through [_colorFilter] (a GPU `ColorFilter`, instant in every mode).
+  /// Live page color correction. [_adj] is the resolved effective adjustment,
+  /// seeded from [ReaderData] (correct first paint) and kept current by the
+  /// color-settings listener (which updates it live while sliders move). The
+  /// non-linear residual (gamma/auto-levels) is baked into [_source] via a
+  /// corrected provider; the affine layer (brightness/contrast/mode) is applied
+  /// at render through [_colorFilter] (a GPU `ColorFilter`, instant in every
+  /// mode, swapped without a re-decode when only the affine part changes).
   late ColorAdjustments _adj = widget.data.colorAdjustments;
-  bool _colorEnabled = true;
   ColorFilter? _colorFilter;
 
   /// Reading-time + page-span accumulator for the current session. Lives on the
@@ -287,8 +287,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Split the live correction: the non-linear residual (gamma/auto-levels) is
     // baked into the decoded page by a corrected provider; the affine part
     // (brightness/contrast/mode) is layered on at render via a GPU ColorFilter.
-    final adj = _colorEnabled ? _adj : ColorAdjustments.identity;
-    final (affine: affine, residual: residual) = splitAdjustments(adj);
+    final (affine: affine, residual: residual) = splitAdjustments(_adj);
     final source = colorCorrectedSource(base, residual);
     _colorFilter =
         affine.isIdentity ? null : ColorFilter.matrix(buildMatrix(affine));
@@ -377,6 +376,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
 
   void _openColorCorrection() => AppBottomSheet.show<void>(
         context,
+        // Keep the page fully visible (no dim) so corrections preview clearly.
+        barrierColor: Colors.transparent,
         builder: (_) => ColorCorrectionSheet(
           sourceId: widget.sourceId,
           seriesId: widget.data.seriesId,
@@ -456,12 +457,23 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       ),
       (_, next) {
         next.whenData((s) {
-          final adj = s.enabled ? s.resolved : ColorAdjustments.identity;
-          if (adj == _adj && s.enabled == _colorEnabled) return;
+          final adj = s.resolved;
+          if (adj == _adj) return;
+          final residualChanged = splitAdjustments(adj).residual.signature !=
+              splitAdjustments(_adj).residual.signature;
           _adj = adj;
-          _colorEnabled = s.enabled;
-          _rebuildSource(force: true);
-          setState(() {});
+          if (_source != null && !residualChanged) {
+            // Only the affine (GPU) layer changed: swap the ColorFilter with no
+            // re-decode, so brightness/contrast/mode preview in real time.
+            final affine = splitAdjustments(adj).affine;
+            setState(() => _colorFilter = affine.isIdentity
+                ? null
+                : ColorFilter.matrix(buildMatrix(affine)));
+          } else {
+            // Residual (gamma/auto-levels) changed: re-bake via the provider.
+            _rebuildSource(force: true);
+            setState(() {});
+          }
         });
       },
     );

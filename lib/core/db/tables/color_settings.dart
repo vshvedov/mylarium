@@ -18,6 +18,11 @@ class ColorSettings extends Table {
   /// bookId for book.
   TextColumn get scopeId => text()();
 
+  /// Whether correction is enabled at this scope. Persisted per scope so the
+  /// user can independently toggle global / series / chapter. A disabled
+  /// most-specific row acts as an explicit "no correction here" override.
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+
   RealColumn get brightness => real().withDefault(const Constant(0.0))();
   RealColumn get contrast => real().withDefault(const Constant(0.0))();
   RealColumn get gamma => real().withDefault(const Constant(1.0))();

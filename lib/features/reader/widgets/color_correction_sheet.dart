@@ -65,7 +65,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
   Widget _body(BuildContext context, ColorState s) {
     final text = Theme.of(context).textTheme;
     final editing = s.editing;
-    final on = s.enabled;
+    final on = s.editingEnabled;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,11 +74,18 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
           children: [
             Text('Color correction', style: text.titleMedium),
             const Spacer(),
+            // The switch toggles the CURRENTLY selected scope's correction; it
+            // and the scope selector stay enabled so each scope can be turned
+            // on/off independently.
             Switch(value: on, onChanged: _controller.setEnabled),
           ],
         ),
-        const SizedBox(height: 4),
-        // Everything below is disabled (greyed) while the quick toggle is off.
+        const SizedBox(height: 8),
+        _scopeSelector(s),
+        const SizedBox(height: 8),
+        // Only the adjustment controls are greyed while this scope is off; the
+        // scope tabs above remain interactive so you can switch and toggle
+        // another scope.
         AnimatedOpacity(
           opacity: on ? 1 : 0.4,
           duration: const Duration(milliseconds: 150),
@@ -87,19 +94,18 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _scopeSelector(s),
-                const SizedBox(height: 8),
                 _slider(
                   label: 'Brightness',
                   value: _dragBrightness ?? editing.brightness,
                   min: -1,
                   max: 1,
                   divisions: 40,
-                  onChanged: (v) => setState(() => _dragBrightness = v),
+                  onChanged: (v) {
+                    setState(() => _dragBrightness = v);
+                    _controller.preview(editing.copyWith(brightness: v));
+                  },
                   onChangeEnd: (v) async {
-                    // Hold the drag value until the commit lands so the thumb
-                    // does not snap back to the stale value for a frame.
-                    await _controller.apply(editing.copyWith(brightness: v));
+                    await _controller.commit(editing.copyWith(brightness: v));
                     if (mounted) setState(() => _dragBrightness = null);
                   },
                 ),
@@ -109,9 +115,12 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                   min: -1,
                   max: 1,
                   divisions: 40,
-                  onChanged: (v) => setState(() => _dragContrast = v),
+                  onChanged: (v) {
+                    setState(() => _dragContrast = v);
+                    _controller.preview(editing.copyWith(contrast: v));
+                  },
                   onChangeEnd: (v) async {
-                    await _controller.apply(editing.copyWith(contrast: v));
+                    await _controller.commit(editing.copyWith(contrast: v));
                     if (mounted) setState(() => _dragContrast = null);
                   },
                 ),
@@ -121,9 +130,12 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                   min: 0.4,
                   max: 2.5,
                   divisions: 42,
-                  onChanged: (v) => setState(() => _dragGamma = v),
+                  onChanged: (v) {
+                    setState(() => _dragGamma = v);
+                    _controller.preview(editing.copyWith(gamma: v));
+                  },
                   onChangeEnd: (v) async {
-                    await _controller.apply(editing.copyWith(gamma: v));
+                    await _controller.commit(editing.copyWith(gamma: v));
                     if (mounted) setState(() => _dragGamma = null);
                   },
                 ),
@@ -139,7 +151,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                       label: const Text('Auto (white point)'),
                       selected: editing.autoLevels,
                       onSelected: (v) =>
-                          _controller.apply(editing.copyWith(autoLevels: v)),
+                          _controller.commit(editing.copyWith(autoLevels: v)),
                     ),
                     const Spacer(),
                     TextButton.icon(
@@ -162,8 +174,8 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
     return SegmentedButton<ColorScopeKind>(
       segments: [
         const ButtonSegment(
-          value: ColorScopeKind.global,
-          label: Text('Global'),
+          value: ColorScopeKind.book,
+          label: Text('Chapter'),
         ),
         if (hasSeries)
           const ButtonSegment(
@@ -171,8 +183,8 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
             label: Text('Series'),
           ),
         const ButtonSegment(
-          value: ColorScopeKind.book,
-          label: Text('Chapter'),
+          value: ColorScopeKind.global,
+          label: Text('Global'),
         ),
       ],
       selected: {s.editingScope},
@@ -192,7 +204,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
       selected: {editing.mode},
       showSelectedIcon: false,
       onSelectionChanged: (sel) =>
-          _controller.apply(editing.copyWith(mode: sel.first)),
+          _controller.commit(editing.copyWith(mode: sel.first)),
     );
   }
 

@@ -1493,6 +1493,17 @@ class ColorSettings extends Table with TableInfo {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const CustomExpression('1'),
+  );
   late final GeneratedColumn<double> brightness = GeneratedColumn<double>(
     'brightness',
     aliasedName,
@@ -1541,6 +1552,7 @@ class ColorSettings extends Table with TableInfo {
     sourceId,
     scope,
     scopeId,
+    enabled,
     brightness,
     contrast,
     gamma,

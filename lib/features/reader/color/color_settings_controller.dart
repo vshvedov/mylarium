@@ -7,15 +7,21 @@ import 'color_settings_repository.dart';
 part 'color_settings_controller.g.dart';
 
 /// Owns the reader's live color-correction state for one book: the resolved
-/// effective adjustment, the value being edited at the active scope, and the
-/// session-only quick on/off. Mutations persist through
-/// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-/// AsyncNotifier mutate pattern).
+/// effective adjustment (what the reader renders, updated live while editing),
+/// the value being edited at the active scope, and that scope's persisted
+/// on/off. [preview] updates the effective adjustment in memory (for real-time
+/// slider feedback) without touching the DB; [commit] persists.
 @riverpod
 class ColorSettingsController extends _$ColorSettingsController {
   late String _sourceId;
   late String _seriesId;
   late String _bookId;
+
+  // In-memory mirror of the three scope rows, loaded in build and kept current
+  // by mutations, so resolution and previews never re-query.
+  ScopedColor? _global;
+  ScopedColor? _series;
+  ScopedColor? _book;
 
   ColorSettingsRepository get _repo =>
       ColorSettingsRepository(ref.read(appDatabaseProvider));
@@ -30,65 +36,107 @@ class ColorSettingsController extends _$ColorSettingsController {
     _seriesId = seriesId;
     _bookId = bookId;
     final repo = _repo;
-    // Fetch each scope's row once, then derive resolved + the default editing
-    // scope from those rows (no redundant re-reads).
-    final global = await repo.forScope(const ColorScope.global());
-    final series = seriesId.isNotEmpty
+    _global = await repo.forScope(const ColorScope.global());
+    _series = seriesId.isNotEmpty
         ? await repo.forScope(ColorScope.series(sourceId, seriesId))
         : null;
-    final book = bookId.isNotEmpty
+    _book = bookId.isNotEmpty
         ? await repo.forScope(ColorScope.book(sourceId, bookId))
         : null;
-    final resolved = resolveColorSettings(global, series, book);
     // Default to the most specific scope that already has a saved row.
-    final (scopeKind, scopeValue) = book != null
-        ? (ColorScopeKind.book, book)
-        : series != null
-            ? (ColorScopeKind.series, series)
-            : (ColorScopeKind.global, global);
-    return ColorState(
-      resolved: resolved,
-      editing: scopeValue ?? resolved,
-      editingScope: scopeKind,
-      enabled: true,
+    final scopeKind = _book != null
+        ? ColorScopeKind.book
+        : _series != null
+            ? ColorScopeKind.series
+            : ColorScopeKind.global;
+    return _stateFor(scopeKind);
+  }
+
+  /// Live, in-memory preview at the active scope (no DB write). Drives the
+  /// reader's real-time slider feedback.
+  void preview(ColorAdjustments adj) {
+    final st = state.valueOrNull;
+    if (st == null) return;
+    _setScoped(st.editingScope, ScopedColor(adj, st.editingEnabled));
+    state = AsyncData(st.copyWith(resolved: _effective(), editing: adj));
+  }
+
+  /// Persists [adj] at the active scope (and its current enable flag).
+  Future<void> commit(ColorAdjustments adj) async {
+    final st = state.valueOrNull;
+    if (st == null) return;
+    preview(adj);
+    await _repo.save(_scope(st.editingScope), adj, enabled: st.editingEnabled);
+  }
+
+  /// Toggles the active scope's persisted on/off (creating its row from the
+  /// current editing values if it has none).
+  Future<void> setEnabled(bool enabled) async {
+    final st = state.valueOrNull;
+    if (st == null) return;
+    _setScoped(st.editingScope, ScopedColor(st.editing, enabled));
+    state = AsyncData(
+      st.copyWith(editingEnabled: enabled, resolved: _effective()),
     );
+    await _repo.save(_scope(st.editingScope), st.editing, enabled: enabled);
   }
 
-  /// Persists [adj] at the active editing scope, re-resolves, and updates state.
-  Future<void> apply(ColorAdjustments adj) async {
+  /// Switches the editing scope; shows that scope's saved value (or the
+  /// inherited effective value when it has no row) without a DB write.
+  void setScope(ColorScopeKind kind) {
     final st = state.valueOrNull;
     if (st == null) return;
-    final repo = _repo;
-    await repo.save(_scope(st.editingScope), adj);
-    final resolved = await repo.resolve(_sourceId, _seriesId, _bookId);
-    state = AsyncData(st.copyWith(resolved: resolved, editing: adj));
+    state = AsyncData(_stateFor(kind).copyWith(resolved: _effective()));
   }
 
-  /// Switches the editing scope; shows that scope's saved value, or the
-  /// inherited resolved value when it has no row.
-  Future<void> setScope(ColorScopeKind kind) async {
-    final st = state.valueOrNull;
-    if (st == null) return;
-    final editing = (await _repo.forScope(_scope(kind))) ?? st.resolved;
-    state = AsyncData(st.copyWith(editingScope: kind, editing: editing));
-  }
-
-  /// Resets (deletes) the active editing scope's row; re-resolves.
+  /// Resets (deletes) the active scope's row; re-resolves and shows inherited.
   Future<void> reset() async {
     final st = state.valueOrNull;
     if (st == null) return;
-    final repo = _repo;
-    await repo.reset(_scope(st.editingScope));
-    final resolved = await repo.resolve(_sourceId, _seriesId, _bookId);
-    state = AsyncData(st.copyWith(resolved: resolved, editing: resolved));
+    final scope = st.editingScope;
+    _setScoped(scope, null);
+    await _repo.reset(_scope(scope));
+    final inherited = _effective();
+    state = AsyncData(ColorState(
+      resolved: inherited,
+      editing: inherited,
+      editingScope: scope,
+      editingEnabled: true,
+    ));
   }
 
-  /// Quick on/off (session-only; not persisted). Reseeds to true on a provider
-  /// rebuild (a new book).
-  void setEnabled(bool v) {
-    final st = state.valueOrNull;
-    if (st == null) return;
-    state = AsyncData(st.copyWith(enabled: v));
+  // --- internals -----------------------------------------------------------
+
+  /// Builds the state for editing [kind]: editing value + enable from that
+  /// scope's row, or the inherited effective value when it has no row.
+  ColorState _stateFor(ColorScopeKind kind) {
+    final scoped = _scopedFor(kind);
+    final effective = _effective();
+    return ColorState(
+      resolved: effective,
+      editing: scoped?.adjustments ?? effective,
+      editingScope: kind,
+      editingEnabled: scoped?.enabled ?? true,
+    );
+  }
+
+  ColorAdjustments _effective() => resolveScopedColor(_global, _series, _book);
+
+  ScopedColor? _scopedFor(ColorScopeKind kind) => switch (kind) {
+        ColorScopeKind.global => _global,
+        ColorScopeKind.series => _series,
+        ColorScopeKind.book => _book,
+      };
+
+  void _setScoped(ColorScopeKind kind, ScopedColor? value) {
+    switch (kind) {
+      case ColorScopeKind.global:
+        _global = value;
+      case ColorScopeKind.series:
+        _series = value;
+      case ColorScopeKind.book:
+        _book = value;
+    }
   }
 
   ColorScope _scope(ColorScopeKind kind) => switch (kind) {

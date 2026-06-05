@@ -2,25 +2,42 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/features/reader/color/color_settings.dart';
 
 void main() {
-  const global = ColorAdjustments(brightness: 0.1);
-  const series = ColorAdjustments(brightness: 0.2);
-  const chapter = ColorAdjustments(brightness: 0.3);
+  ScopedColor on(double brightness) =>
+      ScopedColor(ColorAdjustments(brightness: brightness), true);
 
-  group('resolveColorSettings (most specific wins, whole record)', () {
+  group('resolveScopedColor (most specific existing wins, enable-aware)', () {
     test('chapter beats series beats global', () {
-      expect(resolveColorSettings(global, series, chapter), chapter);
+      expect(resolveScopedColor(on(0.1), on(0.2), on(0.3)).brightness, 0.3);
     });
 
     test('series wins when chapter is absent', () {
-      expect(resolveColorSettings(global, series, null), series);
+      expect(resolveScopedColor(on(0.1), on(0.2), null).brightness, 0.2);
     });
 
     test('global wins when series and chapter are absent', () {
-      expect(resolveColorSettings(global, null, null), global);
+      expect(resolveScopedColor(on(0.1), null, null).brightness, 0.1);
     });
 
     test('identity when nothing is set', () {
-      expect(resolveColorSettings(null, null, null), ColorAdjustments.identity);
+      expect(resolveScopedColor(null, null, null), ColorAdjustments.identity);
+    });
+
+    test('a disabled most-specific row resolves to identity (explicit off)', () {
+      final disabledChapter =
+          ScopedColor(const ColorAdjustments(brightness: 0.3), false);
+      expect(
+        resolveScopedColor(on(0.1), on(0.2), disabledChapter),
+        ColorAdjustments.identity,
+      );
+    });
+
+    test('a disabled global with no overrides resolves to identity', () {
+      final disabledGlobal =
+          ScopedColor(const ColorAdjustments(brightness: 0.1), false);
+      expect(
+        resolveScopedColor(disabledGlobal, null, null),
+        ColorAdjustments.identity,
+      );
     });
   });
 

@@ -7,7 +7,7 @@ part of 'color_settings_controller.dart';
 // **************************************************************************
 
 String _$colorSettingsControllerHash() =>
-    r'ac2c8a0822f6549e1e60b4e68c47970ce903bc69';
+    r'ba37a5c0aa81a85c54b89c7bdef2ca3c63a396ef';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -40,37 +40,37 @@ abstract class _$ColorSettingsController
 }
 
 /// Owns the reader's live color-correction state for one book: the resolved
-/// effective adjustment, the value being edited at the active scope, and the
-/// session-only quick on/off. Mutations persist through
-/// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-/// AsyncNotifier mutate pattern).
+/// effective adjustment (what the reader renders, updated live while editing),
+/// the value being edited at the active scope, and that scope's persisted
+/// on/off. [preview] updates the effective adjustment in memory (for real-time
+/// slider feedback) without touching the DB; [commit] persists.
 ///
 /// Copied from [ColorSettingsController].
 @ProviderFor(ColorSettingsController)
 const colorSettingsControllerProvider = ColorSettingsControllerFamily();
 
 /// Owns the reader's live color-correction state for one book: the resolved
-/// effective adjustment, the value being edited at the active scope, and the
-/// session-only quick on/off. Mutations persist through
-/// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-/// AsyncNotifier mutate pattern).
+/// effective adjustment (what the reader renders, updated live while editing),
+/// the value being edited at the active scope, and that scope's persisted
+/// on/off. [preview] updates the effective adjustment in memory (for real-time
+/// slider feedback) without touching the DB; [commit] persists.
 ///
 /// Copied from [ColorSettingsController].
 class ColorSettingsControllerFamily extends Family<AsyncValue<ColorState>> {
   /// Owns the reader's live color-correction state for one book: the resolved
-  /// effective adjustment, the value being edited at the active scope, and the
-  /// session-only quick on/off. Mutations persist through
-  /// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-  /// AsyncNotifier mutate pattern).
+  /// effective adjustment (what the reader renders, updated live while editing),
+  /// the value being edited at the active scope, and that scope's persisted
+  /// on/off. [preview] updates the effective adjustment in memory (for real-time
+  /// slider feedback) without touching the DB; [commit] persists.
   ///
   /// Copied from [ColorSettingsController].
   const ColorSettingsControllerFamily();
 
   /// Owns the reader's live color-correction state for one book: the resolved
-  /// effective adjustment, the value being edited at the active scope, and the
-  /// session-only quick on/off. Mutations persist through
-  /// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-  /// AsyncNotifier mutate pattern).
+  /// effective adjustment (what the reader renders, updated live while editing),
+  /// the value being edited at the active scope, and that scope's persisted
+  /// on/off. [preview] updates the effective adjustment in memory (for real-time
+  /// slider feedback) without touching the DB; [commit] persists.
   ///
   /// Copied from [ColorSettingsController].
   ColorSettingsControllerProvider call(
@@ -104,10 +104,10 @@ class ColorSettingsControllerFamily extends Family<AsyncValue<ColorState>> {
 }
 
 /// Owns the reader's live color-correction state for one book: the resolved
-/// effective adjustment, the value being edited at the active scope, and the
-/// session-only quick on/off. Mutations persist through
-/// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-/// AsyncNotifier mutate pattern).
+/// effective adjustment (what the reader renders, updated live while editing),
+/// the value being edited at the active scope, and that scope's persisted
+/// on/off. [preview] updates the effective adjustment in memory (for real-time
+/// slider feedback) without touching the DB; [commit] persists.
 ///
 /// Copied from [ColorSettingsController].
 class ColorSettingsControllerProvider
@@ -117,10 +117,10 @@ class ColorSettingsControllerProvider
           ColorState
         > {
   /// Owns the reader's live color-correction state for one book: the resolved
-  /// effective adjustment, the value being edited at the active scope, and the
-  /// session-only quick on/off. Mutations persist through
-  /// [ColorSettingsRepository] and re-resolve (mirrors `ReaderController`'s
-  /// AsyncNotifier mutate pattern).
+  /// effective adjustment (what the reader renders, updated live while editing),
+  /// the value being edited at the active scope, and that scope's persisted
+  /// on/off. [preview] updates the effective adjustment in memory (for real-time
+  /// slider feedback) without touching the DB; [commit] persists.
   ///
   /// Copied from [ColorSettingsController].
   ColorSettingsControllerProvider(
