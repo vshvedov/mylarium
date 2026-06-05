@@ -1,35 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/theme/cover_palette.dart';
-import '../../app/theme/design_tokens.dart';
+import '../../app/theme/app_icons.dart';
+import '../integrations/comic_vine/comic_vine_panel.dart';
 import 'library_browse_controllers.dart';
-import 'widgets/cover_image.dart';
+import 'widgets/detail_header.dart';
 import 'widgets/library_tiles.dart';
 
-/// A dark cinematic hero band behind the detail headers. Kept dark in both
-/// themes so cover-derived art reads as the hero with legible light text.
-const _heroBarColor = Color(0xFF1A1820);
-
-/// Title ink used in the rare case a cover yields a light hero band, so the
-/// title stays legible there too (normally the scrim keeps the band dark and
-/// the title resolves to white).
-const _heroInk = Color(0xFF15131A);
-
-/// Picks a legible hero-title ink for [background]: white on a dark band,
-/// [_heroInk] on a light one. The hero is normally dark (so this returns white),
-/// but it adapts if a cover ever yields a light band. Exposed for tests.
-@visibleForTesting
-Color heroTitleColorFor(Color background) =>
-    ThemeData.estimateBrightnessForColor(background) == Brightness.dark
-    ? Colors.white
-    : _heroInk;
-
-/// Series detail: a cover-derived hero, a metadata header, then the series'
-/// books as a grid. Books are streamed from the cache (refreshed online on
-/// open). Runs [embedded] (no back button) inside the two-pane browse shell.
+/// Series detail: a cover-forward hero, status/summary, then the series' books
+/// as a grid. Books are streamed from the cache (refreshed online on open). Runs
+/// [embedded] (no back button) inside the two-pane browse shell.
 class SeriesDetailScreen extends ConsumerWidget {
   const SeriesDetailScreen({
     super.key,
@@ -46,164 +27,94 @@ class SeriesDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(seriesDetailProvider(sourceId, seriesId));
     final books = ref.watch(seriesBooksProvider(sourceId, seriesId));
-    final tokens = Theme.of(context).extension<DesignTokens>()!;
     final series = detail.valueOrNull;
     final bookRows = books.valueOrNull ?? const [];
-
-    // The pinned hero title must read against the cover-derived band, not the
-    // theme's default onSurface ink (which washes out on the dark hero). Decide
-    // from the *composited* background behind the title (the palette's muted
-    // color under the legibility scrim), so it flips to dark ink if a cover ever
-    // yields a light band.
-    final palette = ref
-        .watch(coverPaletteProvider(sourceId, 'series', seriesId))
-        .valueOrNull;
-    final heroBg = palette == null
-        ? _heroBarColor
-        : Color.alphaBlend(const Color(0x99000000), palette.muted);
-    final titleColor = heroTitleColorFor(heroBg);
+    final summary = series?.summary;
+    final status = series?.status;
+    final count = series?.booksCount ?? 0;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 168,
-            automaticallyImplyLeading: false,
-            leading: embedded ? null : const _HeroBackButton(),
-            backgroundColor: _heroBarColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsetsDirectional.only(
-                start: 56,
-                bottom: 14,
-              ),
-              title: Text(
-                series?.title ?? 'Series',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: titleColor),
-              ),
-              background: CoverBackground(
-                sourceId: sourceId,
-                ownerType: 'series',
-                ownerId: seriesId,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(tokens.coverRadius),
-                      boxShadow: tokens.elevation.hero,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(tokens.coverRadius),
-                      child: CoverImage(
+      body: Stack(
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: DetailHeader(
+                      sourceId: sourceId,
+                      ownerType: 'series',
+                      ownerId: seriesId,
+                      title: series?.title ?? 'Series',
+                      pills: [
+                        if (status != null && status.isNotEmpty)
+                          DetailPill(_titleCase(status)),
+                        if (count > 0)
+                          DetailPill(count == 1 ? '1 book' : '$count books'),
+                      ],
+                      summary: (summary != null && summary.isNotEmpty)
+                          ? Text(
+                              summary,
+                              maxLines: 6,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            )
+                          : null,
+                      details: ComicVineDetailsPanel(
+                        ownerKind: 'series',
                         sourceId: sourceId,
-                        ownerType: 'series',
                         ownerId: seriesId,
-                        title: series?.title ?? '',
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          series?.title ?? '',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        if (series?.status != null)
-                          Text(
-                            series!.status!,
-                            style: Theme.of(context).textTheme.labelMedium,
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 160,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.58,
                           ),
-                        const SizedBox(height: 8),
-                        if (series?.summary != null)
-                          Text(
-                            series!.summary!,
-                            maxLines: 6,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                      ],
+                      delegate: SliverChildBuilderDelegate((context, i) {
+                        final b = bookRows[i];
+                        return CoverTile(
+                          sourceId: sourceId,
+                          ownerType: 'book',
+                          ownerId: b.id,
+                          title: b.title,
+                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                          badge: b.completed ? const _CheckBadge() : null,
+                          onTap: () => context.push('/book/$sourceId/${b.id}'),
+                        );
+                      }, childCount: bookRows.length),
                     ),
+                  ),
+                  if (books.isLoading)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    ),
+                  const SliverToBoxAdapter(
+                    child: SafeArea(top: false, child: SizedBox(height: 20)),
                   ),
                 ],
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(12),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.58,
-              ),
-              delegate: SliverChildBuilderDelegate((context, i) {
-                final b = bookRows[i];
-                return CoverTile(
-                  sourceId: sourceId,
-                  ownerType: 'book',
-                  ownerId: b.id,
-                  title: b.title,
-                  subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                  badge: b.completed ? const _CheckBadge() : null,
-                  onTap: () => context.push('/book/$sourceId/${b.id}'),
-                );
-              }, childCount: bookRows.length),
-            ),
-          ),
-          if (books.isLoading)
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            ),
+          if (!embedded) const Positioned(top: 0, left: 4, child: HeroBackButton()),
         ],
       ),
     );
   }
 }
 
-/// Back affordance for the hero: a light icon on a subtle dark scrim so it
-/// reads over any cover when the bar is expanded and over the dark bar once it
-/// collapses (where the title itself is hidden).
-class _HeroBackButton extends StatelessWidget {
-  const _HeroBackButton();
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0x66000000),
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        iconSize: 20,
-        color: Colors.white,
-        icon: const Icon(AppIcons.back),
-        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-        onPressed: () => Navigator.maybePop(context),
-      ),
-    ),
-  );
-}
+String _titleCase(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
 
 class _CheckBadge extends StatelessWidget {
   const _CheckBadge();

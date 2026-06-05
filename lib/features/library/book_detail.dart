@@ -3,19 +3,14 @@ import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/theme/cover_palette.dart';
-import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
-import '../../app/widgets/app_button.dart';
 import '../../core/db/database.dart';
+import '../integrations/comic_vine/comic_vine_panel.dart';
 import '../offline/offline_providers.dart';
-import 'widgets/cover_image.dart';
+import 'widgets/detail_header.dart';
 
-/// Dark cinematic hero band behind the detail header (both themes).
-const _heroBarColor = Color(0xFF1A1820);
-
-/// Book detail: a cover-derived hero, the cover and metadata, then a Read action
-/// that opens the reader.
+/// Book detail: a cover-forward hero (cover over its own blurred art), the
+/// metadata, a Read action that opens the reader, and the offline control.
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({
     super.key,
@@ -28,90 +23,63 @@ class BookDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tokens = Theme.of(context).extension<DesignTokens>()!;
     final bookAsync = ref.watch(_bookProvider((sourceId, bookId)));
     final book = bookAsync.valueOrNull;
+    final readPage = book?.readPage ?? 0;
+    final percent = (book != null && book.pagesCount > 0 && readPage > 0)
+        ? (readPage / book.pagesCount * 100).clamp(0, 100).round()
+        : null;
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 168,
-            backgroundColor: _heroBarColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsetsDirectional.only(
-                start: 56,
-                bottom: 14,
-              ),
-              title: Text(
-                book?.title ?? 'Book',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              background: CoverBackground(
-                sourceId: sourceId,
-                ownerType: 'book',
-                ownerId: bookId,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 180,
-                      height: 270,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(tokens.coverRadius),
-                        boxShadow: tokens.elevation.hero,
+      body: Stack(
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: DetailHeader(
+                      sourceId: sourceId,
+                      ownerType: 'book',
+                      ownerId: bookId,
+                      title: book?.title ?? 'Book',
+                      pills: [
+                        if (book != null && book.number.isNotEmpty)
+                          DetailPill('No. ${book.number}'),
+                        if (book != null && book.pagesCount > 0)
+                          DetailPill('${book.pagesCount} pages'),
+                        if (percent != null)
+                          DetailPill('$percent% read', accent: true),
+                      ],
+                      actions: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          HeroAction(
+                            label: readPage > 0 ? 'Continue reading' : 'Read',
+                            icon: AppIcons.read,
+                            onPressed: () =>
+                                context.push('/reader/$sourceId/$bookId'),
+                          ),
+                          const SizedBox(height: 12),
+                          _DownloadControl(sourceId: sourceId, bookId: bookId),
+                        ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(tokens.coverRadius),
-                        child: CoverImage(
-                          sourceId: sourceId,
-                          ownerType: 'book',
-                          ownerId: bookId,
-                          title: book?.title ?? '',
-                        ),
+                      details: ComicVineDetailsPanel(
+                        ownerKind: 'book',
+                        sourceId: sourceId,
+                        ownerId: bookId,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    book?.title ?? '',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  const SliverToBoxAdapter(
+                    child: SafeArea(top: false, child: SizedBox(height: 28)),
                   ),
-                  if (book != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        if (book.number.isNotEmpty) 'No. ${book.number}',
-                        if (book.pagesCount > 0) '${book.pagesCount} pages',
-                      ].join('  -  '),
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  AppButton(
-                    label: (book?.readPage ?? 0) > 0
-                        ? 'Continue reading'
-                        : 'Read',
-                    icon: AppIcons.read,
-                    onPressed: () => context.push('/reader/$sourceId/$bookId'),
-                  ),
-                  const SizedBox(height: 8),
-                  _DownloadControl(sourceId: sourceId, bookId: bookId),
                 ],
               ),
             ),
           ),
+          const Positioned(top: 0, left: 4, child: HeroBackButton()),
         ],
       ),
     );
@@ -135,33 +103,28 @@ class _DownloadControl extends ConsumerWidget {
 
     if (asset != null) {
       if (asset.permanent) {
-        return Row(
-          children: [
-            const Icon(AppIcons.downloaded, size: 20),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('Downloaded')),
-            AppButton(
-              kind: AppButtonKind.text,
-              icon: AppIcons.delete,
-              label: 'Remove',
-              onPressed: () => cache.delete(sourceId, bookId),
-            ),
-          ],
+        return _StatusRow(
+          icon: AppIcons.downloaded,
+          label: 'Downloaded',
+          action: HeroAction(
+            label: 'Remove',
+            icon: AppIcons.delete,
+            style: HeroActionStyle.ghost,
+            compact: true,
+            onPressed: () => cache.delete(sourceId, bookId),
+          ),
         );
       }
-      return Row(
-        children: [
-          const Icon(AppIcons.savedOffline, size: 20),
-          const SizedBox(width: 8),
-          const Expanded(child: Text('Saved offline (auto-cache)')),
-          AppButton(
-            kind: AppButtonKind.text,
-            icon: AppIcons.download,
-            label: 'Keep',
-            onPressed: () =>
-                manager.enqueueBook(sourceId, bookId, manual: true),
-          ),
-        ],
+      return _StatusRow(
+        icon: AppIcons.savedOffline,
+        label: 'Saved offline',
+        action: HeroAction(
+          label: 'Keep',
+          icon: AppIcons.download,
+          style: HeroActionStyle.ghost,
+          compact: true,
+          onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
+        ),
       );
     }
 
@@ -174,18 +137,57 @@ class _DownloadControl extends ConsumerWidget {
           : null;
       return Row(
         children: [
-          Expanded(child: LinearProgressIndicator(value: frac)),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(value: frac, minHeight: 6),
+            ),
+          ),
           const SizedBox(width: 12),
           const Text('Downloading...'),
         ],
       );
     }
 
-    return AppButton(
-      kind: AppButtonKind.outlined,
-      icon: AppIcons.download,
+    return HeroAction(
       label: state == 'failed' ? 'Retry download' : 'Download',
+      icon: AppIcons.download,
+      style: HeroActionStyle.ghost,
       onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
+    );
+  }
+}
+
+/// A cached-state row: a status icon and label on the left, an action on the
+/// right (Remove / Keep).
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({
+    required this.icon,
+    required this.label,
+    required this.action,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+        action,
+      ],
     );
   }
 }

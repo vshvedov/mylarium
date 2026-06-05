@@ -51,6 +51,7 @@ dependencies:
   background_downloader: ^9.5.5
   unrar: ^0.1.2
   phosphor_flutter: ^2.1.0
+  connectivity_plus: ^7.1.1
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +83,11 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  fonts:
+    - family: Anton
+      fonts:
+        - asset: assets/fonts/Anton-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

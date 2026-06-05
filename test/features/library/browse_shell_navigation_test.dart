@@ -10,6 +10,7 @@ import 'package:mylarium/core/network/komga_exception.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/repositories/series_repository.dart';
 import 'package:mylarium/data/source/source_providers.dart';
+import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
 
@@ -89,6 +90,9 @@ Future<GoRouter> _pumpBrowse(
         ),
         // No server: covers resolve to the deterministic placeholder.
         komgaApiForProvider('s1').overrideWith((ref) async => null),
+        // Comic Vine off (avoids hitting secure storage, which never resolves
+        // in a widget test and would leave the panel spinning forever).
+        comicVineApiKeyProvider.overrideWith((ref) async => null),
         ...extra,
       ],
       child: MaterialApp.router(theme: lightTheme, routerConfig: router),

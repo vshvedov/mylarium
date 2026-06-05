@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/data/source/source_providers.dart';
+import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/series_detail.dart';
 
@@ -47,6 +48,7 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
       overrides: [
         ...scope.overrides,
         komgaApiForProvider('s1').overrideWith((ref) async => null),
+        comicVineApiKeyProvider.overrideWith((ref) async => null),
         seriesDetailProvider(
           's1',
           'se1',

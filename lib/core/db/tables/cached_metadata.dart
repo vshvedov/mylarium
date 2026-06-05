@@ -1,12 +1,15 @@
 import 'package:drift/drift.dart';
 
 /// A generic JSON cache for resource metadata that has no dedicated typed table
-/// yet (collections, read lists). Composite PK `{sourceId, ownerType, ownerId}`.
+/// yet. Composite PK `{sourceId, ownerType, ownerId}`.
 ///
-/// [json] holds the raw Komga `content` list (serialized) so browsing works
-/// across a restart; on a fresh online fetch it is overwritten. `ownerType` is
-/// one of `collections` / `readlists`; `ownerId` is the `sourceId` (one cached
-/// list per source).
+/// [json] holds a serialized payload whose shape depends on `ownerType`; it is
+/// overwritten on a fresh fetch. Current owners:
+/// - `collections` / `readlists`: the raw Komga `content` list; `ownerId` is the
+///   `sourceId` (one cached list per source).
+/// - `comicvine.volume` (`ownerId` = seriesId) / `comicvine.issue`
+///   (`ownerId` = bookId): the structured Comic Vine display payload, or
+///   `{"v":1,"noMatch":true}` for a cached no-match.
 @DataClassName('CachedMetadataRow')
 class CachedMetadata extends Table {
   /// FK to `Sources.id`.

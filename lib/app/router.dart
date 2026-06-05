@@ -9,6 +9,7 @@ import '../features/library/libraries_screen.dart';
 import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
+import '../features/integrations/comic_vine/comic_vine_settings_screen.dart';
 import '../features/offline/storage_screen.dart';
 import '../features/onboarding/komga_connect_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -97,6 +98,10 @@ final appRouterProvider = Provider<GoRouter>(
       GoRoute(
         path: '/settings/storage',
         builder: (_, _) => const StorageScreen(),
+      ),
+      GoRoute(
+        path: '/settings/comic-vine',
+        builder: (_, _) => const ComicVineSettingsScreen(),
       ),
       GoRoute(
         path: '/reader/:sourceId/:bookId',
