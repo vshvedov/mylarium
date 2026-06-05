@@ -53,6 +53,44 @@ void main() {
     });
   });
 
+  test('genre, tag and publisher filters serialize as their own groups (T3)',
+      () {
+    final body = const SeriesSearch(
+      genres: ['Action'],
+      tags: ['ongoing'],
+      publishers: ['Acme'],
+    ).toRequestBody();
+
+    // Groups are emitted in field order: genre, tag, publisher.
+    expect(body, {
+      'condition': {
+        'allOf': [
+          {
+            'anyOf': [
+              {
+                'genre': {'operator': 'is', 'value': 'Action'}
+              },
+            ],
+          },
+          {
+            'anyOf': [
+              {
+                'tag': {'operator': 'is', 'value': 'ongoing'}
+              },
+            ],
+          },
+          {
+            'anyOf': [
+              {
+                'publisher': {'operator': 'is', 'value': 'Acme'}
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
   test('age ratings serialize with integer values', () {
     final body = const SeriesSearch(ageRatings: [18]).toRequestBody();
     expect(body, {

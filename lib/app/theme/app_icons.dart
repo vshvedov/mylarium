@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 /// Codepoints are the regular weight from `phosphor_flutter`.
 abstract final class AppIcons {
   static const _family = 'PhosphorRegular';
+  static const _fillFamily = 'PhosphorFill';
   static const _package = 'phosphor_flutter';
 
   // Navigation / chrome
@@ -64,6 +65,19 @@ abstract final class AppIcons {
       fontFamily: _family, fontPackage: _package); // checkSquare
   static const checkboxOff =
       IconData(0xe45e, fontFamily: _family, fontPackage: _package); // square
+
+  // Ratings (T3): an outline star and its filled counterpart (same glyph,
+  // different Phosphor weight font).
+  static const star =
+      IconData(0xe46a, fontFamily: _family, fontPackage: _package); // star
+  static const starFill =
+      IconData(0xe46a, fontFamily: _fillFamily, fontPackage: _package); // star
+
+  // Read-state actions (T3).
+  static const markRead = IconData(0xe184,
+      fontFamily: _family, fontPackage: _package); // checkCircle
+  static const markUnread = IconData(0xe18a,
+      fontFamily: _family, fontPackage: _package); // circle
 
   // Reader
   static const read =

@@ -5,12 +5,21 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
+import '../../features/sync/sync_providers.dart';
 import '../integrations/comic_vine/comic_vine_panel.dart';
 import '../offline/offline_providers.dart';
+import 'library_browse_controllers.dart';
+import 'widgets/add_to_collection_sheet.dart';
 import 'widgets/detail_header.dart';
+import 'widgets/detail_metadata.dart';
+import 'widgets/star_rating.dart';
 
 /// Book detail: a cover-forward hero (cover over its own blurred art), the
-/// metadata, a Read action that opens the reader, and the offline control.
+/// metadata, a Read action that opens the reader, and the offline control. T3
+/// adds mark read/unread, a local star rating, an add-to-read-list action, and
+/// a richer metadata block. The completed badge / percent read from [BookState]
+/// (the authoritative local state) so an optimistic mark survives a cache
+/// refresh; the rich metadata comes from the live DTO (hidden offline).
 class BookDetailScreen extends ConsumerWidget {
   const BookDetailScreen({
     super.key,
@@ -23,12 +32,26 @@ class BookDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bookAsync = ref.watch(_bookProvider((sourceId, bookId)));
-    final book = bookAsync.valueOrNull;
-    final readPage = book?.readPage ?? 0;
-    final percent = (book != null && book.pagesCount > 0 && readPage > 0)
-        ? (readPage / book.pagesCount * 100).clamp(0, 100).round()
-        : null;
+    final book = ref.watch(_bookProvider((sourceId, bookId))).valueOrNull;
+    final state = ref.watch(bookReadStateProvider(sourceId, bookId)).valueOrNull;
+    final dto = ref.watch(bookDetailDtoProvider(sourceId, bookId)).valueOrNull;
+    final rating = ref.watch(bookRatingProvider(sourceId, bookId)).valueOrNull;
+
+    final pagesCount = dto?.pagesCount ?? book?.pagesCount ?? 0;
+    final completed =
+        state != null ? state.status == 'completed' : (book?.completed ?? false);
+    final double? frac;
+    if (completed) {
+      frac = 1;
+    } else if (state != null && pagesCount > 0 && state.currentPage > 0) {
+      frac = ((state.currentPage + 1) / pagesCount).clamp(0, 1).toDouble();
+    } else if (book != null && pagesCount > 0 && (book.readPage ?? 0) > 0) {
+      frac = (book.readPage! / pagesCount).clamp(0, 1).toDouble();
+    } else {
+      frac = null;
+    }
+    final percent = frac == null ? null : (frac * 100).round();
+    final inProgress = frac != null && !completed && frac > 0;
 
     return Scaffold(
       body: Stack(
@@ -43,32 +66,74 @@ class BookDetailScreen extends ConsumerWidget {
                       sourceId: sourceId,
                       ownerType: 'book',
                       ownerId: bookId,
-                      title: book?.title ?? 'Book',
+                      title: book?.title ?? dto?.title ?? 'Book',
                       pills: [
                         if (book != null && book.number.isNotEmpty)
                           DetailPill('No. ${book.number}'),
-                        if (book != null && book.pagesCount > 0)
-                          DetailPill('${book.pagesCount} pages'),
-                        if (percent != null)
+                        if (pagesCount > 0) DetailPill('$pagesCount pages'),
+                        if (completed)
+                          const DetailPill('Read', accent: true)
+                        else if (percent != null)
                           DetailPill('$percent% read', accent: true),
                       ],
                       actions: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           HeroAction(
-                            label: readPage > 0 ? 'Continue reading' : 'Read',
+                            label: inProgress ? 'Continue reading' : 'Read',
                             icon: AppIcons.read,
                             onPressed: () =>
                                 context.push('/reader/$sourceId/$bookId'),
                           ),
                           const SizedBox(height: 12),
+                          _MarkReadControl(
+                            sourceId: sourceId,
+                            bookId: bookId,
+                            completed: completed,
+                            pagesCount: pagesCount,
+                          ),
+                          const SizedBox(height: 12),
+                          HeroAction(
+                            label: 'Add to read list',
+                            icon: AppIcons.readList,
+                            style: HeroActionStyle.ghost,
+                            onPressed: () => AddToCollectionSheet.show(
+                              context,
+                              ref,
+                              mode: 'readlist',
+                              sourceId: sourceId,
+                              itemId: bookId,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           _DownloadControl(sourceId: sourceId, bookId: bookId),
                         ],
                       ),
-                      details: ComicVineDetailsPanel(
-                        ownerKind: 'book',
-                        sourceId: sourceId,
-                        ownerId: bookId,
+                      details: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DetailMetadata.book(dto),
+                          const SizedBox(height: 18),
+                          RatingRow(
+                            value: rating,
+                            onChanged: (v) async {
+                              await ref.read(appDatabaseProvider).setBookRating(
+                                    sourceId,
+                                    bookId,
+                                    v,
+                                    DateTime.now().millisecondsSinceEpoch,
+                                  );
+                              ref.invalidate(
+                                  bookRatingProvider(sourceId, bookId));
+                            },
+                          ),
+                          const SizedBox(height: 18),
+                          ComicVineDetailsPanel(
+                            ownerKind: 'book',
+                            sourceId: sourceId,
+                            ownerId: bookId,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -84,6 +149,38 @@ class BookDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The mark read / unread toggle, routed through the T6 write-back queue.
+class _MarkReadControl extends ConsumerWidget {
+  const _MarkReadControl({
+    required this.sourceId,
+    required this.bookId,
+    required this.completed,
+    required this.pagesCount,
+  });
+
+  final String sourceId;
+  final String bookId;
+  final bool completed;
+  final int pagesCount;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => HeroAction(
+        label: completed ? 'Mark unread' : 'Mark read',
+        icon: completed ? AppIcons.markUnread : AppIcons.markRead,
+        style: HeroActionStyle.ghost,
+        onPressed: pagesCount == 0
+            ? null
+            : () async {
+                final engine = await ref.read(syncEngineProvider.future);
+                if (completed) {
+                  await engine.markUnread(sourceId, bookId);
+                } else {
+                  await engine.markRead(sourceId, bookId, pagesCount - 1);
+                }
+              },
+      );
 }
 
 /// Download / offline-state control. Shows: Download (not cached), a progress

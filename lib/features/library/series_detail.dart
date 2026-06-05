@@ -3,10 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../core/db/database.dart';
+import '../../features/sync/sync_providers.dart';
 import '../integrations/comic_vine/comic_vine_panel.dart';
 import 'library_browse_controllers.dart';
+import 'widgets/add_to_collection_sheet.dart';
 import 'widgets/detail_header.dart';
+import 'widgets/detail_metadata.dart';
 import 'widgets/library_tiles.dart';
+import 'widgets/star_rating.dart';
 
 /// Series detail: a cover-forward hero, status/summary, then the series' books
 /// as a grid. Books are streamed from the cache (refreshed online on open). Runs
@@ -27,11 +33,25 @@ class SeriesDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = ref.watch(seriesDetailProvider(sourceId, seriesId));
     final books = ref.watch(seriesBooksProvider(sourceId, seriesId));
+    final dto = ref.watch(seriesDetailDtoProvider(sourceId, seriesId)).valueOrNull;
+    final rating = ref.watch(seriesRatingProvider(sourceId, seriesId)).valueOrNull;
+    final states =
+        ref.watch(seriesReadStatesProvider(sourceId, seriesId)).valueOrNull ??
+            const <BookStateRow>[];
     final series = detail.valueOrNull;
     final bookRows = books.valueOrNull ?? const [];
     final summary = series?.summary;
     final status = series?.status;
     final count = series?.booksCount ?? 0;
+
+    // BookState wins for the badge when a row exists; otherwise fall back to the
+    // cached Books.completed (which the server refresh may overwrite).
+    final stateById = {for (final s in states) s.bookId: s};
+    bool isCompleted(Book b) => stateById.containsKey(b.id)
+        ? stateById[b.id]!.status == 'completed'
+        : b.completed;
+    final seriesCompleted =
+        bookRows.isNotEmpty && bookRows.every(isCompleted);
 
     return Scaffold(
       body: Stack(
@@ -53,6 +73,30 @@ class SeriesDetailScreen extends ConsumerWidget {
                         if (count > 0)
                           DetailPill(count == 1 ? '1 book' : '$count books'),
                       ],
+                      actions: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _MarkSeriesControl(
+                            sourceId: sourceId,
+                            seriesId: seriesId,
+                            completed: seriesCompleted,
+                            empty: bookRows.isEmpty,
+                          ),
+                          const SizedBox(height: 12),
+                          HeroAction(
+                            label: 'Add to collection',
+                            icon: AppIcons.collections,
+                            style: HeroActionStyle.ghost,
+                            onPressed: () => AddToCollectionSheet.show(
+                              context,
+                              ref,
+                              mode: 'collection',
+                              sourceId: sourceId,
+                              itemId: seriesId,
+                            ),
+                          ),
+                        ],
+                      ),
                       summary: (summary != null && summary.isNotEmpty)
                           ? Text(
                               summary,
@@ -61,10 +105,28 @@ class SeriesDetailScreen extends ConsumerWidget {
                               style: Theme.of(context).textTheme.bodyMedium,
                             )
                           : null,
-                      details: ComicVineDetailsPanel(
-                        ownerKind: 'series',
-                        sourceId: sourceId,
-                        ownerId: seriesId,
+                      details: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DetailMetadata.series(dto),
+                          const SizedBox(height: 18),
+                          RatingRow(
+                            value: rating,
+                            onChanged: (v) async {
+                              await ref
+                                  .read(appDatabaseProvider)
+                                  .setSeriesRating(sourceId, seriesId, v);
+                              ref.invalidate(
+                                  seriesRatingProvider(sourceId, seriesId));
+                            },
+                          ),
+                          const SizedBox(height: 18),
+                          ComicVineDetailsPanel(
+                            ownerKind: 'series',
+                            sourceId: sourceId,
+                            ownerId: seriesId,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -86,7 +148,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                           ownerId: b.id,
                           title: b.title,
                           subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                          badge: b.completed ? const _CheckBadge() : null,
+                          badge: isCompleted(b) ? const _CheckBadge() : null,
                           onTap: () => context.push('/book/$sourceId/${b.id}'),
                         );
                       }, childCount: bookRows.length),
@@ -115,6 +177,38 @@ class SeriesDetailScreen extends ConsumerWidget {
 
 String _titleCase(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+
+/// Marks the whole series read or unread (routed through the T6 queue).
+class _MarkSeriesControl extends ConsumerWidget {
+  const _MarkSeriesControl({
+    required this.sourceId,
+    required this.seriesId,
+    required this.completed,
+    required this.empty,
+  });
+
+  final String sourceId;
+  final String seriesId;
+  final bool completed;
+  final bool empty;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => HeroAction(
+        label: completed ? 'Mark series unread' : 'Mark series read',
+        icon: completed ? AppIcons.markUnread : AppIcons.markRead,
+        style: HeroActionStyle.ghost,
+        onPressed: empty
+            ? null
+            : () async {
+                final engine = await ref.read(syncEngineProvider.future);
+                if (completed) {
+                  await engine.markSeriesUnread(sourceId, seriesId);
+                } else {
+                  await engine.markSeriesRead(sourceId, seriesId);
+                }
+              },
+      );
+}
 
 class _CheckBadge extends StatelessWidget {
   const _CheckBadge();

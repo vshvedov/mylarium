@@ -66,6 +66,13 @@ enum ReadStatus { reading, completed, dropped, planToRead, paused, rereading }
 /// (PATCH + queue); local sources keep progress on-device only.
 enum SyncTarget { komga, localOnly }
 
+/// The kind of Komga write-back a queued row represents (T3). Stored by [name]
+/// in `SyncQueue.op`; `progress` is the column default so every pre-T3 row reads
+/// back as a read-progress PATCH. `unread` deletes a book's read-progress;
+/// `seriesRead` / `seriesUnread` PATCH / DELETE a whole series' read-progress
+/// (the seriesId rides in the row's bookId column).
+enum SyncOp { progress, unread, seriesRead, seriesUnread }
+
 /// The current local state of a book, as far as [applyProgress] needs it. A
 /// minimal projection of the persisted `BookState` row (no Drift dependency).
 class BookProgressState {

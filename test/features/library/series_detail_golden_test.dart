@@ -56,6 +56,12 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
         seriesBooksProvider('s1', 'se1').overrideWith(
           (ref) => Stream.value([for (var i = 0; i < 4; i++) _book(i)]),
         ),
+        // T3 detail providers: deterministic empty/offline so the golden is
+        // stable (no live db stream, no network metadata).
+        seriesReadStatesProvider('s1', 'se1')
+            .overrideWith((ref) => Stream.value(const <BookStateRow>[])),
+        seriesDetailDtoProvider('s1', 'se1').overrideWith((ref) async => null),
+        seriesRatingProvider('s1', 'se1').overrideWith((ref) async => null),
       ],
       child: MaterialApp(
         theme: theme,

@@ -140,6 +140,115 @@ Stream<List<Book>> seriesBooks(Ref ref, String sourceId, String seriesId) async*
   yield* ref.watch(appDatabaseProvider).watchBooksForSeries(sourceId, seriesId);
 }
 
+// --- T3: read-state, detail DTOs, ratings, filter referentials -----------
+
+/// The book's local read state (the authoritative source for the completed
+/// badge and percent; survives a Books-cache refresh).
+@riverpod
+Stream<BookStateRow?> bookReadState(Ref ref, String sourceId, String bookId) =>
+    ref.watch(appDatabaseProvider).watchBookState(sourceId, bookId);
+
+/// The local read state of every book of a series that has one, for the series
+/// grid badges (books without a row fall back to the cached `Books.completed`).
+@riverpod
+Stream<List<BookStateRow>> seriesReadStates(
+  Ref ref,
+  String sourceId,
+  String seriesId,
+) =>
+    ref.watch(appDatabaseProvider).watchSeriesReadStates(sourceId, seriesId);
+
+/// The live Komga book, fetched for the richer detail metadata. Null offline
+/// (the screen falls back to the cached row).
+@riverpod
+Future<BookDto?> bookDetailDto(Ref ref, String sourceId, String bookId) async {
+  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  if (api == null) return null;
+  try {
+    return await api.getBook(bookId);
+  } on KomgaException {
+    return null;
+  }
+}
+
+/// The live Komga series, fetched for the richer detail metadata. Null offline.
+@riverpod
+Future<SeriesDto?> seriesDetailDto(
+  Ref ref,
+  String sourceId,
+  String seriesId,
+) async {
+  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  if (api == null) return null;
+  try {
+    return await api.getSeries(seriesId);
+  } on KomgaException {
+    return null;
+  }
+}
+
+/// The local star rating for a book (null when unset).
+@riverpod
+Future<int?> bookRating(Ref ref, String sourceId, String bookId) async =>
+    (await ref.watch(appDatabaseProvider).getBookState(sourceId, bookId))
+        ?.rating;
+
+/// The local star rating for a series (null when unset).
+@riverpod
+Future<int?> seriesRating(Ref ref, String sourceId, String seriesId) async =>
+    (await ref.watch(appDatabaseProvider).getSeriesMeta(sourceId, seriesId))
+        ?.rating;
+
+/// All genres on the active source (filter chips). Empty on any error/offline.
+@riverpod
+Future<List<String>> genres(Ref ref) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  try {
+    return await api.listGenres();
+  } on KomgaException {
+    return const [];
+  }
+}
+
+/// All tags on the active source (filter chips). Empty on any error/offline.
+@riverpod
+Future<List<String>> tags(Ref ref) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  try {
+    return await api.listTags();
+  } on KomgaException {
+    return const [];
+  }
+}
+
+/// All publishers on the active source (filter chips). Empty on error/offline.
+@riverpod
+Future<List<String>> publishers(Ref ref) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  try {
+    return await api.listPublishers();
+  } on KomgaException {
+    return const [];
+  }
+}
+
+/// Age ratings present on the active source (filter chips). Empty hides the
+/// group (there is no fixed Komga age ladder).
+@riverpod
+Future<List<int>> ageRatings(Ref ref) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  try {
+    final list = await api.listAgeRatings();
+    return list..sort();
+  } on KomgaException {
+    return const [];
+  }
+}
+
 /// A single cached series row (for the series-detail header).
 @riverpod
 Future<SeriesRow?> seriesDetail(

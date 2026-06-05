@@ -98,4 +98,88 @@ void main() {
       expect((await db.getBookState('src', 'b1'))!.currentPage, 40);
     },
   );
+
+  // --- T3: mark read / unread / series -------------------------------------
+
+  test('markRead completes the book and flushes a progress write-back', () async {
+    await addSource('komga');
+    adapter.onPatch(
+      '/api/v1/books/b1/read-progress',
+      (s) => s.reply(204, null),
+      data: {'page': 10, 'completed': true},
+    );
+
+    await engine().markRead('src', 'b1', 9); // 0-based last page 9 -> page 10
+
+    expect((await db.getBookState('src', 'b1'))!.status, 'completed');
+    expect(await db.pendingSync(), isEmpty, reason: 'flushed on success');
+  });
+
+  test('markUnread resets state to page 0 and enqueues an unread delete',
+      () async {
+    await addSource('komga');
+    adapter.onPatch(
+      '/api/v1/books/b1/read-progress',
+      (s) => s.reply(204, null),
+      data: {'page': 10, 'completed': true},
+    );
+    await engine().markRead('src', 'b1', 9);
+
+    adapter.onDelete(
+      '/api/v1/books/b1/read-progress',
+      (s) => s.reply(204, null),
+    );
+    await engine().markUnread('src', 'b1');
+
+    final st = await db.getBookState('src', 'b1');
+    expect(st!.status, isNull);
+    expect(st.currentPage, 0);
+    expect(await db.pendingSync(), isEmpty, reason: 'delete flushed');
+  });
+
+  test('mark unread then read does not bump timesReread', () async {
+    await addSource('komga');
+    adapter
+      ..onPatch('/api/v1/books/b1/read-progress', (s) => s.reply(204, null))
+      ..onDelete('/api/v1/books/b1/read-progress', (s) => s.reply(204, null));
+
+    final e = engine();
+    await e.markRead('src', 'b1', 9);
+    await e.markUnread('src', 'b1');
+    await e.markRead('src', 'b1', 9);
+
+    expect((await db.getBookState('src', 'b1'))!.timesReread, 0);
+  });
+
+  test('markSeriesRead writes a state row for every book and enqueues seriesRead',
+      () async {
+    await addSource('komga');
+    await db.upsertBook(BooksCompanion.insert(
+      sourceId: 'src',
+      id: 'b1',
+      seriesId: 'ser1',
+      libraryId: 'lib',
+      title: 'B1',
+      number: '1',
+      pagesCount: const Value(20),
+    ));
+    // b2 has no prior BookState row (a never-opened book).
+    await db.upsertBook(BooksCompanion.insert(
+      sourceId: 'src',
+      id: 'b2',
+      seriesId: 'ser1',
+      libraryId: 'lib',
+      title: 'B2',
+      number: '2',
+      pagesCount: const Value(10),
+    ));
+    adapter.onPost('/api/v1/series/ser1/read-progress', (s) => s.reply(204, null));
+
+    await engine().markSeriesRead('src', 'ser1');
+
+    expect((await db.getBookState('src', 'b1'))!.status, 'completed');
+    expect((await db.getBookState('src', 'b2'))!.status, 'completed',
+        reason: 'never-opened book gets a row the reconciler can confirm');
+    expect(await db.pendingSync(), isEmpty, reason: 'series op flushed');
+  });
 }

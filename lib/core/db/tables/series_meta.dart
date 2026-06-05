@@ -22,6 +22,12 @@ class SeriesMeta extends Table {
   /// JSON-encoded `List<String>` of genres (tag-overlap breakdown).
   TextColumn get genres => text().nullable()();
 
+  /// The user's local star rating for the series (T3). Komga exposes no
+  /// user-rating endpoint, so this is a device-only mirror. Preserved across
+  /// series re-syncs because `seriesMetaToRow` never writes it (the
+  /// insertOnConflictUpdate update set omits the absent column).
+  IntColumn get rating => integer().nullable()();
+
   @override
   Set<Column> get primaryKey => {sourceId, seriesId};
 }

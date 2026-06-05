@@ -290,6 +290,115 @@ class KomgaApi {
         return Page.fromJson(
             res.data! as Map<String, Object?>, BookDto.fromJson);
       });
+
+  // --- T3: deeper Komga integration ----------------------------------------
+  // Request shapes confirmed against the Komga OpenAPI spec.
+
+  /// Marks a book unread by deleting its read-progress. Idempotent: a 404 means
+  /// it was already absent (the write-back queue treats that as success).
+  Future<void> deleteReadProgress(String bookId) => _guard(() async {
+        await _dio.delete<void>('$_v1/books/$bookId/read-progress');
+      });
+
+  /// Marks every book in a series read. Komga's endpoint is a POST with no body.
+  Future<void> markSeriesRead(String seriesId) => _guard(() async {
+        await _dio.post<void>('$_v1/series/$seriesId/read-progress');
+      });
+
+  /// Marks every book in a series unread (deletes the series read-progress).
+  Future<void> markSeriesUnread(String seriesId) => _guard(() async {
+        await _dio.delete<void>('$_v1/series/$seriesId/read-progress');
+      });
+
+  Future<CollectionDto> getCollection(String id) => _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/collections/$id');
+        return CollectionDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
+  Future<CollectionDto> createCollection({
+    required String name,
+    required List<String> seriesIds,
+  }) =>
+      _guard(() async {
+        final res = await _dio.post<Object?>('$_v1/collections',
+            data: {'name': name, 'ordered': false, 'seriesIds': seriesIds});
+        return CollectionDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
+  /// PATCHes a collection. The full object (name + ordered + seriesIds) is sent
+  /// from a fresh [getCollection] so no version that requires name/ordered is
+  /// rejected and the ordered flag is preserved.
+  Future<void> updateCollection(
+    String id, {
+    required String name,
+    required bool ordered,
+    required List<String> seriesIds,
+  }) =>
+      _guard(() async {
+        await _dio.patch<void>('$_v1/collections/$id',
+            data: {'name': name, 'ordered': ordered, 'seriesIds': seriesIds});
+      });
+
+  Future<void> deleteCollection(String id) => _guard(() async {
+        await _dio.delete<void>('$_v1/collections/$id');
+      });
+
+  Future<ReadListDto> getReadList(String id) => _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/readlists/$id');
+        return ReadListDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
+  Future<ReadListDto> createReadList({
+    required String name,
+    required List<String> bookIds,
+  }) =>
+      _guard(() async {
+        // Komga's ReadListCreationDto requires a summary; an empty one is fine.
+        final res = await _dio.post<Object?>('$_v1/readlists', data: {
+          'name': name,
+          'ordered': false,
+          'summary': '',
+          'bookIds': bookIds,
+        });
+        return ReadListDto.fromJson(res.data! as Map<String, Object?>);
+      });
+
+  Future<void> updateReadList(
+    String id, {
+    required String name,
+    required bool ordered,
+    required List<String> bookIds,
+  }) =>
+      _guard(() async {
+        await _dio.patch<void>('$_v1/readlists/$id',
+            data: {'name': name, 'ordered': ordered, 'bookIds': bookIds});
+      });
+
+  Future<void> deleteReadList(String id) => _guard(() async {
+        await _dio.delete<void>('$_v1/readlists/$id');
+      });
+
+  /// Komga referential lists return a plain (unpaged) JSON array of strings.
+  Future<List<String>> _referential(String path) => _guard(() async {
+        final res = await _dio.get<Object?>(path);
+        return ((res.data as List?) ?? const [])
+            .map((e) => e as String)
+            .toList(growable: false);
+      });
+
+  Future<List<String>> listGenres() => _referential('$_v1/genres');
+  Future<List<String>> listTags() => _referential('$_v1/tags');
+  Future<List<String>> listPublishers() => _referential('$_v1/publishers');
+
+  /// Age ratings come back as strings (e.g. "0", "12", "18"); parsed to int for
+  /// the filter (unparseable values are dropped).
+  Future<List<int>> listAgeRatings() => _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/age-ratings');
+        return ((res.data as List?) ?? const [])
+            .map((e) => int.tryParse(e.toString()))
+            .whereType<int>()
+            .toList(growable: false);
+      });
 }
 
 /// Whether [version] is new enough for Komga API keys (>= 1.20.0). A null or

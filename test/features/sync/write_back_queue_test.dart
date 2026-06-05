@@ -102,6 +102,75 @@ void main() {
     expect(await db.select(db.syncQueue).get(), isEmpty);
   });
 
+  // --- T3: op-aware write-back ---------------------------------------------
+
+  Future<void> enqueueOp(String op, {String bookId = 'b1'}) => db.enqueueSync(
+        SyncQueueCompanion.insert(
+          sourceId: 'src',
+          bookId: bookId,
+          page: 0,
+          queuedAt: 1,
+          op: Value(op),
+        ),
+      );
+
+  test('op=unread DELETEs the book read-progress and deletes the row', () async {
+    await enqueueOp('unread');
+    adapter.onDelete('/api/v1/books/b1/read-progress', (s) => s.reply(204, null));
+
+    await queueFor((_) => api).flush();
+
+    expect(await db.pendingSync(), isEmpty);
+    expect(await db.select(db.syncQueue).get(), isEmpty);
+  });
+
+  test('op=unread treats a 404 as success (already absent)', () async {
+    await enqueueOp('unread');
+    adapter.onDelete(
+      '/api/v1/books/b1/read-progress',
+      (s) => s.reply(404, {'error': 'gone'}),
+    );
+
+    await queueFor((_) => api).flush();
+
+    expect(await db.select(db.syncQueue).get(), isEmpty,
+        reason: '404 on a delete is idempotent success, not dead-letter');
+  });
+
+  test('op=seriesRead POSTs the series read-progress', () async {
+    await enqueueOp('seriesRead', bookId: 'ser1');
+    adapter.onPost(
+      '/api/v1/series/ser1/read-progress',
+      (s) => s.reply(204, null),
+    );
+
+    await queueFor((_) => api).flush();
+
+    expect(await db.select(db.syncQueue).get(), isEmpty);
+  });
+
+  test('op=seriesUnread DELETEs the series read-progress', () async {
+    await enqueueOp('seriesUnread', bookId: 'ser1');
+    adapter.onDelete(
+      '/api/v1/series/ser1/read-progress',
+      (s) => s.reply(204, null),
+    );
+
+    await queueFor((_) => api).flush();
+
+    expect(await db.select(db.syncQueue).get(), isEmpty);
+  });
+
+  test('an unknown op is dead-lettered without throwing', () async {
+    await enqueueOp('teleport');
+
+    await queueFor((_) => api).flush();
+
+    expect(await db.pendingSync(), isEmpty);
+    final all = await db.select(db.syncQueue).get();
+    expect(all.single.state, 'failed');
+  });
+
   test('a transient failure on one source still drains the others', () async {
     // Source A is down (transient); source B is healthy.
     final dioB = Dio(BaseOptions(baseUrl: 'https://b.test'));

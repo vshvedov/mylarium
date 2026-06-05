@@ -93,6 +93,91 @@ class SyncEngine {
     }
   }
 
+  /// Marks a book read from the UI (T3): records completion at the last page
+  /// through the monotonic [recordProgress] path (so it enqueues a `progress`
+  /// write-back and flushes), and updates the Books cache for any direct reader.
+  Future<void> markRead(String sourceId, String bookId, int lastPageIndex) async {
+    await recordProgress(sourceId, bookId, lastPageIndex, true);
+    await _db.setBookReadCache(
+      sourceId,
+      bookId,
+      readPage: lastPageIndex + 1, // 0-based -> Komga 1-based for the cache
+      completed: true,
+    );
+  }
+
+  /// Marks a book unread from the UI (T3). This is the one intentional
+  /// un-complete: it resets the read position directly (bypassing the monotonic
+  /// [applyProgress]) while PRESERVING timesReread / startedAt / rating /
+  /// remoteUpdatedAt / reconciledAt (left absent in the companion). Keeping
+  /// remoteUpdatedAt matters: the reconciler's "nothing new" early-return then
+  /// holds the unread state if the DELETE has not flushed, and launch flushes
+  /// the queue before reconcile. Because status is now null (not completed), a
+  /// later [markRead] does not trip the re-read branch, so timesReread is not
+  /// bumped. The reading-sessions log is append-only and is not rewritten.
+  Future<void> markUnread(String sourceId, String bookId) async {
+    final now = _now();
+    await _db.upsertBookState(
+      BookStateCompanion(
+        sourceId: Value(sourceId),
+        bookId: Value(bookId),
+        status: const Value(null),
+        currentPage: const Value(0),
+        isRereading: const Value(false),
+        finishedAt: const Value(null),
+        updatedAt: Value(now),
+      ),
+    );
+    await _db.setBookReadCache(sourceId, bookId, readPage: 0, completed: false);
+    if (await _isKomga(sourceId)) {
+      await _db.enqueueSync(
+        SyncQueueCompanion.insert(
+          sourceId: sourceId,
+          bookId: bookId,
+          page: 0,
+          queuedAt: now,
+          op: Value(SyncOp.unread.name),
+        ),
+      );
+      await _queue.flush();
+    }
+  }
+
+  /// Marks every book of a series read (T3).
+  Future<void> markSeriesRead(String sourceId, String seriesId) =>
+      _markSeries(sourceId, seriesId, read: true, op: SyncOp.seriesRead);
+
+  /// Marks every book of a series unread (T3).
+  Future<void> markSeriesUnread(String sourceId, String seriesId) =>
+      _markSeries(sourceId, seriesId, read: false, op: SyncOp.seriesUnread);
+
+  Future<void> _markSeries(
+    String sourceId,
+    String seriesId, {
+    required bool read,
+    required SyncOp op,
+  }) async {
+    final now = _now();
+    // Optimistic per-book BookState rows: flips the grid badges now and seeds
+    // rows the reconciler later confirms (it only visits existing state rows).
+    await _db.setSeriesBooksReadStates(sourceId, seriesId, read: read, now: now);
+    if (await _isKomga(sourceId)) {
+      // Drop any stale per-book write-backs so they cannot flush after the
+      // series op and re-diverge.
+      await _db.deletePendingSyncForSeries(sourceId, seriesId);
+      await _db.enqueueSync(
+        SyncQueueCompanion.insert(
+          sourceId: sourceId,
+          bookId: seriesId, // series ops carry the seriesId in bookId
+          page: 0,
+          queuedAt: now,
+          op: Value(op.name),
+        ),
+      );
+      await _queue.flush();
+    }
+  }
+
   /// Appends a finished reading session (append-only stats log), stamping this
   /// device's id and the current reread index. Defaults keep it private and
   /// unshared (NSFW never auto-shares in phase 1).

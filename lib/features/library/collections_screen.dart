@@ -4,7 +4,10 @@ import '../../app/widgets/app_list_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/network/komga_exception.dart';
+import '../../data/source/source_providers.dart';
 import 'library_browse_controllers.dart';
+import 'widgets/add_to_collection_sheet.dart';
 import 'widgets/library_tiles.dart';
 
 /// Browses the active source's collections and read lists. Tapping one opens a
@@ -20,7 +23,20 @@ class CollectionsScreen extends ConsumerWidget {
     final readLists = ref.watch(readListsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Collections & read lists')),
+      appBar: AppBar(
+        title: const Text('Collections & read lists'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(AppIcons.add),
+            tooltip: 'New',
+            onSelected: (mode) => _createNew(context, ref, mode),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'collection', child: Text('New collection')),
+              PopupMenuItem(value: 'readlist', child: Text('New read list')),
+            ],
+          ),
+        ],
+      ),
       body: ListView(
         children: [
           _Header(label: 'Collections'),
@@ -103,12 +119,25 @@ class CollectionDetailScreen extends ConsumerWidget {
                 itemCount: list.length,
                 itemBuilder: (context, i) {
                   final s = list[i];
-                  return CoverTile(
-                    sourceId: sourceId,
-                    ownerType: 'series',
-                    ownerId: s.id,
-                    title: s.title,
-                    onTap: () => context.push('/series/$sourceId/${s.id}'),
+                  return GestureDetector(
+                    onLongPress: () => _confirmRemove(
+                      context,
+                      title: 'Remove from collection?',
+                      label: s.title,
+                      onRemove: () async {
+                        final repo = await ref
+                            .read(collectionRepositoryProvider.future);
+                        await repo?.removeSeries(collectionId, s.id);
+                        ref.invalidate(collectionSeriesProvider(collectionId));
+                      },
+                    ),
+                    child: CoverTile(
+                      sourceId: sourceId,
+                      ownerType: 'series',
+                      ownerId: s.id,
+                      title: s.title,
+                      onTap: () => context.push('/series/$sourceId/${s.id}'),
+                    ),
                   );
                 },
               ),
@@ -149,18 +178,95 @@ class ReadListDetailScreen extends ConsumerWidget {
                 itemCount: list.length,
                 itemBuilder: (context, i) {
                   final b = list[i];
-                  return CoverTile(
-                    sourceId: sourceId,
-                    ownerType: 'book',
-                    ownerId: b.id,
-                    title: b.title,
-                    subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                    onTap: () => context.push('/book/$sourceId/${b.id}'),
+                  return GestureDetector(
+                    onLongPress: () => _confirmRemove(
+                      context,
+                      title: 'Remove from read list?',
+                      label: b.title,
+                      onRemove: () async {
+                        final repo =
+                            await ref.read(readListRepositoryProvider.future);
+                        await repo?.removeBook(readListId, b.id);
+                        ref.invalidate(readListBooksProvider(readListId));
+                      },
+                    ),
+                    child: CoverTile(
+                      sourceId: sourceId,
+                      ownerType: 'book',
+                      ownerId: b.id,
+                      title: b.title,
+                      subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                      onTap: () => context.push('/book/$sourceId/${b.id}'),
+                    ),
                   );
                 },
               ),
       ),
     );
+  }
+}
+
+/// Prompts for a name and creates an empty collection or read list.
+Future<void> _createNew(
+  BuildContext context,
+  WidgetRef ref,
+  String mode,
+) async {
+  final name = await promptName(
+    context,
+    title: mode == 'collection' ? 'New collection' : 'New read list',
+  );
+  if (name == null) return;
+  try {
+    if (mode == 'collection') {
+      final repo = await ref.read(collectionRepositoryProvider.future);
+      await repo?.create(name);
+      ref.invalidate(collectionsProvider);
+    } else {
+      final repo = await ref.read(readListRepositoryProvider.future);
+      await repo?.create(name);
+      ref.invalidate(readListsProvider);
+    }
+  } on KomgaException {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not create $name.')));
+    }
+  }
+}
+
+/// Confirms then runs an item removal, surfacing a snackbar on failure.
+Future<void> _confirmRemove(
+  BuildContext context, {
+  required String title,
+  required String label,
+  required Future<void> Function() onRemove,
+}) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(label),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Remove'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  try {
+    await onRemove();
+  } on KomgaException {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Could not remove.')));
+    }
   }
 }
 

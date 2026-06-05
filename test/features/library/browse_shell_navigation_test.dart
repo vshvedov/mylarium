@@ -135,6 +135,12 @@ void main() {
           ),
           seriesBooksProvider('s1', 'ida')
               .overrideWith((ref) => Stream.value(const <Book>[])),
+          // T3 detail providers: stub them so the embedded screen does not open
+          // a live db stream / network fetch that would outlive the test.
+          seriesReadStatesProvider('s1', 'ida')
+              .overrideWith((ref) => Stream.value(const <BookStateRow>[])),
+          seriesDetailDtoProvider('s1', 'ida').overrideWith((ref) async => null),
+          seriesRatingProvider('s1', 'ida').overrideWith((ref) async => null),
         ],
       );
 

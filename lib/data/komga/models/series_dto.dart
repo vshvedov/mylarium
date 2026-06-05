@@ -1,3 +1,5 @@
+import 'komga_meta.dart';
+
 /// Komga series resource. Title/sort/age/status/summary live under `metadata`.
 class SeriesDto {
   const SeriesDto({
@@ -13,6 +15,9 @@ class SeriesDto {
     this.booksCount = 0,
     this.publisher,
     this.genres = const [],
+    this.tags = const [],
+    this.links = const [],
+    this.language,
   });
 
   final String id;
@@ -38,11 +43,17 @@ class SeriesDto {
   /// Genres, for the stats genre breakdown (tag-overlap). Empty when unset.
   final List<String> genres;
 
+  /// Richer T3 detail metadata.
+  final List<String> tags;
+  final List<KomgaLink> links;
+  final String? language;
+
   factory SeriesDto.fromJson(Map<String, Object?> json) {
     final meta = (json['metadata'] as Map<String, Object?>?) ?? const {};
     final name = json['name'] as String? ?? '';
     final publisher = meta['publisher'] as String?;
     final rawGenres = meta['genres'];
+    final language = meta['language'] as String?;
     return SeriesDto(
       id: json['id'] as String,
       libraryId: json['libraryId'] as String? ?? '',
@@ -58,6 +69,9 @@ class SeriesDto {
       genres: rawGenres is List
           ? rawGenres.whereType<String>().toList(growable: false)
           : const [],
+      tags: parseStringList(meta['tags']),
+      links: parseLinks(meta['links']),
+      language: (language == null || language.isEmpty) ? null : language,
     );
   }
 }

@@ -46,7 +46,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +119,18 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8 && to >= 8) {
             await m.addColumn(appSettings, appSettings.imageQualitySmart);
             await m.addColumn(appSettings, appSettings.imageQualityManualLevel);
+          }
+          // v8 -> v9: deeper Komga integration (T3). A write-back `op` kind on
+          // the sync queue (mark read/unread, series read/unread) and a local
+          // series rating mirror. Both syncQueue and seriesMeta are created in
+          // the from<7 block, where createTable already emits the current (v9)
+          // shape including these columns; only a real v7 or v8 install has the
+          // tables WITHOUT them, so the addColumns are guarded on from >= 7.
+          if (from < 9 && to >= 9) {
+            if (from >= 7) {
+              await m.addColumn(syncQueue, syncQueue.op);
+              await m.addColumn(seriesMeta, seriesMeta.rating);
+            }
           }
         },
       );
@@ -273,6 +285,19 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertSeriesMeta(SeriesMetaCompanion row) =>
       into(seriesMeta).insertOnConflictUpdate(row);
 
+  /// Sets only the local star [rating] for a series (T3). On conflict touches
+  /// ONLY `rating`; `seriesMetaToRow` never writes rating, so a later series
+  /// re-sync (`upsertSeriesMeta`) leaves it intact. A null [rating] clears it.
+  Future<void> setSeriesRating(String sourceId, String seriesId, int? rating) =>
+      into(seriesMeta).insert(
+        SeriesMetaCompanion.insert(
+          sourceId: sourceId,
+          seriesId: seriesId,
+          rating: Value(rating),
+        ),
+        onConflict: DoUpdate((_) => SeriesMetaCompanion(rating: Value(rating))),
+      );
+
   Future<SeriesMetaRow?> getSeriesMeta(String sourceId, String seriesId) =>
       (select(seriesMeta)
             ..where((t) =>
@@ -296,6 +321,31 @@ class AppDatabase extends _$AppDatabase {
   Future<Book?> getBook(String sourceId, String id) =>
       (select(books)..where((t) => t.sourceId.equals(sourceId) & t.id.equals(id)))
           .getSingleOrNull();
+
+  /// All cached books of a series (awaitable; the [watchBooksForSeries] stream
+  /// cannot be consumed inside a transaction). Used by the series mark-read
+  /// optimistic write and the series sync-queue purge (T3).
+  Future<List<Book>> getBooksForSeries(String sourceId, String seriesId) =>
+      (select(books)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) & t.seriesId.equals(seriesId)))
+          .get();
+
+  /// Optimistically updates a cached book's read fields after a local mark
+  /// read/unread (T3), so any consumer reading the Books row directly stays in
+  /// step with [BookState] (the authoritative badge source).
+  Future<void> setBookReadCache(
+    String sourceId,
+    String bookId, {
+    int? readPage,
+    required bool completed,
+  }) =>
+      (update(books)
+            ..where((t) => t.sourceId.equals(sourceId) & t.id.equals(bookId)))
+          .write(BooksCompanion(
+            readPage: Value(readPage),
+            completed: Value(completed),
+          ));
 
   // --- Thumbnails ----------------------------------------------------------
 
@@ -462,6 +512,83 @@ class AppDatabase extends _$AppDatabase {
             ..limit(limit))
           .get();
 
+  /// The [BookState] rows for every book of a series that has one (T3 series
+  /// detail badges). Joined on `{sourceId, bookId} == {sourceId, id}` so books
+  /// without a state row simply do not appear; the grid falls back to the
+  /// cached `Books.completed` for those.
+  Stream<List<BookStateRow>> watchSeriesReadStates(
+    String sourceId,
+    String seriesId,
+  ) {
+    final query = select(bookState).join([
+      innerJoin(
+        books,
+        books.sourceId.equalsExp(bookState.sourceId) &
+            books.id.equalsExp(bookState.bookId),
+      ),
+    ])
+      ..where(books.sourceId.equals(sourceId) & books.seriesId.equals(seriesId));
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.readTable(bookState)).toList());
+  }
+
+  /// Sets only the local star [rating] for a book (T3). Inserts a minimal row
+  /// when the book has no state yet (supplying the NOT NULL `updatedAt`), and on
+  /// conflict touches ONLY `rating`, so existing progress and `updatedAt` are
+  /// untouched. A null [rating] clears it.
+  Future<void> setBookRating(
+    String sourceId,
+    String bookId,
+    int? rating,
+    int now,
+  ) =>
+      into(bookState).insert(
+        BookStateCompanion.insert(
+          sourceId: sourceId,
+          bookId: bookId,
+          rating: Value(rating),
+          updatedAt: now,
+        ),
+        onConflict: DoUpdate((_) => BookStateCompanion(rating: Value(rating))),
+      );
+
+  /// Optimistically marks every cached book of a series read or unread (T3).
+  /// Writing a [BookState] row per book both flips the series grid badges
+  /// (which read state-then-cache) and seeds rows the reconciler later confirms
+  /// (it only visits existing state rows). `'completed'` matches
+  /// `ReadStatus.completed.name`; the badge keys on status, not the page.
+  Future<void> setSeriesBooksReadStates(
+    String sourceId,
+    String seriesId, {
+    required bool read,
+    required int now,
+  }) =>
+      transaction(() async {
+        final rows = await getBooksForSeries(sourceId, seriesId);
+        for (final b in rows) {
+          final page = read && b.pagesCount > 0 ? b.pagesCount - 1 : 0;
+          await into(bookState).insert(
+            BookStateCompanion.insert(
+              sourceId: sourceId,
+              bookId: b.id,
+              status: Value(read ? 'completed' : null),
+              currentPage: Value(page),
+              isRereading: const Value(false),
+              updatedAt: now,
+            ),
+            // Clear isRereading too: a series mark must not leave a book in the
+            // impossible status=completed + isRereading=true state.
+            onConflict: DoUpdate((_) => BookStateCompanion(
+                  status: Value(read ? 'completed' : null),
+                  currentPage: Value(page),
+                  isRereading: const Value(false),
+                  updatedAt: Value(now),
+                )),
+          );
+        }
+      });
+
   // --- Reading sessions (append-only stats log) ----------------------------
 
   Future<void> insertReadingSession(ReadingSessionsCompanion row) =>
@@ -504,6 +631,21 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteSyncRow(int id) =>
       (delete(syncQueue)..where((t) => t.id.equals(id))).go();
+
+  /// Drops any pending per-book write-back rows for the books of [seriesId]
+  /// (T3). Called before enqueueing a series read/unread op so a stale per-book
+  /// progress row cannot flush afterwards and re-diverge from the series mark.
+  Future<void> deletePendingSyncForSeries(
+    String sourceId,
+    String seriesId,
+  ) async {
+    final ids =
+        (await getBooksForSeries(sourceId, seriesId)).map((b) => b.id).toList();
+    if (ids.isEmpty) return;
+    await (delete(syncQueue)
+          ..where((t) => t.sourceId.equals(sourceId) & t.bookId.isIn(ids)))
+        .go();
+  }
 
   Future<void> updateSyncRow(int id, SyncQueueCompanion row) =>
       (update(syncQueue)..where((t) => t.id.equals(id))).write(row);

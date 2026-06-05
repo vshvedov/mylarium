@@ -7282,6 +7282,16 @@ class $SyncQueueTable extends SyncQueue
     requiredDuringInsert: false,
     defaultValue: const Constant('pending'),
   );
+  static const VerificationMeta _opMeta = const VerificationMeta('op');
+  @override
+  late final GeneratedColumn<String> op = GeneratedColumn<String>(
+    'op',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('progress'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -7292,6 +7302,7 @@ class $SyncQueueTable extends SyncQueue
     queuedAt,
     attempts,
     state,
+    op,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -7358,6 +7369,9 @@ class $SyncQueueTable extends SyncQueue
         state.isAcceptableOrUnknown(data['state']!, _stateMeta),
       );
     }
+    if (data.containsKey('op')) {
+      context.handle(_opMeta, op.isAcceptableOrUnknown(data['op']!, _opMeta));
+    }
     return context;
   }
 
@@ -7399,6 +7413,10 @@ class $SyncQueueTable extends SyncQueue
         DriftSqlType.string,
         data['${effectivePrefix}state'],
       )!,
+      op: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}op'],
+      )!,
     );
   }
 
@@ -7417,6 +7435,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
   final int queuedAt;
   final int attempts;
   final String state;
+  final String op;
   const SyncQueueRow({
     required this.id,
     required this.sourceId,
@@ -7426,6 +7445,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
     required this.queuedAt,
     required this.attempts,
     required this.state,
+    required this.op,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7438,6 +7458,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
     map['queued_at'] = Variable<int>(queuedAt);
     map['attempts'] = Variable<int>(attempts);
     map['state'] = Variable<String>(state);
+    map['op'] = Variable<String>(op);
     return map;
   }
 
@@ -7451,6 +7472,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
       queuedAt: Value(queuedAt),
       attempts: Value(attempts),
       state: Value(state),
+      op: Value(op),
     );
   }
 
@@ -7468,6 +7490,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
       queuedAt: serializer.fromJson<int>(json['queuedAt']),
       attempts: serializer.fromJson<int>(json['attempts']),
       state: serializer.fromJson<String>(json['state']),
+      op: serializer.fromJson<String>(json['op']),
     );
   }
   @override
@@ -7482,6 +7505,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
       'queuedAt': serializer.toJson<int>(queuedAt),
       'attempts': serializer.toJson<int>(attempts),
       'state': serializer.toJson<String>(state),
+      'op': serializer.toJson<String>(op),
     };
   }
 
@@ -7494,6 +7518,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
     int? queuedAt,
     int? attempts,
     String? state,
+    String? op,
   }) => SyncQueueRow(
     id: id ?? this.id,
     sourceId: sourceId ?? this.sourceId,
@@ -7503,6 +7528,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
     queuedAt: queuedAt ?? this.queuedAt,
     attempts: attempts ?? this.attempts,
     state: state ?? this.state,
+    op: op ?? this.op,
   );
   SyncQueueRow copyWithCompanion(SyncQueueCompanion data) {
     return SyncQueueRow(
@@ -7514,6 +7540,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
       queuedAt: data.queuedAt.present ? data.queuedAt.value : this.queuedAt,
       attempts: data.attempts.present ? data.attempts.value : this.attempts,
       state: data.state.present ? data.state.value : this.state,
+      op: data.op.present ? data.op.value : this.op,
     );
   }
 
@@ -7527,7 +7554,8 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
           ..write('completed: $completed, ')
           ..write('queuedAt: $queuedAt, ')
           ..write('attempts: $attempts, ')
-          ..write('state: $state')
+          ..write('state: $state, ')
+          ..write('op: $op')
           ..write(')'))
         .toString();
   }
@@ -7542,6 +7570,7 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
     queuedAt,
     attempts,
     state,
+    op,
   );
   @override
   bool operator ==(Object other) =>
@@ -7554,7 +7583,8 @@ class SyncQueueRow extends DataClass implements Insertable<SyncQueueRow> {
           other.completed == this.completed &&
           other.queuedAt == this.queuedAt &&
           other.attempts == this.attempts &&
-          other.state == this.state);
+          other.state == this.state &&
+          other.op == this.op);
 }
 
 class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
@@ -7566,6 +7596,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
   final Value<int> queuedAt;
   final Value<int> attempts;
   final Value<String> state;
+  final Value<String> op;
   const SyncQueueCompanion({
     this.id = const Value.absent(),
     this.sourceId = const Value.absent(),
@@ -7575,6 +7606,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
     this.queuedAt = const Value.absent(),
     this.attempts = const Value.absent(),
     this.state = const Value.absent(),
+    this.op = const Value.absent(),
   });
   SyncQueueCompanion.insert({
     this.id = const Value.absent(),
@@ -7585,6 +7617,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
     required int queuedAt,
     this.attempts = const Value.absent(),
     this.state = const Value.absent(),
+    this.op = const Value.absent(),
   }) : sourceId = Value(sourceId),
        bookId = Value(bookId),
        page = Value(page),
@@ -7598,6 +7631,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
     Expression<int>? queuedAt,
     Expression<int>? attempts,
     Expression<String>? state,
+    Expression<String>? op,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -7608,6 +7642,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
       if (queuedAt != null) 'queued_at': queuedAt,
       if (attempts != null) 'attempts': attempts,
       if (state != null) 'state': state,
+      if (op != null) 'op': op,
     });
   }
 
@@ -7620,6 +7655,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
     Value<int>? queuedAt,
     Value<int>? attempts,
     Value<String>? state,
+    Value<String>? op,
   }) {
     return SyncQueueCompanion(
       id: id ?? this.id,
@@ -7630,6 +7666,7 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
       queuedAt: queuedAt ?? this.queuedAt,
       attempts: attempts ?? this.attempts,
       state: state ?? this.state,
+      op: op ?? this.op,
     );
   }
 
@@ -7660,6 +7697,9 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
     if (state.present) {
       map['state'] = Variable<String>(state.value);
     }
+    if (op.present) {
+      map['op'] = Variable<String>(op.value);
+    }
     return map;
   }
 
@@ -7673,7 +7713,8 @@ class SyncQueueCompanion extends UpdateCompanion<SyncQueueRow> {
           ..write('completed: $completed, ')
           ..write('queuedAt: $queuedAt, ')
           ..write('attempts: $attempts, ')
-          ..write('state: $state')
+          ..write('state: $state, ')
+          ..write('op: $op')
           ..write(')'))
         .toString();
   }
@@ -7727,8 +7768,23 @@ class $SeriesMetaTable extends SeriesMeta
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
   @override
-  List<GeneratedColumn> get $columns => [sourceId, seriesId, publisher, genres];
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    seriesId,
+    publisher,
+    genres,
+    rating,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -7769,6 +7825,12 @@ class $SeriesMetaTable extends SeriesMeta
         genres.isAcceptableOrUnknown(data['genres']!, _genresMeta),
       );
     }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    }
     return context;
   }
 
@@ -7794,6 +7856,10 @@ class $SeriesMetaTable extends SeriesMeta
         DriftSqlType.string,
         data['${effectivePrefix}genres'],
       ),
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rating'],
+      ),
     );
   }
 
@@ -7810,11 +7876,18 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
 
   /// JSON-encoded `List<String>` of genres (tag-overlap breakdown).
   final String? genres;
+
+  /// The user's local star rating for the series (T3). Komga exposes no
+  /// user-rating endpoint, so this is a device-only mirror. Preserved across
+  /// series re-syncs because `seriesMetaToRow` never writes it (the
+  /// insertOnConflictUpdate update set omits the absent column).
+  final int? rating;
   const SeriesMetaRow({
     required this.sourceId,
     required this.seriesId,
     this.publisher,
     this.genres,
+    this.rating,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -7826,6 +7899,9 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
     }
     if (!nullToAbsent || genres != null) {
       map['genres'] = Variable<String>(genres);
+    }
+    if (!nullToAbsent || rating != null) {
+      map['rating'] = Variable<int>(rating);
     }
     return map;
   }
@@ -7840,6 +7916,9 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
       genres: genres == null && nullToAbsent
           ? const Value.absent()
           : Value(genres),
+      rating: rating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rating),
     );
   }
 
@@ -7853,6 +7932,7 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
       seriesId: serializer.fromJson<String>(json['seriesId']),
       publisher: serializer.fromJson<String?>(json['publisher']),
       genres: serializer.fromJson<String?>(json['genres']),
+      rating: serializer.fromJson<int?>(json['rating']),
     );
   }
   @override
@@ -7863,6 +7943,7 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
       'seriesId': serializer.toJson<String>(seriesId),
       'publisher': serializer.toJson<String?>(publisher),
       'genres': serializer.toJson<String?>(genres),
+      'rating': serializer.toJson<int?>(rating),
     };
   }
 
@@ -7871,11 +7952,13 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
     String? seriesId,
     Value<String?> publisher = const Value.absent(),
     Value<String?> genres = const Value.absent(),
+    Value<int?> rating = const Value.absent(),
   }) => SeriesMetaRow(
     sourceId: sourceId ?? this.sourceId,
     seriesId: seriesId ?? this.seriesId,
     publisher: publisher.present ? publisher.value : this.publisher,
     genres: genres.present ? genres.value : this.genres,
+    rating: rating.present ? rating.value : this.rating,
   );
   SeriesMetaRow copyWithCompanion(SeriesMetaCompanion data) {
     return SeriesMetaRow(
@@ -7883,6 +7966,7 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
       seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
       publisher: data.publisher.present ? data.publisher.value : this.publisher,
       genres: data.genres.present ? data.genres.value : this.genres,
+      rating: data.rating.present ? data.rating.value : this.rating,
     );
   }
 
@@ -7892,13 +7976,15 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
           ..write('sourceId: $sourceId, ')
           ..write('seriesId: $seriesId, ')
           ..write('publisher: $publisher, ')
-          ..write('genres: $genres')
+          ..write('genres: $genres, ')
+          ..write('rating: $rating')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(sourceId, seriesId, publisher, genres);
+  int get hashCode =>
+      Object.hash(sourceId, seriesId, publisher, genres, rating);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -7906,7 +7992,8 @@ class SeriesMetaRow extends DataClass implements Insertable<SeriesMetaRow> {
           other.sourceId == this.sourceId &&
           other.seriesId == this.seriesId &&
           other.publisher == this.publisher &&
-          other.genres == this.genres);
+          other.genres == this.genres &&
+          other.rating == this.rating);
 }
 
 class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
@@ -7914,12 +8001,14 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
   final Value<String> seriesId;
   final Value<String?> publisher;
   final Value<String?> genres;
+  final Value<int?> rating;
   final Value<int> rowid;
   const SeriesMetaCompanion({
     this.sourceId = const Value.absent(),
     this.seriesId = const Value.absent(),
     this.publisher = const Value.absent(),
     this.genres = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SeriesMetaCompanion.insert({
@@ -7927,6 +8016,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
     required String seriesId,
     this.publisher = const Value.absent(),
     this.genres = const Value.absent(),
+    this.rating = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : sourceId = Value(sourceId),
        seriesId = Value(seriesId);
@@ -7935,6 +8025,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
     Expression<String>? seriesId,
     Expression<String>? publisher,
     Expression<String>? genres,
+    Expression<int>? rating,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -7942,6 +8033,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
       if (seriesId != null) 'series_id': seriesId,
       if (publisher != null) 'publisher': publisher,
       if (genres != null) 'genres': genres,
+      if (rating != null) 'rating': rating,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -7951,6 +8043,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
     Value<String>? seriesId,
     Value<String?>? publisher,
     Value<String?>? genres,
+    Value<int?>? rating,
     Value<int>? rowid,
   }) {
     return SeriesMetaCompanion(
@@ -7958,6 +8051,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
       seriesId: seriesId ?? this.seriesId,
       publisher: publisher ?? this.publisher,
       genres: genres ?? this.genres,
+      rating: rating ?? this.rating,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -7977,6 +8071,9 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
     if (genres.present) {
       map['genres'] = Variable<String>(genres.value);
     }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -7990,6 +8087,7 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
           ..write('seriesId: $seriesId, ')
           ..write('publisher: $publisher, ')
           ..write('genres: $genres, ')
+          ..write('rating: $rating, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -11591,6 +11689,7 @@ typedef $$SyncQueueTableCreateCompanionBuilder =
       required int queuedAt,
       Value<int> attempts,
       Value<String> state,
+      Value<String> op,
     });
 typedef $$SyncQueueTableUpdateCompanionBuilder =
     SyncQueueCompanion Function({
@@ -11602,6 +11701,7 @@ typedef $$SyncQueueTableUpdateCompanionBuilder =
       Value<int> queuedAt,
       Value<int> attempts,
       Value<String> state,
+      Value<String> op,
     });
 
 class $$SyncQueueTableFilterComposer
@@ -11650,6 +11750,11 @@ class $$SyncQueueTableFilterComposer
 
   ColumnFilters<String> get state => $composableBuilder(
     column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get op => $composableBuilder(
+    column: $table.op,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11702,6 +11807,11 @@ class $$SyncQueueTableOrderingComposer
     column: $table.state,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get op => $composableBuilder(
+    column: $table.op,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncQueueTableAnnotationComposer
@@ -11736,6 +11846,9 @@ class $$SyncQueueTableAnnotationComposer
 
   GeneratedColumn<String> get state =>
       $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<String> get op =>
+      $composableBuilder(column: $table.op, builder: (column) => column);
 }
 
 class $$SyncQueueTableTableManager
@@ -11777,6 +11890,7 @@ class $$SyncQueueTableTableManager
                 Value<int> queuedAt = const Value.absent(),
                 Value<int> attempts = const Value.absent(),
                 Value<String> state = const Value.absent(),
+                Value<String> op = const Value.absent(),
               }) => SyncQueueCompanion(
                 id: id,
                 sourceId: sourceId,
@@ -11786,6 +11900,7 @@ class $$SyncQueueTableTableManager
                 queuedAt: queuedAt,
                 attempts: attempts,
                 state: state,
+                op: op,
               ),
           createCompanionCallback:
               ({
@@ -11797,6 +11912,7 @@ class $$SyncQueueTableTableManager
                 required int queuedAt,
                 Value<int> attempts = const Value.absent(),
                 Value<String> state = const Value.absent(),
+                Value<String> op = const Value.absent(),
               }) => SyncQueueCompanion.insert(
                 id: id,
                 sourceId: sourceId,
@@ -11806,6 +11922,7 @@ class $$SyncQueueTableTableManager
                 queuedAt: queuedAt,
                 attempts: attempts,
                 state: state,
+                op: op,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -11838,6 +11955,7 @@ typedef $$SeriesMetaTableCreateCompanionBuilder =
       required String seriesId,
       Value<String?> publisher,
       Value<String?> genres,
+      Value<int?> rating,
       Value<int> rowid,
     });
 typedef $$SeriesMetaTableUpdateCompanionBuilder =
@@ -11846,6 +11964,7 @@ typedef $$SeriesMetaTableUpdateCompanionBuilder =
       Value<String> seriesId,
       Value<String?> publisher,
       Value<String?> genres,
+      Value<int?> rating,
       Value<int> rowid,
     });
 
@@ -11875,6 +11994,11 @@ class $$SeriesMetaTableFilterComposer
 
   ColumnFilters<String> get genres => $composableBuilder(
     column: $table.genres,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rating => $composableBuilder(
+    column: $table.rating,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11907,6 +12031,11 @@ class $$SeriesMetaTableOrderingComposer
     column: $table.genres,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SeriesMetaTableAnnotationComposer
@@ -11929,6 +12058,9 @@ class $$SeriesMetaTableAnnotationComposer
 
   GeneratedColumn<String> get genres =>
       $composableBuilder(column: $table.genres, builder: (column) => column);
+
+  GeneratedColumn<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
 }
 
 class $$SeriesMetaTableTableManager
@@ -11966,12 +12098,14 @@ class $$SeriesMetaTableTableManager
                 Value<String> seriesId = const Value.absent(),
                 Value<String?> publisher = const Value.absent(),
                 Value<String?> genres = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SeriesMetaCompanion(
                 sourceId: sourceId,
                 seriesId: seriesId,
                 publisher: publisher,
                 genres: genres,
+                rating: rating,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -11980,12 +12114,14 @@ class $$SeriesMetaTableTableManager
                 required String seriesId,
                 Value<String?> publisher = const Value.absent(),
                 Value<String?> genres = const Value.absent(),
+                Value<int?> rating = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SeriesMetaCompanion.insert(
                 sourceId: sourceId,
                 seriesId: seriesId,
                 publisher: publisher,
                 genres: genres,
+                rating: rating,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -15,7 +15,9 @@ import 'widgets/library_tiles.dart';
 enum SeriesSort {
   relevance('Relevance', null),
   titleAsc('Title A-Z', 'metadata.titleSort,asc'),
-  titleDesc('Title Z-A', 'metadata.titleSort,desc');
+  titleDesc('Title Z-A', 'metadata.titleSort,desc'),
+  recentlyAdded('Recently added', 'createdDate,desc'),
+  recentlyUpdated('Recently updated', 'lastModifiedDate,desc');
 
   const SeriesSort(this.label, this.value);
   final String label;
@@ -38,6 +40,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final Set<String> _libraryIds = {};
   final Set<String> _status = {};
   final Set<String> _readStatus = {};
+  final Set<String> _genres = {};
+  final Set<String> _tags = {};
+  final Set<String> _publishers = {};
+  final Set<int> _ageRatings = {};
   SeriesSort _sort = SeriesSort.relevance;
 
   // Komga series and read statuses.
@@ -74,6 +80,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         libraryIds: _libraryIds.isEmpty ? null : _libraryIds.toList(),
         status: _status.isEmpty ? null : _status.toList(),
         readStatus: _readStatus.isEmpty ? null : _readStatus.toList(),
+        genres: _genres.isEmpty ? null : _genres.toList(),
+        tags: _tags.isEmpty ? null : _tags.toList(),
+        publishers: _publishers.isEmpty ? null : _publishers.toList(),
+        ageRatings: _ageRatings.isEmpty ? null : _ageRatings.toList(),
       );
       final page = await repo.searchSeriesWith(
         search,
@@ -149,6 +159,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 _run();
               }),
           ]),
+          _stringFilterRow(
+            ref.watch(genresProvider).valueOrNull ?? const [],
+            _genres,
+          ),
+          _stringFilterRow(
+            ref.watch(tagsProvider).valueOrNull ?? const [],
+            _tags,
+          ),
+          _stringFilterRow(
+            ref.watch(publishersProvider).valueOrNull ?? const [],
+            _publishers,
+          ),
+          _ageFilterRow(ref.watch(ageRatingsProvider).valueOrNull ?? const []),
           Expanded(
             child: _results.when(
               loading: () =>
@@ -192,6 +215,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Row(children: chips),
     );
   }
+
+  /// A filter row over a referential string list (genres / tags / publishers).
+  /// Renders nothing when the list is empty (e.g. offline).
+  Widget _stringFilterRow(List<String> options, Set<String> selected) =>
+      _filterRow([
+        for (final o in options)
+          _chip(o, selected.contains(o), (sel) {
+            setState(() => sel ? selected.add(o) : selected.remove(o));
+            _run();
+          }),
+      ]);
+
+  /// The age-rating filter row. Hidden when the server reports none.
+  Widget _ageFilterRow(List<int> options) => _filterRow([
+        for (final a in options)
+          _chip('$a+', _ageRatings.contains(a), (sel) {
+            setState(() => sel ? _ageRatings.add(a) : _ageRatings.remove(a));
+            _run();
+          }),
+      ]);
 
   Widget _chip(String label, bool selected, ValueChanged<bool> onSelected) =>
       Padding(

@@ -1,3 +1,5 @@
+import 'komga_meta.dart';
+
 /// Komga book resource. `metadata` carries title/number; `media` carries page
 /// count and type; `readProgress` (nullable) carries last-known progress.
 class BookDto {
@@ -16,6 +18,11 @@ class BookDto {
     this.completed = false,
     this.readDate,
     this.readLastModified,
+    this.summary,
+    this.tags = const [],
+    this.authors = const [],
+    this.releaseDate,
+    this.links = const [],
   });
 
   final String id;
@@ -30,6 +37,17 @@ class BookDto {
   final int? sizeBytes;
   final int? readPage;
   final bool completed;
+
+  /// Richer T3 detail metadata. The file name is [name]; file size is
+  /// [sizeBytes]; page count is [pagesCount]; read date is [readDate].
+  final String? summary;
+  final List<String> tags;
+  final List<KomgaAuthor> authors;
+
+  /// Release date as epoch ms (parsed from `metadata.releaseDate`, a `YYYY-MM-DD`
+  /// string), or null when unset.
+  final int? releaseDate;
+  final List<KomgaLink> links;
 
   /// When the server last recorded a read for this book (epoch ms), parsed from
   /// `readProgress.readDate`. Null when never read. Used to time a synthesized
@@ -60,6 +78,14 @@ class BookDto {
       completed: progress?['completed'] as bool? ?? false,
       readDate: _epochMs(progress?['readDate']),
       readLastModified: _epochMs(progress?['lastModified']),
+      summary: () {
+        final s = meta['summary'] as String?;
+        return (s == null || s.isEmpty) ? null : s;
+      }(),
+      tags: parseStringList(meta['tags']),
+      authors: parseAuthors(meta['authors']),
+      releaseDate: _epochMs(meta['releaseDate']),
+      links: parseLinks(meta['links']),
     );
   }
 }

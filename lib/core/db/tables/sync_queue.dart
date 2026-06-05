@@ -8,6 +8,13 @@ import 'package:drift/drift.dart';
 ///
 /// [state] is `pending` or `failed` (dead-lettered after repeated permanent
 /// errors). [attempts] counts transient failures.
+///
+/// [op] is the write-back kind (T3): `progress` (read-progress PATCH, the
+/// default so every legacy row reads back as progress), `unread` (DELETE a
+/// book's read-progress), `seriesRead` / `seriesUnread` (PATCH/DELETE a series'
+/// read-progress). For series ops the seriesId is carried in [bookId], so the
+/// unique `{sourceId, bookId}` collapse keys per series; a book op and a series
+/// op cannot collide because Komga book and series ids are distinct uuids.
 @DataClassName('SyncQueueRow')
 @TableIndex(
   name: 'sync_queue_book',
@@ -23,4 +30,5 @@ class SyncQueue extends Table {
   IntColumn get queuedAt => integer()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
   TextColumn get state => text().withDefault(const Constant('pending'))();
+  TextColumn get op => text().withDefault(const Constant('progress'))();
 }

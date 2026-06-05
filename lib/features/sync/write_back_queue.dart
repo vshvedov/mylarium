@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' show Value;
 import '../../core/db/database.dart';
 import '../../core/network/komga_exception.dart';
 import '../../data/komga/komga_api.dart';
+import 'sync_models.dart';
 
 /// Maximum transient failures before a queued write-back is dead-lettered.
 const int kMaxSyncAttempts = 20;
@@ -38,12 +39,18 @@ class WriteBackQueue {
         await _db.deleteSyncRow(row.id);
         continue;
       }
-      try {
-        await api.patchReadProgress(
-          row.bookId,
-          page: row.page + 1, // 0-based local -> 1-based Komga
-          completed: row.completed,
+      final op = _parseOp(row.op);
+      if (op == null) {
+        // Forward-incompatible op string (e.g. written by a newer build):
+        // dead-letter rather than crash the whole drain.
+        await _db.updateSyncRow(
+          row.id,
+          const SyncQueueCompanion(state: Value('failed')),
         );
+        continue;
+      }
+      try {
+        await _dispatch(api, op, row);
         await _db.deleteSyncRow(row.id);
       } on KomgaException catch (e) {
         if (_isTransient(e)) {
@@ -69,6 +76,47 @@ class WriteBackQueue {
         );
       }
     }
+  }
+
+  /// Performs the one API call for [row]'s op. For the DELETE-based ops (mark a
+  /// book or series unread) a 404 means the progress is already gone, which is
+  /// success, so it is swallowed here before the outer catch's permanent policy
+  /// would dead-letter it. Every other error propagates to the outer catch with
+  /// the existing transient/permanent handling unchanged.
+  Future<void> _dispatch(KomgaApi api, SyncOp op, SyncQueueRow row) async {
+    switch (op) {
+      case SyncOp.progress:
+        await api.patchReadProgress(
+          row.bookId,
+          page: row.page + 1, // 0-based local -> 1-based Komga
+          completed: row.completed,
+        );
+      case SyncOp.unread:
+        await _ignoreNotFound(() => api.deleteReadProgress(row.bookId));
+      case SyncOp.seriesRead:
+        // The seriesId is carried in bookId for series ops.
+        await api.markSeriesRead(row.bookId);
+      case SyncOp.seriesUnread:
+        await _ignoreNotFound(() => api.markSeriesUnread(row.bookId));
+    }
+  }
+}
+
+/// Parses a stored op string, or null when it is not a known [SyncOp].
+SyncOp? _parseOp(String op) {
+  for (final v in SyncOp.values) {
+    if (v.name == op) return v;
+  }
+  return null;
+}
+
+/// Runs a DELETE-style call, treating a 404 (already absent) as success.
+Future<void> _ignoreNotFound(Future<void> Function() run) async {
+  try {
+    await run();
+  } on KomgaException catch (e) {
+    if (e.kind == KomgaErrorKind.notFound) return;
+    rethrow;
   }
 }
 
