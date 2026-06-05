@@ -34,14 +34,18 @@ class StorageScreen extends ConsumerWidget {
         stream: db.watchSettings(),
         builder: (context, settingsSnap) {
           final settings = settingsSnap.data;
-          return StreamBuilder<List<CachedAsset>>(
-            stream: db.watchCachedAssets(),
+          return StreamBuilder<List<({CachedAsset asset, String? title})>>(
+            stream: db.watchCachedAssetsWithTitles(),
             builder: (context, snap) {
               final assets = snap.data ?? const [];
-              final auto = assets.where((a) => !a.permanent).toList();
-              final downloads = assets.where((a) => a.permanent).toList();
-              final autoTotal = auto.fold<int>(0, (s, a) => s + a.sizeBytes);
-              final dlTotal = downloads.fold<int>(0, (s, a) => s + a.sizeBytes);
+              final auto =
+                  assets.where((a) => !a.asset.permanent).toList();
+              final downloads =
+                  assets.where((a) => a.asset.permanent).toList();
+              final autoTotal =
+                  auto.fold<int>(0, (s, a) => s + a.asset.sizeBytes);
+              final dlTotal =
+                  downloads.fold<int>(0, (s, a) => s + a.asset.sizeBytes);
               final cap = settings?.cacheCapBytes ?? 0;
 
               return ListView(
@@ -81,10 +85,10 @@ class StorageScreen extends ConsumerWidget {
                   if (auto.isEmpty)
                     const _EmptyRow('No auto-cached chapters.')
                   else
-                    for (final a in auto)
+                    for (final e in auto)
                       ListTile(
-                        title: Text(a.bookId),
-                        subtitle: Text(_fmtBytes(a.sizeBytes)),
+                        title: Text(e.title ?? e.asset.bookId),
+                        subtitle: Text(_fmtBytes(e.asset.sizeBytes)),
                         leading: const Icon(AppIcons.savedOffline),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -94,13 +98,13 @@ class StorageScreen extends ConsumerWidget {
                               tooltip: 'Keep (move to Downloads)',
                               onPressed: () => ref
                                   .read(downloadManagerProvider)
-                                  .enqueueBook(a.sourceId, a.bookId,
+                                  .enqueueBook(e.asset.sourceId, e.asset.bookId,
                                       manual: true),
                             ),
                             IconButton(
                               icon: const Icon(AppIcons.delete),
-                              onPressed: () =>
-                                  cache.delete(a.sourceId, a.bookId),
+                              onPressed: () => cache.delete(
+                                  e.asset.sourceId, e.asset.bookId),
                             ),
                           ],
                         ),
@@ -116,14 +120,15 @@ class StorageScreen extends ConsumerWidget {
                   if (downloads.isEmpty)
                     const _EmptyRow('No downloaded chapters.')
                   else
-                    for (final a in downloads)
+                    for (final e in downloads)
                       ListTile(
-                        title: Text(a.bookId),
-                        subtitle: Text(_fmtBytes(a.sizeBytes)),
+                        title: Text(e.title ?? e.asset.bookId),
+                        subtitle: Text(_fmtBytes(e.asset.sizeBytes)),
                         leading: const Icon(AppIcons.downloaded),
                         trailing: IconButton(
                           icon: const Icon(AppIcons.delete),
-                          onPressed: () => cache.delete(a.sourceId, a.bookId),
+                          onPressed: () =>
+                              cache.delete(e.asset.sourceId, e.asset.bookId),
                         ),
                       ),
                 ],

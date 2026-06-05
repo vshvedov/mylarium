@@ -41,6 +41,18 @@ void main() {
         reason: 'lastAccessedAt desc; uncached b3 excluded');
   });
 
+  test('watchCachedAssetsWithTitles pairs assets with book titles', () async {
+    await book('b1', 'ser1'); // the helper sets title == id
+    await asset('b1', at: 1);
+    await asset('orphan', at: 2); // no book row
+
+    final rows = await db.watchCachedAssetsWithTitles().first;
+    final byId = {for (final r in rows) r.asset.bookId: r.title};
+    expect(byId['b1'], 'b1', reason: 'title resolved from the book row');
+    expect(byId['orphan'], isNull,
+        reason: 'no book row -> null so the screen falls back to the id');
+  });
+
   test('watchSeriesDownloadCounts reports total and downloaded', () async {
     await book('b1', 'ser1');
     await book('b2', 'ser1');

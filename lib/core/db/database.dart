@@ -460,6 +460,27 @@ class AppDatabase extends _$AppDatabase {
 
   Stream<List<CachedAsset>> watchCachedAssets() => select(cachedAssets).watch();
 
+  /// Cached assets paired with their book's title (null when the book row is
+  /// missing), for the storage screen so it can show names rather than ids.
+  Stream<List<({CachedAsset asset, String? title})>>
+      watchCachedAssetsWithTitles() {
+    final query = select(cachedAssets).join([
+      leftOuterJoin(
+        books,
+        books.sourceId.equalsExp(cachedAssets.sourceId) &
+            books.id.equalsExp(cachedAssets.bookId),
+      ),
+    ]);
+    return query.watch().map(
+          (rows) => rows
+              .map((r) => (
+                    asset: r.readTable(cachedAssets),
+                    title: r.readTableOrNull(books)?.title,
+                  ))
+              .toList(),
+        );
+  }
+
   Stream<CachedAsset?> watchCachedAsset(String sourceId, String bookId) =>
       (select(cachedAssets)
             ..where((t) =>
