@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -97,14 +98,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull ?? '';
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
+        title: AppTextField(
           controller: _controller,
           autofocus: true,
+          dense: true,
+          hint: 'Search series',
+          prefixIcon: AppIcons.search,
           textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(
-            hintText: 'Search series',
-            border: InputBorder.none,
-          ),
           onChanged: (v) => _query = v,
           onSubmitted: (_) => _run(),
         ),

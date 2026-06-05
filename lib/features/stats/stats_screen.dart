@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_card.dart';
+import '../../app/widgets/app_segmented_toggle.dart';
 import 'badges.dart';
 import 'stats_controller.dart';
 import 'stats_models.dart';
@@ -45,14 +46,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         data: (s) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            SegmentedButton<StatsPeriod>(
+            AppSegmentedToggle<StatsPeriod>(
               segments: [
                 for (final p in StatsPeriod.values)
-                  ButtonSegment(value: p, label: Text(p.label)),
+                  AppSegment(p, p.label),
               ],
-              selected: {_period},
-              showSelectedIcon: false,
-              onSelectionChanged: (v) => setState(() => _period = v.first),
+              selected: _period,
+              onChanged: (v) => setState(() => _period = v),
             ),
             const SizedBox(height: 16),
             if (s.isEmpty) const _EmptyStats() else ..._content(context, s),

@@ -140,9 +140,10 @@ class _DownloadControl extends ConsumerWidget {
             const Icon(AppIcons.downloaded, size: 20),
             const SizedBox(width: 8),
             const Expanded(child: Text('Downloaded')),
-            TextButton.icon(
-              icon: const Icon(AppIcons.delete),
-              label: const Text('Remove'),
+            AppButton(
+              kind: AppButtonKind.text,
+              icon: AppIcons.delete,
+              label: 'Remove',
               onPressed: () => cache.delete(sourceId, bookId),
             ),
           ],
@@ -153,9 +154,10 @@ class _DownloadControl extends ConsumerWidget {
           const Icon(AppIcons.savedOffline, size: 20),
           const SizedBox(width: 8),
           const Expanded(child: Text('Saved offline (auto-cache)')),
-          TextButton.icon(
-            icon: const Icon(AppIcons.download),
-            label: const Text('Keep'),
+          AppButton(
+            kind: AppButtonKind.text,
+            icon: AppIcons.download,
+            label: 'Keep',
             onPressed: () =>
                 manager.enqueueBook(sourceId, bookId, manual: true),
           ),
@@ -179,9 +181,10 @@ class _DownloadControl extends ConsumerWidget {
       );
     }
 
-    return OutlinedButton.icon(
-      icon: const Icon(AppIcons.download),
-      label: Text(state == 'failed' ? 'Retry download' : 'Download'),
+    return AppButton(
+      kind: AppButtonKind.outlined,
+      icon: AppIcons.download,
+      label: state == 'failed' ? 'Retry download' : 'Download',
       onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),
     );
   }

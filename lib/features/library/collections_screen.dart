@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/app_list_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,12 +30,15 @@ class CollectionsScreen extends ConsumerWidget {
               ],
             AsyncData(:final value) => [
                 for (final c in value)
-                  ListTile(
-                    leading: const Icon(AppIcons.libraries),
-                    title: Text(c.name),
-                    subtitle: Text('${c.seriesIds.length} series'),
-                    onTap: () =>
-                        context.push('/collection/$sourceId/${c.id}'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppListRow(
+                      icon: AppIcons.collections,
+                      title: c.name,
+                      subtitle: '${c.seriesIds.length} series',
+                      onTap: () =>
+                          context.push('/collection/$sourceId/${c.id}'),
+                    ),
                   ),
               ],
             AsyncError() => [const _Empty(label: 'Could not load collections.')],
@@ -48,11 +52,14 @@ class CollectionsScreen extends ConsumerWidget {
               ],
             AsyncData(:final value) => [
                 for (final r in value)
-                  ListTile(
-                    leading: const Icon(AppIcons.readList),
-                    title: Text(r.name),
-                    subtitle: Text('${r.bookIds.length} books'),
-                    onTap: () => context.push('/readlist/$sourceId/${r.id}'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: AppListRow(
+                      icon: AppIcons.readList,
+                      title: r.name,
+                      subtitle: '${r.bookIds.length} books',
+                      onTap: () => context.push('/readlist/$sourceId/${r.id}'),
+                    ),
                   ),
               ],
             AsyncError() => [const _Empty(label: 'Could not load read lists.')],

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppButtonKind { filled, tonal, text }
+enum AppButtonKind { filled, tonal, outlined, text }
 
 /// Thin wrapper over the Material button family so call sites use one widget
 /// and the kind is a token, not a different class each time.
@@ -31,6 +31,11 @@ class AppButton extends StatelessWidget {
         return icon == null
             ? FilledButton.tonal(onPressed: onPressed, child: child)
             : FilledButton.tonalIcon(
+                onPressed: onPressed, icon: Icon(icon), label: child);
+      case AppButtonKind.outlined:
+        return icon == null
+            ? OutlinedButton(onPressed: onPressed, child: child)
+            : OutlinedButton.icon(
                 onPressed: onPressed, icon: Icon(icon), label: child);
       case AppButtonKind.text:
         return icon == null

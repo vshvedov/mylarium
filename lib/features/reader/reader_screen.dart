@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
+import '../../app/widgets/app_button.dart';
 import '../../core/network/komga_exception.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
@@ -518,9 +519,10 @@ class _ErrorState extends StatelessWidget {
                   ],
                   if (onRetry != null) ...[
                     const SizedBox(height: 20),
-                    FilledButton.tonalIcon(
-                      icon: const Icon(AppIcons.refresh, size: 18),
-                      label: const Text('Try again'),
+                    AppButton(
+                      kind: AppButtonKind.tonal,
+                      icon: AppIcons.refresh,
+                      label: 'Try again',
                       onPressed: onRetry,
                     ),
                   ],

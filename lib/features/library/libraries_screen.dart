@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/app_button.dart';
+import '../../app/widgets/app_list_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -25,13 +27,14 @@ class LibrariesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Could not load libraries: $e')),
         data: (libs) => ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           children: [
             for (final lib in libs)
-              ListTile(
-                leading: Icon(lock.isLocked(lib.id)
+              AppListRow(
+                icon: lock.isLocked(lib.id)
                     ? AppIcons.lock
-                    : AppIcons.libraries),
-                title: Text(lib.name),
+                    : AppIcons.libraries,
+                title: lib.name,
                 onTap: () => _open(context, ref, lib.id),
               ),
           ],
@@ -93,10 +96,11 @@ class LibraryGridScreen extends ConsumerWidget {
             children: [
               const Icon(AppIcons.lock, size: 48),
               const SizedBox(height: 12),
-              FilledButton(
+              AppButton(
+                label: 'Unlock',
+                icon: AppIcons.lockOpen,
                 onPressed: () =>
                     ref.read(appLockProvider.notifier).unlock(libraryId),
-                child: const Text('Unlock'),
               ),
             ],
           ),

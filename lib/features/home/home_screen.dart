@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/theme_controller.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
+import '../../app/widgets/app_list_row.dart';
+import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/source_providers.dart';
 import '../library/library_browse_controllers.dart';
 import '../library/widgets/library_tiles.dart';
@@ -123,20 +125,15 @@ class HomeScreen extends ConsumerWidget {
             Consumer(
               builder: (context, ref, _) {
                 final mode = ref.watch(themeControllerProvider);
-                return SegmentedButton<AppThemeMode>(
+                return AppSegmentedToggle<AppThemeMode>(
                   segments: const [
-                    ButtonSegment(
-                        value: AppThemeMode.light, label: Text('Light')),
-                    ButtonSegment(
-                        value: AppThemeMode.dark, label: Text('Dark')),
-                    ButtonSegment(
-                        value: AppThemeMode.system, label: Text('Auto')),
+                    AppSegment(AppThemeMode.light, 'Light'),
+                    AppSegment(AppThemeMode.dark, 'Dark'),
+                    AppSegment(AppThemeMode.system, 'Auto'),
                   ],
-                  selected: {mode},
-                  showSelectedIcon: false,
-                  onSelectionChanged: (s) => ref
-                      .read(themeControllerProvider.notifier)
-                      .set(s.first),
+                  selected: mode,
+                  onChanged: (m) =>
+                      ref.read(themeControllerProvider.notifier).set(m),
                 );
               },
             ),
@@ -147,11 +144,9 @@ class HomeScreen extends ConsumerWidget {
                     ref.watch(activeSourceIdProvider).valueOrNull;
                 return Column(
                   children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading:
-                          const Icon(AppIcons.libraries),
-                      title: const Text('Libraries'),
+                    AppListRow(
+                      icon: AppIcons.libraries,
+                      title: 'Libraries',
                       enabled: sourceId != null,
                       onTap: sourceId == null
                           ? null
@@ -160,10 +155,9 @@ class HomeScreen extends ConsumerWidget {
                               context.push('/libraries/$sourceId');
                             },
                     ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(AppIcons.collections),
-                      title: const Text('Collections & read lists'),
+                    AppListRow(
+                      icon: AppIcons.collections,
+                      title: 'Collections & read lists',
                       enabled: sourceId != null,
                       onTap: sourceId == null
                           ? null
@@ -176,28 +170,25 @@ class HomeScreen extends ConsumerWidget {
                 );
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(AppIcons.storage),
-              title: const Text('Storage'),
+            AppListRow(
+              icon: AppIcons.storage,
+              title: 'Storage',
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 context.push('/settings/storage');
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(AppIcons.lock),
-              title: const Text('Library locks'),
+            AppListRow(
+              icon: AppIcons.lock,
+              title: 'Library locks',
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 context.push('/settings/library-lock');
               },
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(AppIcons.sources),
-              title: const Text('Sources (debug)'),
+            AppListRow(
+              icon: AppIcons.sources,
+              title: 'Sources (debug)',
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 context.push('/debug/sources');

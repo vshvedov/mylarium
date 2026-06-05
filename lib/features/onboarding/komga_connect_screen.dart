@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
-import '../../app/theme/app_theme.dart' show AppHaptics;
-import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_button.dart';
+import '../../app/widgets/app_segmented_toggle.dart';
+import '../../app/widgets/app_text_field.dart';
 import 'connection_result.dart';
 import 'onboarding_controller.dart';
 import 'widgets/brand_mark.dart';
@@ -14,9 +14,8 @@ import 'widgets/brand_mark.dart';
 /// connection. Reached from the onboarding picker, or deep-linked for re-auth
 /// (with [initialUrl] prefilled). On success it routes to the library home.
 ///
-/// The form is deliberately bespoke (labels above filled fields, a custom pill
-/// auth toggle) so it reads as the same app on iOS and Android, not a stock
-/// platform form.
+/// Built from the shared app inputs ([AppTextField], [AppSegmentedToggle]) so it
+/// reads as the same app on iOS and Android, not a stock platform form.
 class KomgaConnectScreen extends ConsumerStatefulWidget {
   const KomgaConnectScreen({super.key, this.initialUrl});
 
@@ -124,7 +123,7 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                   ),
                 ),
                 const SizedBox(height: 28),
-                _LabeledField(
+                AppTextField(
                   label: 'Server URL',
                   controller: _url,
                   enabled: !busy,
@@ -133,14 +132,18 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                   prefixIcon: AppIcons.sourceKomga,
                 ),
                 const SizedBox(height: 18),
-                _AuthToggle(
-                  method: _method,
+                AppSegmentedToggle<AuthMethod>(
+                  segments: const [
+                    AppSegment(AuthMethod.apiKey, 'API key'),
+                    AppSegment(AuthMethod.basic, 'Password'),
+                  ],
+                  selected: _method,
                   enabled: !busy,
                   onChanged: (m) => setState(() => _method = m),
                 ),
                 const SizedBox(height: 18),
                 if (_method == AuthMethod.apiKey)
-                  _LabeledField(
+                  AppTextField(
                     label: 'API key',
                     controller: _apiKey,
                     enabled: !busy,
@@ -148,13 +151,13 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                     prefixIcon: AppIcons.lock,
                   )
                 else ...[
-                  _LabeledField(
+                  AppTextField(
                     label: 'Username',
                     controller: _username,
                     enabled: !busy,
                   ),
                   const SizedBox(height: 14),
-                  _LabeledField(
+                  AppTextField(
                     label: 'Password',
                     controller: _password,
                     enabled: !busy,
@@ -189,148 +192,6 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
       // Deep-linked here (re-auth) with nothing to pop: fall back to the picker.
       context.go('/onboarding');
     }
-  }
-}
-
-/// A label rendered above a filled, rounded, borderless field. Avoids the stock
-/// floating-label + underline look so the form is identical across platforms.
-class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.controller,
-    required this.enabled,
-    this.obscureText = false,
-    this.keyboardType,
-    this.hint,
-    this.prefixIcon,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final bool enabled;
-  final bool obscureText;
-  final TextInputType? keyboardType;
-  final String? hint;
-  final IconData? prefixIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(14);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          autocorrect: false,
-          enableSuggestions: false,
-          decoration: InputDecoration(
-            isDense: true,
-            hintText: hint,
-            filled: true,
-            fillColor: scheme.surfaceContainerHighest,
-            prefixIcon: prefixIcon == null
-                ? null
-                : Icon(prefixIcon, size: 20, color: scheme.onSurfaceVariant),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: radius,
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: radius,
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: radius,
-              borderSide: BorderSide(color: scheme.primary, width: 1.5),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A custom two-segment pill toggle for the auth method (replaces the very
-/// Material-looking [SegmentedButton]).
-class _AuthToggle extends StatelessWidget {
-  const _AuthToggle({
-    required this.method,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final AuthMethod method;
-  final bool enabled;
-  final ValueChanged<AuthMethod> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        children: [
-          _seg(context, 'API key', AuthMethod.apiKey),
-          _seg(context, 'Password', AuthMethod.basic),
-        ],
-      ),
-    );
-  }
-
-  Widget _seg(BuildContext context, String label, AuthMethod value) {
-    final scheme = Theme.of(context).colorScheme;
-    final selected = method == value;
-    final tokens = Theme.of(context).extension<DesignTokens>();
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: enabled
-            ? () {
-                if (!selected) {
-                  AppHaptics.selection();
-                  onChanged(value);
-                }
-              }
-            : null,
-        child: AnimatedContainer(
-          duration: tokens?.motion.short ?? const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
