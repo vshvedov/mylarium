@@ -10,11 +10,15 @@ class AppBottomSheet {
   static Future<T?> show<T>(
     BuildContext context, {
     required WidgetBuilder builder,
+    Color? barrierColor,
   }) {
     final radius = Theme.of(context).extension<DesignTokens>()!.sheetRadius;
     return showModalBottomSheet<T>(
       context: context,
       showDragHandle: true,
+      // Allow a transparent barrier (e.g. the reader color panel keeps the page
+      // fully visible while adjusting); null uses the framework default scrim.
+      barrierColor: barrierColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
       ),

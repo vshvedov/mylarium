@@ -10,6 +10,8 @@ import '../../data/komga/models/mappers.dart';
 import '../../data/komga/models/page_dto.dart';
 import '../../data/source/source_providers.dart';
 import '../offline/offline_providers.dart';
+import 'color/color_settings.dart';
+import 'color/color_settings_repository.dart';
 import 'reader_models.dart';
 import 'reader_settings_repository.dart';
 
@@ -44,6 +46,7 @@ class ReaderData {
     required this.settings,
     required this.source,
     required this.initialPage,
+    required this.colorAdjustments,
   });
 
   final String sourceId;
@@ -56,6 +59,11 @@ class ReaderData {
   /// range by the screen). 0 for a never-opened book.
   final int initialPage;
 
+  /// The effective page color correction resolved at open (global/series/book
+  /// precedence). The screen seeds its live state from this for a correct
+  /// first paint without awaiting the color controller.
+  final ColorAdjustments colorAdjustments;
+
   ReaderData copyWith({ReaderSettings? settings}) => ReaderData(
         sourceId: sourceId,
         bookId: bookId,
@@ -63,6 +71,7 @@ class ReaderData {
         settings: settings ?? this.settings,
         source: source,
         initialPage: initialPage,
+        colorAdjustments: colorAdjustments,
       );
 }
 
@@ -89,6 +98,8 @@ class ReaderController extends _$ReaderController {
             await ref.watch(archiveExtractorProvider).entries(archivePath);
         final seriesId = (await db.getBook(sourceId, bookId))?.seriesId ?? '';
         final settings = await settingsRepo.load(sourceId, seriesId);
+        final colorAdjustments =
+            await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
         return ReaderData(
           sourceId: sourceId,
           bookId: bookId,
@@ -96,6 +107,7 @@ class ReaderController extends _$ReaderController {
           settings: settings,
           source: OfflinePages(archivePath, entries),
           initialPage: initialPage,
+          colorAdjustments: colorAdjustments,
         );
       } on ArchiveException {
         // Corrupt cache: quarantine and fall through to online.
@@ -131,6 +143,8 @@ class ReaderController extends _$ReaderController {
     }
     final settings =
         await settingsRepo.load(sourceId, seriesId, mangaDirection: direction);
+    final colorAdjustments =
+        await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
 
     // Background full-chapter download (idempotent, fire-and-forget).
     unawaited(ref
@@ -145,6 +159,7 @@ class ReaderController extends _$ReaderController {
       settings: settings,
       source: OnlinePages(api, pages),
       initialPage: initialPage,
+      colorAdjustments: colorAdjustments,
     );
   }
 

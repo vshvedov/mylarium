@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -7,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../core/image/resolve_image.dart';
 import '../../features/library/thumbnail_cache.dart';
 import 'design_tokens.dart';
 
@@ -45,7 +45,7 @@ class CoverPalette {
   /// (decode error, empty bytes) resolves to [neutral] rather than throwing.
   static Future<CoverPalette> fromImage(ImageProvider cover) async {
     try {
-      final image = await _resolve(
+      final image = await resolveImageProvider(
         ResizeImage(cover, width: kPaletteSampleWidth),
       );
       final w = image.width;
@@ -62,24 +62,6 @@ class CoverPalette {
     } catch (_) {
       return neutral;
     }
-  }
-
-  static Future<ui.Image> _resolve(ImageProvider provider) {
-    final completer = Completer<ui.Image>();
-    final stream = provider.resolve(ImageConfiguration.empty);
-    late final ImageStreamListener listener;
-    listener = ImageStreamListener(
-      (info, _) {
-        stream.removeListener(listener);
-        if (!completer.isCompleted) completer.complete(info.image);
-      },
-      onError: (error, stack) {
-        stream.removeListener(listener);
-        if (!completer.isCompleted) completer.completeError(error, stack);
-      },
-    );
-    stream.addListener(listener);
-    return completer.future;
   }
 }
 

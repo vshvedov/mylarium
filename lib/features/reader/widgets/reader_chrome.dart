@@ -25,6 +25,7 @@ class ReaderChrome extends ConsumerStatefulWidget {
     required this.onSettings,
     required this.onSeekPage,
     required this.onImageQuality,
+    required this.onColorCorrection,
     this.onNudge,
     this.nudged = false,
   });
@@ -53,6 +54,9 @@ class ReaderChrome extends ConsumerStatefulWidget {
 
   /// Opens the global image-quality controls.
   final VoidCallback onImageQuality;
+
+  /// Opens the page color-correction controls.
+  final VoidCallback onColorCorrection;
 
   /// Double-page single-page nudge (shown only when non-null).
   final VoidCallback? onNudge;
@@ -94,6 +98,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
               onClose: widget.onClose,
               onSettings: widget.onSettings,
               onImageQuality: widget.onImageQuality,
+              onColorCorrection: widget.onColorCorrection,
               onNudge: widget.onNudge,
               nudged: widget.nudged,
             ),
@@ -209,6 +214,7 @@ class _TopBar extends StatelessWidget {
     required this.onClose,
     required this.onSettings,
     required this.onImageQuality,
+    required this.onColorCorrection,
     required this.onNudge,
     required this.nudged,
   });
@@ -220,6 +226,7 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onClose;
   final void Function(ReaderSettings) onSettings;
   final VoidCallback onImageQuality;
+  final VoidCallback onColorCorrection;
   final VoidCallback? onNudge;
   final bool nudged;
 
@@ -291,6 +298,8 @@ class _TopBar extends StatelessWidget {
                           animatePageTurn: !settings.animatePageTurn));
                     case 'quality':
                       onImageQuality();
+                    case 'color':
+                      onColorCorrection();
                   }
                 },
                 itemBuilder: (_) => [
@@ -305,6 +314,16 @@ class _TopBar extends StatelessWidget {
                         Icon(AppIcons.options, size: 18),
                         SizedBox(width: 8),
                         Text('Image quality'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'color',
+                    child: Row(
+                      children: [
+                        Icon(AppIcons.colorCorrection, size: 18),
+                        SizedBox(width: 8),
+                        Text('Color correction'),
                       ],
                     ),
                   ),

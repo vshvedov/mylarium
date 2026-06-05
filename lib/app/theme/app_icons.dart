@@ -88,6 +88,8 @@ abstract final class AppIcons {
       IconData(0xe0a2, fontFamily: _family, fontPackage: _package); // arrowsOut
   static const options = IconData(0xe434,
       fontFamily: _family, fontPackage: _package); // slidersHorizontal
+  static const colorCorrection =
+      IconData(0xe18c, fontFamily: _family, fontPackage: _package); // circleHalf
   static const nudge =
       IconData(0xe83c, fontFamily: _family, fontPackage: _package); // swap
 

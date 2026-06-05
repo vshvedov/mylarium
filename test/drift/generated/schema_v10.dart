@@ -1385,6 +1385,14 @@ class SyncQueue extends Table with TableInfo {
     requiredDuringInsert: false,
     defaultValue: const CustomExpression('\'pending\''),
   );
+  late final GeneratedColumn<String> op = GeneratedColumn<String>(
+    'op',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const CustomExpression('\'progress\''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1395,6 +1403,7 @@ class SyncQueue extends Table with TableInfo {
     queuedAt,
     attempts,
     state,
+    op,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1447,8 +1456,21 @@ class SeriesMeta extends Table with TableInfo {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
-  List<GeneratedColumn> get $columns => [sourceId, seriesId, publisher, genres];
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    seriesId,
+    publisher,
+    genres,
+    rating,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1577,8 +1599,8 @@ class ColorSettings extends Table with TableInfo {
   }
 }
 
-class DatabaseAtV9 extends GeneratedDatabase {
-  DatabaseAtV9(QueryExecutor e) : super(e);
+class DatabaseAtV10 extends GeneratedDatabase {
+  DatabaseAtV10(QueryExecutor e) : super(e);
   late final AppSettings appSettings = AppSettings(this);
   late final Sources sources = Sources(this);
   late final Libraries libraries = Libraries(this);
@@ -1638,5 +1660,5 @@ class DatabaseAtV9 extends GeneratedDatabase {
     syncQueueBook,
   ];
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 }

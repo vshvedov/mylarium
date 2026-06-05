@@ -10,12 +10,12 @@ void main() {
 
   setUpAll(() => verifier = SchemaVerifier(GeneratedHelper()));
 
-  // Validated at head (v9) rather than v7: the v8->v9 step adds `op` to
+  // Validated at head (v10) rather than v7: the v9->v10 step adds `op` to
   // sync_queue and `rating` to series_meta, both createTable'd in the from<7
-  // block, so a fresh ->v7 migration now emits the v9 shape of those tables and
+  // block, so a fresh ->v7 migration now emits the v10 shape of those tables and
   // can no longer match the frozen v7 snapshot. This mirrors how the v4->v5
   // test validates at v6 after download_tasks.permanent landed there.
-  test('v6 -> v9 preserves data and adds sync + stats schema', () async {
+  test('v6 -> v10 preserves data and adds sync + stats schema', () async {
     final schema = await verifier.schemaAt(6);
 
     final oldDb = v6.DatabaseAtV6(schema.newConnection());
@@ -32,7 +32,7 @@ void main() {
     await oldDb.close();
 
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 9);
+    await verifier.migrateAndValidate(db, 10);
 
     // Old settings survived. Read raw: the typed AppSetting mapper expects
     // current (v8) columns the v7 schema lacks. (deviceId generation is a
@@ -79,17 +79,17 @@ void main() {
     await db.close();
   });
 
-  test('v5 -> v9 chained migration reaches the v9 schema', () async {
+  test('v5 -> v10 chained migration reaches the v10 schema', () async {
     final schema = await verifier.schemaAt(5);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 9);
+    await verifier.migrateAndValidate(db, 10);
     await db.close();
   });
 
-  test('v2 -> v9 chained migration reaches the v9 schema', () async {
+  test('v2 -> v10 chained migration reaches the v10 schema', () async {
     final schema = await verifier.schemaAt(2);
     final db = AppDatabase(schema.newConnection());
-    await verifier.migrateAndValidate(db, 9);
+    await verifier.migrateAndValidate(db, 10);
     await db.close();
   });
 }

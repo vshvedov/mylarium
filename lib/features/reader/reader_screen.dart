@@ -13,6 +13,10 @@ import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
 import '../sync/sync_models.dart';
 import '../sync/sync_providers.dart';
+import 'color/color_corrected_image_provider.dart';
+import 'color/color_math.dart';
+import 'color/color_settings.dart';
+import 'color/color_settings_controller.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
 import 'gestures/tap_zones.dart';
@@ -26,6 +30,7 @@ import 'reader_controller.dart';
 import 'reader_models.dart';
 import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
+import 'widgets/color_correction_sheet.dart';
 import 'widgets/image_quality_sheet.dart';
 import 'widgets/reader_chrome.dart';
 
@@ -91,6 +96,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
 
   bool _chrome = true;
   int? _cacheWidth;
+
+  /// Live page color correction. [_adj] is the resolved effective adjustment,
+  /// seeded from [ReaderData] (correct first paint) and kept current by the
+  /// color-settings listener (which updates it live while sliders move). The
+  /// non-linear residual (gamma/auto-levels) is baked into [_source] via a
+  /// corrected provider; the affine layer (brightness/contrast/mode) is applied
+  /// at render through [_colorFilter] (a GPU `ColorFilter`, instant in every
+  /// mode, swapped without a re-decode when only the affine part changes).
+  late ColorAdjustments _adj = widget.data.colorAdjustments;
+  ColorFilter? _colorFilter;
 
   /// Reading-time + page-span accumulator for the current session. Lives on the
   /// State (a stable lifetime) so orientation rebuilds do not reset it.
@@ -235,7 +250,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     }
   }
 
-  void _rebuildSource() {
+  void _rebuildSource({bool force = false}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
     // Decode to the viewport's physical width, but cap it: on a large hi-DPI
@@ -248,9 +263,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final cacheWidth = (width * dpr).round().clamp(1, _decodeCeiling);
     // Only rebuild when the decode sizing actually changes (e.g. rotation), so
     // a metrics/theme dependency change does not reset the prefetch window.
-    if (_source != null && _cacheWidth == cacheWidth) return;
+    // [force] is used when a color change must rebuild the source even though
+    // the decode width is unchanged.
+    if (!force && _source != null && _cacheWidth == cacheWidth) return;
     _cacheWidth = cacheWidth;
-    final source = switch (widget.data.source) {
+    final base = switch (widget.data.source) {
       OnlinePages(:final api, :final pages) => KomgaPageSource(
           api: api,
           sourceId: widget.sourceId,
@@ -267,10 +284,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           cacheWidth: cacheWidth,
         ),
     };
+    // Split the live correction: the non-linear residual (gamma/auto-levels) is
+    // baked into the decoded page by a corrected provider; the affine part
+    // (brightness/contrast/mode) is layered on at render via a GPU ColorFilter.
+    final (affine: affine, residual: residual) = splitAdjustments(_adj);
+    final source = colorCorrectedSource(base, residual);
+    _colorFilter =
+        affine.isIdentity ? null : ColorFilter.matrix(buildMatrix(affine));
     _source = source;
     _recomputePairs();
     _prefetcher = PagePrefetcher.forContext(source, context);
     _pageController ??= PageController(initialPage: _controllerIndexFor(_page));
+    // On a forced (color) rebuild, warm the new providers for the visible
+    // window so the corrected pages decode now rather than on the next turn.
+    if (force) _prefetcher?.onPage(_page);
   }
 
   void _recomputePairs() {
@@ -347,6 +374,17 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         builder: (_) => const ImageQualitySheet(),
       );
 
+  void _openColorCorrection() => AppBottomSheet.show<void>(
+        context,
+        // Keep the page fully visible (no dim) so corrections preview clearly.
+        barrierColor: Colors.transparent,
+        builder: (_) => ColorCorrectionSheet(
+          sourceId: widget.sourceId,
+          seriesId: widget.data.seriesId,
+          bookId: widget.bookId,
+        ),
+      );
+
   void _step(int delta) {
     final controller = _pageController;
     if (controller == null || !controller.hasClients) return;
@@ -409,6 +447,36 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         setState(() {});
       }
     });
+    // React to a live color-correction change: re-split into the baked residual
+    // and the GPU affine layer, rebuild the source, and re-prefetch.
+    ref.listen(
+      colorSettingsControllerProvider(
+        widget.sourceId,
+        widget.data.seriesId,
+        widget.bookId,
+      ),
+      (_, next) {
+        next.whenData((s) {
+          final adj = s.resolved;
+          if (adj == _adj) return;
+          final residualChanged = splitAdjustments(adj).residual.signature !=
+              splitAdjustments(_adj).residual.signature;
+          _adj = adj;
+          if (_source != null && !residualChanged) {
+            // Only the affine (GPU) layer changed: swap the ColorFilter with no
+            // re-decode, so brightness/contrast/mode preview in real time.
+            final affine = splitAdjustments(adj).affine;
+            setState(() => _colorFilter = affine.isIdentity
+                ? null
+                : ColorFilter.matrix(buildMatrix(affine)));
+          } else {
+            // Residual (gamma/auto-levels) changed: re-bake via the provider.
+            _rebuildSource(force: true);
+            setState(() {});
+          }
+        });
+      },
+    );
     final source = _source!;
     final s = widget.data.settings;
     final size = MediaQuery.sizeOf(context);
@@ -449,9 +517,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         ),
     };
 
+    // The GPU affine layer (brightness/contrast/mode). A single ColorFilter
+    // over the composited view applies instantly in every reading mode; absent
+    // any affine adjustment there is no layer (zero cost for uncorrected
+    // reading). The non-linear residual is already baked into [source].
+    final filter = _colorFilter;
+    final filteredView =
+        filter == null ? view : ColorFiltered(colorFilter: filter, child: view);
     return Stack(
       children: [
-        Positioned.fill(child: view),
+        Positioned.fill(child: filteredView),
         Positioned.fill(
           child: ReaderChrome(
             visible: _chrome,
@@ -469,6 +544,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
                     .notifier).updateSettings(next),
             onSeekPage: _seekPage,
             onImageQuality: _openImageQuality,
+            onColorCorrection: _openColorCorrection,
             onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
             nudged: _nudge,
           ),

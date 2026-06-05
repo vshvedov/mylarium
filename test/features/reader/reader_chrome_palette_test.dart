@@ -20,6 +20,7 @@ ReaderChrome _chrome() => ReaderChrome(
   onSettings: (_) {},
   onSeekPage: (_) {},
   onImageQuality: () {},
+  onColorCorrection: () {},
 );
 
 final _plain = darkTheme.colorScheme.surface.withValues(alpha: 0.92);

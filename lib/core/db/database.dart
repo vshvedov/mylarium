@@ -12,6 +12,7 @@ import 'tables/book_state.dart';
 import 'tables/books.dart';
 import 'tables/cached_assets.dart';
 import 'tables/cached_metadata.dart';
+import 'tables/color_settings.dart';
 import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
@@ -41,12 +42,13 @@ part 'database.g.dart';
   ReadingSessions,
   SyncQueue,
   SeriesMeta,
+  ColorSettings,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -120,13 +122,18 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(appSettings, appSettings.imageQualitySmart);
             await m.addColumn(appSettings, appSettings.imageQualityManualLevel);
           }
-          // v8 -> v9: deeper Komga integration (T3). A write-back `op` kind on
+          // v8 -> v9: reader page color-correction settings (global / per-series
+          // / per-book). A new table, so additive createTable only.
+          if (from < 9 && to >= 9) {
+            await m.createTable(colorSettings);
+          }
+          // v9 -> v10: deeper Komga integration (T3). A write-back `op` kind on
           // the sync queue (mark read/unread, series read/unread) and a local
           // series rating mirror. Both syncQueue and seriesMeta are created in
-          // the from<7 block, where createTable already emits the current (v9)
-          // shape including these columns; only a real v7 or v8 install has the
+          // the from<7 block, where createTable already emits the current (v10)
+          // shape including these columns; only a real v7/v8/v9 install has the
           // tables WITHOUT them, so the addColumns are guarded on from >= 7.
-          if (from < 9 && to >= 9) {
+          if (from < 10 && to >= 10) {
             if (from >= 7) {
               await m.addColumn(syncQueue, syncQueue.op);
               await m.addColumn(seriesMeta, seriesMeta.rating);
@@ -411,6 +418,35 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertReaderSettings(ReaderSettingsCompanion row) =>
       into(readerSettings).insertOnConflictUpdate(row);
+
+  // --- Color settings (global / per-series / per-book) ----------------------
+
+  Future<ColorSettingsRow?> getColorSettings(
+    String sourceId,
+    String scope,
+    String scopeId,
+  ) =>
+      (select(colorSettings)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.scope.equals(scope) &
+                t.scopeId.equals(scopeId)))
+          .getSingleOrNull();
+
+  Future<void> upsertColorSettings(ColorSettingsCompanion row) =>
+      into(colorSettings).insertOnConflictUpdate(row);
+
+  Future<void> deleteColorSettings(
+    String sourceId,
+    String scope,
+    String scopeId,
+  ) =>
+      (delete(colorSettings)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.scope.equals(scope) &
+                t.scopeId.equals(scopeId)))
+          .go();
 
   // --- Cached assets (offline archives) ------------------------------------
 
