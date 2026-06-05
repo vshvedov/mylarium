@@ -562,7 +562,7 @@ class _SeriesBooksProviderElement
   String get seriesId => (origin as SeriesBooksProvider).seriesId;
 }
 
-String _$seriesDetailHash() => r'4dcac94b2b225b2578b112fa2dcee9c5b5262f6f';
+String _$seriesDetailHash() => r'c9797d90c42c1fe1dc0605888766db37189b987f';
 
 /// A single cached series row (for the series-detail header).
 ///

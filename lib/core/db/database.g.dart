@@ -7996,6 +7996,521 @@ class SeriesMetaCompanion extends UpdateCompanion<SeriesMetaRow> {
   }
 }
 
+class $ColorSettingsTable extends ColorSettings
+    with TableInfo<$ColorSettingsTable, ColorSettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ColorSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+    'scope',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scopeIdMeta = const VerificationMeta(
+    'scopeId',
+  );
+  @override
+  late final GeneratedColumn<String> scopeId = GeneratedColumn<String>(
+    'scope_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _brightnessMeta = const VerificationMeta(
+    'brightness',
+  );
+  @override
+  late final GeneratedColumn<double> brightness = GeneratedColumn<double>(
+    'brightness',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _contrastMeta = const VerificationMeta(
+    'contrast',
+  );
+  @override
+  late final GeneratedColumn<double> contrast = GeneratedColumn<double>(
+    'contrast',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _gammaMeta = const VerificationMeta('gamma');
+  @override
+  late final GeneratedColumn<double> gamma = GeneratedColumn<double>(
+    'gamma',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('none'),
+  );
+  static const VerificationMeta _autoLevelsMeta = const VerificationMeta(
+    'autoLevels',
+  );
+  @override
+  late final GeneratedColumn<bool> autoLevels = GeneratedColumn<bool>(
+    'auto_levels',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_levels" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    scope,
+    scopeId,
+    brightness,
+    contrast,
+    gamma,
+    mode,
+    autoLevels,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'color_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ColorSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+        _scopeMeta,
+        scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeMeta);
+    }
+    if (data.containsKey('scope_id')) {
+      context.handle(
+        _scopeIdMeta,
+        scopeId.isAcceptableOrUnknown(data['scope_id']!, _scopeIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeIdMeta);
+    }
+    if (data.containsKey('brightness')) {
+      context.handle(
+        _brightnessMeta,
+        brightness.isAcceptableOrUnknown(data['brightness']!, _brightnessMeta),
+      );
+    }
+    if (data.containsKey('contrast')) {
+      context.handle(
+        _contrastMeta,
+        contrast.isAcceptableOrUnknown(data['contrast']!, _contrastMeta),
+      );
+    }
+    if (data.containsKey('gamma')) {
+      context.handle(
+        _gammaMeta,
+        gamma.isAcceptableOrUnknown(data['gamma']!, _gammaMeta),
+      );
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    }
+    if (data.containsKey('auto_levels')) {
+      context.handle(
+        _autoLevelsMeta,
+        autoLevels.isAcceptableOrUnknown(data['auto_levels']!, _autoLevelsMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, scope, scopeId};
+  @override
+  ColorSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ColorSettingsRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      scope: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope'],
+      )!,
+      scopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scope_id'],
+      )!,
+      brightness: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}brightness'],
+      )!,
+      contrast: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}contrast'],
+      )!,
+      gamma: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}gamma'],
+      )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
+      autoLevels: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_levels'],
+      )!,
+    );
+  }
+
+  @override
+  $ColorSettingsTable createAlias(String alias) {
+    return $ColorSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class ColorSettingsRow extends DataClass
+    implements Insertable<ColorSettingsRow> {
+  /// FK to `Sources.id` (empty string for the app-wide `global` row).
+  final String sourceId;
+
+  /// `ColorScopeKind.name`: `global` | `series` | `book`.
+  final String scope;
+
+  /// The owning id for the scope: empty for global, seriesId for series,
+  /// bookId for book.
+  final String scopeId;
+  final double brightness;
+  final double contrast;
+  final double gamma;
+  final String mode;
+  final bool autoLevels;
+  const ColorSettingsRow({
+    required this.sourceId,
+    required this.scope,
+    required this.scopeId,
+    required this.brightness,
+    required this.contrast,
+    required this.gamma,
+    required this.mode,
+    required this.autoLevels,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['scope'] = Variable<String>(scope);
+    map['scope_id'] = Variable<String>(scopeId);
+    map['brightness'] = Variable<double>(brightness);
+    map['contrast'] = Variable<double>(contrast);
+    map['gamma'] = Variable<double>(gamma);
+    map['mode'] = Variable<String>(mode);
+    map['auto_levels'] = Variable<bool>(autoLevels);
+    return map;
+  }
+
+  ColorSettingsCompanion toCompanion(bool nullToAbsent) {
+    return ColorSettingsCompanion(
+      sourceId: Value(sourceId),
+      scope: Value(scope),
+      scopeId: Value(scopeId),
+      brightness: Value(brightness),
+      contrast: Value(contrast),
+      gamma: Value(gamma),
+      mode: Value(mode),
+      autoLevels: Value(autoLevels),
+    );
+  }
+
+  factory ColorSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ColorSettingsRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      scope: serializer.fromJson<String>(json['scope']),
+      scopeId: serializer.fromJson<String>(json['scopeId']),
+      brightness: serializer.fromJson<double>(json['brightness']),
+      contrast: serializer.fromJson<double>(json['contrast']),
+      gamma: serializer.fromJson<double>(json['gamma']),
+      mode: serializer.fromJson<String>(json['mode']),
+      autoLevels: serializer.fromJson<bool>(json['autoLevels']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'scope': serializer.toJson<String>(scope),
+      'scopeId': serializer.toJson<String>(scopeId),
+      'brightness': serializer.toJson<double>(brightness),
+      'contrast': serializer.toJson<double>(contrast),
+      'gamma': serializer.toJson<double>(gamma),
+      'mode': serializer.toJson<String>(mode),
+      'autoLevels': serializer.toJson<bool>(autoLevels),
+    };
+  }
+
+  ColorSettingsRow copyWith({
+    String? sourceId,
+    String? scope,
+    String? scopeId,
+    double? brightness,
+    double? contrast,
+    double? gamma,
+    String? mode,
+    bool? autoLevels,
+  }) => ColorSettingsRow(
+    sourceId: sourceId ?? this.sourceId,
+    scope: scope ?? this.scope,
+    scopeId: scopeId ?? this.scopeId,
+    brightness: brightness ?? this.brightness,
+    contrast: contrast ?? this.contrast,
+    gamma: gamma ?? this.gamma,
+    mode: mode ?? this.mode,
+    autoLevels: autoLevels ?? this.autoLevels,
+  );
+  ColorSettingsRow copyWithCompanion(ColorSettingsCompanion data) {
+    return ColorSettingsRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      scopeId: data.scopeId.present ? data.scopeId.value : this.scopeId,
+      brightness: data.brightness.present
+          ? data.brightness.value
+          : this.brightness,
+      contrast: data.contrast.present ? data.contrast.value : this.contrast,
+      gamma: data.gamma.present ? data.gamma.value : this.gamma,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      autoLevels: data.autoLevels.present
+          ? data.autoLevels.value
+          : this.autoLevels,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ColorSettingsRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('scope: $scope, ')
+          ..write('scopeId: $scopeId, ')
+          ..write('brightness: $brightness, ')
+          ..write('contrast: $contrast, ')
+          ..write('gamma: $gamma, ')
+          ..write('mode: $mode, ')
+          ..write('autoLevels: $autoLevels')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sourceId,
+    scope,
+    scopeId,
+    brightness,
+    contrast,
+    gamma,
+    mode,
+    autoLevels,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ColorSettingsRow &&
+          other.sourceId == this.sourceId &&
+          other.scope == this.scope &&
+          other.scopeId == this.scopeId &&
+          other.brightness == this.brightness &&
+          other.contrast == this.contrast &&
+          other.gamma == this.gamma &&
+          other.mode == this.mode &&
+          other.autoLevels == this.autoLevels);
+}
+
+class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
+  final Value<String> sourceId;
+  final Value<String> scope;
+  final Value<String> scopeId;
+  final Value<double> brightness;
+  final Value<double> contrast;
+  final Value<double> gamma;
+  final Value<String> mode;
+  final Value<bool> autoLevels;
+  final Value<int> rowid;
+  const ColorSettingsCompanion({
+    this.sourceId = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.scopeId = const Value.absent(),
+    this.brightness = const Value.absent(),
+    this.contrast = const Value.absent(),
+    this.gamma = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.autoLevels = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ColorSettingsCompanion.insert({
+    required String sourceId,
+    required String scope,
+    required String scopeId,
+    this.brightness = const Value.absent(),
+    this.contrast = const Value.absent(),
+    this.gamma = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.autoLevels = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       scope = Value(scope),
+       scopeId = Value(scopeId);
+  static Insertable<ColorSettingsRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? scope,
+    Expression<String>? scopeId,
+    Expression<double>? brightness,
+    Expression<double>? contrast,
+    Expression<double>? gamma,
+    Expression<String>? mode,
+    Expression<bool>? autoLevels,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (scope != null) 'scope': scope,
+      if (scopeId != null) 'scope_id': scopeId,
+      if (brightness != null) 'brightness': brightness,
+      if (contrast != null) 'contrast': contrast,
+      if (gamma != null) 'gamma': gamma,
+      if (mode != null) 'mode': mode,
+      if (autoLevels != null) 'auto_levels': autoLevels,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ColorSettingsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? scope,
+    Value<String>? scopeId,
+    Value<double>? brightness,
+    Value<double>? contrast,
+    Value<double>? gamma,
+    Value<String>? mode,
+    Value<bool>? autoLevels,
+    Value<int>? rowid,
+  }) {
+    return ColorSettingsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      scope: scope ?? this.scope,
+      scopeId: scopeId ?? this.scopeId,
+      brightness: brightness ?? this.brightness,
+      contrast: contrast ?? this.contrast,
+      gamma: gamma ?? this.gamma,
+      mode: mode ?? this.mode,
+      autoLevels: autoLevels ?? this.autoLevels,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (scopeId.present) {
+      map['scope_id'] = Variable<String>(scopeId.value);
+    }
+    if (brightness.present) {
+      map['brightness'] = Variable<double>(brightness.value);
+    }
+    if (contrast.present) {
+      map['contrast'] = Variable<double>(contrast.value);
+    }
+    if (gamma.present) {
+      map['gamma'] = Variable<double>(gamma.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (autoLevels.present) {
+      map['auto_levels'] = Variable<bool>(autoLevels.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ColorSettingsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('scope: $scope, ')
+          ..write('scopeId: $scopeId, ')
+          ..write('brightness: $brightness, ')
+          ..write('contrast: $contrast, ')
+          ..write('gamma: $gamma, ')
+          ..write('mode: $mode, ')
+          ..write('autoLevels: $autoLevels, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8016,6 +8531,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
   late final $SeriesMetaTable seriesMeta = $SeriesMetaTable(this);
+  late final $ColorSettingsTable colorSettings = $ColorSettingsTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -8052,6 +8568,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     readingSessions,
     syncQueue,
     seriesMeta,
+    colorSettings,
     seriesKeyset,
     seriesKeysetLib,
     cachedAssetsLru,
@@ -12013,6 +12530,271 @@ typedef $$SeriesMetaTableProcessedTableManager =
       SeriesMetaRow,
       PrefetchHooks Function()
     >;
+typedef $$ColorSettingsTableCreateCompanionBuilder =
+    ColorSettingsCompanion Function({
+      required String sourceId,
+      required String scope,
+      required String scopeId,
+      Value<double> brightness,
+      Value<double> contrast,
+      Value<double> gamma,
+      Value<String> mode,
+      Value<bool> autoLevels,
+      Value<int> rowid,
+    });
+typedef $$ColorSettingsTableUpdateCompanionBuilder =
+    ColorSettingsCompanion Function({
+      Value<String> sourceId,
+      Value<String> scope,
+      Value<String> scopeId,
+      Value<double> brightness,
+      Value<double> contrast,
+      Value<double> gamma,
+      Value<String> mode,
+      Value<bool> autoLevels,
+      Value<int> rowid,
+    });
+
+class $$ColorSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $ColorSettingsTable> {
+  $$ColorSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scopeId => $composableBuilder(
+    column: $table.scopeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get brightness => $composableBuilder(
+    column: $table.brightness,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get contrast => $composableBuilder(
+    column: $table.contrast,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get gamma => $composableBuilder(
+    column: $table.gamma,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoLevels => $composableBuilder(
+    column: $table.autoLevels,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ColorSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ColorSettingsTable> {
+  $$ColorSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+    column: $table.scope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scopeId => $composableBuilder(
+    column: $table.scopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get brightness => $composableBuilder(
+    column: $table.brightness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get contrast => $composableBuilder(
+    column: $table.contrast,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get gamma => $composableBuilder(
+    column: $table.gamma,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get autoLevels => $composableBuilder(
+    column: $table.autoLevels,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ColorSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ColorSettingsTable> {
+  $$ColorSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<String> get scopeId =>
+      $composableBuilder(column: $table.scopeId, builder: (column) => column);
+
+  GeneratedColumn<double> get brightness => $composableBuilder(
+    column: $table.brightness,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get contrast =>
+      $composableBuilder(column: $table.contrast, builder: (column) => column);
+
+  GeneratedColumn<double> get gamma =>
+      $composableBuilder(column: $table.gamma, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<bool> get autoLevels => $composableBuilder(
+    column: $table.autoLevels,
+    builder: (column) => column,
+  );
+}
+
+class $$ColorSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ColorSettingsTable,
+          ColorSettingsRow,
+          $$ColorSettingsTableFilterComposer,
+          $$ColorSettingsTableOrderingComposer,
+          $$ColorSettingsTableAnnotationComposer,
+          $$ColorSettingsTableCreateCompanionBuilder,
+          $$ColorSettingsTableUpdateCompanionBuilder,
+          (
+            ColorSettingsRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ColorSettingsTable,
+              ColorSettingsRow
+            >,
+          ),
+          ColorSettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$ColorSettingsTableTableManager(_$AppDatabase db, $ColorSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ColorSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ColorSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ColorSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> scope = const Value.absent(),
+                Value<String> scopeId = const Value.absent(),
+                Value<double> brightness = const Value.absent(),
+                Value<double> contrast = const Value.absent(),
+                Value<double> gamma = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<bool> autoLevels = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ColorSettingsCompanion(
+                sourceId: sourceId,
+                scope: scope,
+                scopeId: scopeId,
+                brightness: brightness,
+                contrast: contrast,
+                gamma: gamma,
+                mode: mode,
+                autoLevels: autoLevels,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String scope,
+                required String scopeId,
+                Value<double> brightness = const Value.absent(),
+                Value<double> contrast = const Value.absent(),
+                Value<double> gamma = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<bool> autoLevels = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ColorSettingsCompanion.insert(
+                sourceId: sourceId,
+                scope: scope,
+                scopeId: scopeId,
+                brightness: brightness,
+                contrast: contrast,
+                gamma: gamma,
+                mode: mode,
+                autoLevels: autoLevels,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ColorSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ColorSettingsTable,
+      ColorSettingsRow,
+      $$ColorSettingsTableFilterComposer,
+      $$ColorSettingsTableOrderingComposer,
+      $$ColorSettingsTableAnnotationComposer,
+      $$ColorSettingsTableCreateCompanionBuilder,
+      $$ColorSettingsTableUpdateCompanionBuilder,
+      (
+        ColorSettingsRow,
+        BaseReferences<_$AppDatabase, $ColorSettingsTable, ColorSettingsRow>,
+      ),
+      ColorSettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -12047,4 +12829,6 @@ class $AppDatabaseManager {
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
   $$SeriesMetaTableTableManager get seriesMeta =>
       $$SeriesMetaTableTableManager(_db, _db.seriesMeta);
+  $$ColorSettingsTableTableManager get colorSettings =>
+      $$ColorSettingsTableTableManager(_db, _db.colorSettings);
 }

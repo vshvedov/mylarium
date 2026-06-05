@@ -12,6 +12,7 @@ import 'tables/book_state.dart';
 import 'tables/books.dart';
 import 'tables/cached_assets.dart';
 import 'tables/cached_metadata.dart';
+import 'tables/color_settings.dart';
 import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
@@ -41,12 +42,13 @@ part 'database.g.dart';
   ReadingSessions,
   SyncQueue,
   SeriesMeta,
+  ColorSettings,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +121,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 8 && to >= 8) {
             await m.addColumn(appSettings, appSettings.imageQualitySmart);
             await m.addColumn(appSettings, appSettings.imageQualityManualLevel);
+          }
+          // v8 -> v9: reader page color-correction settings (global / per-series
+          // / per-book). A new table, so additive createTable only.
+          if (from < 9 && to >= 9) {
+            await m.createTable(colorSettings);
           }
         },
       );
@@ -361,6 +368,35 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertReaderSettings(ReaderSettingsCompanion row) =>
       into(readerSettings).insertOnConflictUpdate(row);
+
+  // --- Color settings (global / per-series / per-book) ----------------------
+
+  Future<ColorSettingsRow?> getColorSettings(
+    String sourceId,
+    String scope,
+    String scopeId,
+  ) =>
+      (select(colorSettings)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.scope.equals(scope) &
+                t.scopeId.equals(scopeId)))
+          .getSingleOrNull();
+
+  Future<void> upsertColorSettings(ColorSettingsCompanion row) =>
+      into(colorSettings).insertOnConflictUpdate(row);
+
+  Future<void> deleteColorSettings(
+    String sourceId,
+    String scope,
+    String scopeId,
+  ) =>
+      (delete(colorSettings)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.scope.equals(scope) &
+                t.scopeId.equals(scopeId)))
+          .go();
 
   // --- Cached assets (offline archives) ------------------------------------
 
