@@ -69,6 +69,8 @@ dev_dependencies:
   build_runner: ^2.5.4
   custom_lint: ^0.7.0
   riverpod_lint: ^2.6.5
+  flutter_launcher_icons: ^0.14.0
+  flutter_native_splash: ^2.4.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -111,3 +113,34 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# App icon generation. Source art lives in branding/ (M monogram, dark cover-forward).
+# Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "branding/icon.png"
+  min_sdk_android: 26
+  remove_alpha_ios: true
+  background_color_ios: "#0B0B0E"
+  android: true
+  ios: true
+  adaptive_icon_background: "branding/icon-bg.png"
+  adaptive_icon_foreground: "branding/icon-fg.png"
+  web:
+    generate: false
+  macos:
+    generate: false
+  windows:
+    generate: false
+
+# Launch / splash screen. Dark brand background with the centered M logo; Android 12+
+# uses the foreground mark. Regenerate with: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#0B0B0E"
+  image: "branding/splash-logo.png"
+  android: true
+  ios: true
+  web: false
+  android_12:
+    image: "branding/icon-fg.png"
+    color: "#0B0B0E"
+    icon_background_color: "#0B0B0E"

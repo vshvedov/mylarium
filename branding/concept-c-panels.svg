@@ -1,0 +1,25 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="60" x2="900" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1C1536"/>
+      <stop offset="1" stop-color="#0A0A11"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="640" cy="380" r="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B4EFF" stop-opacity="0.50"/>
+      <stop offset="0.6" stop-color="#6B4EFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#6B4EFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hot" x1="560" y1="300" x2="724" y2="476" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B73FF"/>
+      <stop offset="1" stop-color="#5A3EE6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <g>
+    <rect x="300" y="300" width="176" height="176" rx="34" fill="#2A2647"/>
+    <rect x="548" y="300" width="176" height="176" rx="34" fill="url(#hot)"/>
+    <rect x="300" y="548" width="176" height="176" rx="34" fill="#34305A"/>
+    <rect x="548" y="548" width="176" height="176" rx="34" fill="#241F3E"/>
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="140" y1="60" x2="900" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1C1536"/>
+      <stop offset="1" stop-color="#0A0A11"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="512" cy="360" r="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B4EFF" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#6B4EFF" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#6B4EFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pageL" x1="250" y1="330" x2="512" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A84FF"/>
+      <stop offset="1" stop-color="#5A40D6"/>
+    </linearGradient>
+    <linearGradient id="pageR" x1="774" y1="330" x2="512" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BBA8FF"/>
+      <stop offset="1" stop-color="#6B4EFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <rect width="1024" height="1024" fill="url(#glow)"/>
+  <path d="M 512 382 C 430 334 326 330 244 360 L 244 656 C 326 626 430 630 512 678 Z" fill="url(#pageL)"/>
+  <path d="M 512 382 C 594 334 698 330 780 360 L 780 656 C 698 626 594 630 512 678 Z" fill="url(#pageR)"/>
+  <rect x="503" y="380" width="18" height="300" rx="9" fill="#1B1440"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.30" stroke-width="9" stroke-linecap="round">
+    <line x1="312" y1="438" x2="452" y2="452"/>
+    <line x1="312" y1="492" x2="452" y2="506"/>
+    <line x1="572" y1="452" x2="712" y2="438"/>
+    <line x1="572" y1="506" x2="712" y2="492"/>
+  </g>
+</svg>
