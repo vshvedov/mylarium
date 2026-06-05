@@ -56,27 +56,34 @@ class CoverHeroBackdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = Theme.of(context).scaffoldBackgroundColor;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ColoredBox(color: bg),
-        ShaderMask(
-          blendMode: BlendMode.dstIn,
-          shaderCallback: (rect) => const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Colors.white, Colors.transparent],
-            stops: [0.0, 0.35, 1.0],
-          ).createShader(rect),
-          child: CoverBackground(
-            sourceId: sourceId,
-            ownerType: ownerType,
-            ownerId: ownerId,
-            showBlurredCover: true,
-            showScrim: false,
+    // Clip to the leak bounds: the blurred cover is a paint-time overflow (the
+    // blur spreads past the layer), and a Stack only clips on *layout* overflow,
+    // so without this the blur bleeds below the fade and hard-cuts at the bottom
+    // edge as a seam. ClipRect clips unconditionally; the fade has already
+    // reached the page colour by the edge, so the clip itself is invisible.
+    return ClipRect(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: bg),
+          ShaderMask(
+            blendMode: BlendMode.dstIn,
+            shaderCallback: (rect) => const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white, Colors.transparent],
+              stops: [0.0, 0.35, 1.0],
+            ).createShader(rect),
+            child: CoverBackground(
+              sourceId: sourceId,
+              ownerType: ownerType,
+              ownerId: ownerId,
+              showBlurredCover: true,
+              showScrim: false,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
