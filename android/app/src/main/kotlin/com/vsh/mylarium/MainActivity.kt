@@ -2,12 +2,25 @@ package com.vsh.mylarium
 
 import android.graphics.Rect
 import android.os.Build
+import android.os.Bundle
+import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val channelName = "mylarium/system_gestures"
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Draw edge to edge on every Android version (15+ already enforces it).
+        // The Flutter view then always fills the window, so toggling the reader's
+        // immersive mode changes only the inset padding, never the view size.
+        // Without this, on Android 13/14 the default activity insets for the
+        // system bars: leaving the reader brings the nav bar back, shrinks the
+        // view, and the revealed home/series list reflows (a visible "jump").
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
