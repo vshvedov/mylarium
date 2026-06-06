@@ -10,7 +10,7 @@ import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../core/network/content_exception.dart';
-import '../../core/platform/device_tier.dart';
+import '../../core/platform/render_capabilities.dart';
 import '../../core/platform/system_ui.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
@@ -333,22 +333,21 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _rebuildSource({bool force = false}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
-    final tier = ref.read(deviceTierProvider);
-    _sampling = tier.sampling;
+    _sampling = kReaderSampling;
     // Off-focus pages decode at display resolution (modest headroom) so only the
     // focused page holds a full-resolution texture; this is what keeps memory in
     // budget while the focused page can be sharp.
     final neighborWidth =
-        (width * dpr * 1.5).round().clamp(1, kMaxSafeTextureDim);
+        (width * dpr * 1.5).round().clamp(1, kFallbackMaxTextureDim);
     // The focused page decodes with zoom headroom over the viewport, up to the
-    // image-quality ceiling (the device-tier cap in Smart mode), clamped to the
-    // safe single-texture size. The page sources clamp to each page's intrinsic
-    // width (never upscaled), so a normal page costs at most its native
+    // image-quality ceiling (the device's probed max texture size in Smart mode),
+    // bounded by the RAM-safe focus limit. The page sources clamp to each page's
+    // intrinsic width (never upscaled), so a normal page costs at most its native
     // resolution and zoom reveals real detail instead of a stretched thumbnail.
+    final hardwareCap = focusTextureCap(ref.read(renderCapabilitiesProvider));
     final focusCeiling =
-        ref.read(imageQualityControllerProvider).focusCeiling(tier.focusCap);
-    final cap =
-        focusCeiling < kMaxSafeTextureDim ? focusCeiling : kMaxSafeTextureDim;
+        ref.read(imageQualityControllerProvider).focusCeiling(hardwareCap);
+    final cap = focusCeiling < hardwareCap ? focusCeiling : hardwareCap;
     _focusWidth = (width * dpr * kReaderZoomHeadroom).round().clamp(1, cap);
     _neighborWidth = neighborWidth;
     // Only rebuild the source (resetting the prefetch window) when the source's
@@ -594,6 +593,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // React to a live image-quality change: recompute the focus/neighbor decode
     // widths so the focused page re-decodes at the new quality (via [_pageImage]).
     ref.listen(imageQualityControllerProvider, (_, _) {
+      _rebuildSource();
+      setState(() {});
+    });
+    // React to the GPU max-texture-size probe resolving (it bootstraps to the
+    // safe fallback, then jumps to the real device value): re-derive the focus
+    // width so the focused page can decode sharper on capable hardware.
+    ref.listen(renderCapabilitiesProvider, (_, _) {
       _rebuildSource();
       setState(() {});
     });

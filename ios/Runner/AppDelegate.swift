@@ -1,4 +1,5 @@
 import Flutter
+import Metal
 import UIKit
 
 @main
@@ -41,6 +42,24 @@ import UIKit
               code: "exclude_failed",
               message: error.localizedDescription, details: nil))
         }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    // mylarium/device: report the GPU max 2D texture dimension so the reader can
+    // decode the focused page sharper on capable hardware. Metal has no direct
+    // property; it is defined by GPU family (Apple3 / A9+ = 16384, earlier 8192).
+    let deviceChannel = FlutterMethodChannel(
+      name: "mylarium/device", binaryMessenger: messenger)
+    deviceChannel.setMethodCallHandler { call, result in
+      switch call.method {
+      case "maxTextureSize":
+        guard let device = MTLCreateSystemDefaultDevice() else {
+          result(8192)
+          return
+        }
+        result(device.supportsFamily(.apple3) ? 16384 : 8192)
       default:
         result(FlutterMethodNotImplemented)
       }
