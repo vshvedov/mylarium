@@ -23,16 +23,10 @@ void main() {
     expect(await DiagnosticsPrefs.readMaxTextureSize(), 16384);
   });
 
-  test('show debug info defaults to false then round-trips', () async {
-    expect(await DiagnosticsPrefs.readShowDebugInfo(), isFalse);
-    await DiagnosticsPrefs.writeShowDebugInfo(true);
-    expect(await DiagnosticsPrefs.readShowDebugInfo(), isTrue);
-  });
-
-  test('the two values coexist in the same store', () async {
+  test('a later write overwrites the cached value', () async {
     await DiagnosticsPrefs.writeMaxTextureSize(8192);
-    await DiagnosticsPrefs.writeShowDebugInfo(true);
     expect(await DiagnosticsPrefs.readMaxTextureSize(), 8192);
-    expect(await DiagnosticsPrefs.readShowDebugInfo(), isTrue);
+    await DiagnosticsPrefs.writeMaxTextureSize(4096);
+    expect(await DiagnosticsPrefs.readMaxTextureSize(), 4096);
   });
 }

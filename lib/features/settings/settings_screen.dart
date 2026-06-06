@@ -5,10 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_list_row.dart';
-import '../../core/platform/render_capabilities.dart';
 import '../home/home_layout.dart';
 import '../home/home_layout_controller.dart';
-import 'show_debug_info.dart';
 
 /// Global / advanced settings. First section: hide and reorder the home rows.
 class SettingsScreen extends ConsumerWidget {
@@ -19,8 +17,6 @@ class SettingsScreen extends ConsumerWidget {
     final items = ref.watch(homeLayoutControllerProvider);
     final controller = ref.read(homeLayoutControllerProvider.notifier);
     final theme = Theme.of(context);
-    final showDebug = ref.watch(showDebugInfoProvider);
-    final maxTex = ref.watch(renderCapabilitiesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -53,39 +49,6 @@ class SettingsScreen extends ConsumerWidget {
               const Divider(height: 24, indent: 20, endIndent: 20),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                child: Text('Diagnostics', style: theme.textTheme.titleMedium),
-              ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                title: const Text('Show debug info'),
-                subtitle: const Text('Surface GPU and rendering details'),
-                value: showDebug,
-                onChanged: ref.read(showDebugInfoProvider.notifier).set,
-              ),
-              if (showDebug)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'GPU max texture size: $maxTex px',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      Text(
-                        'Focused page cap: ${focusTextureCap(maxTex)} px',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              const Divider(height: 24, indent: 20, endIndent: 20),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
                 child: Text('Home screen rows', style: theme.textTheme.titleMedium),
               ),
               Padding(
@@ -115,14 +78,27 @@ class SettingsScreen extends ConsumerWidget {
                   },
                 ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: controller.resetToDefault,
                     icon: const Icon(AppIcons.refresh, size: 18),
                     label: const Text('Reset to default'),
+                  ),
+                ),
+              ),
+              const Divider(height: 24, indent: 20, endIndent: 20),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  child: AppListRow(
+                    icon: AppIcons.info,
+                    title: 'Diagnostics',
+                    subtitle: 'GPU and rendering info',
+                    onTap: () => context.push('/settings/diagnostics'),
                   ),
                 ),
               ),

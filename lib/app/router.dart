@@ -15,6 +15,7 @@ import '../features/onboarding/kavita_connect_screen.dart';
 import '../features/onboarding/komga_connect_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
+import '../features/settings/diagnostics_screen.dart';
 import '../features/settings/library_lock.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/stats/stats_screen.dart';
@@ -104,6 +105,10 @@ final appRouterProvider = Provider<GoRouter>(
       GoRoute(
         path: '/settings/library-lock',
         builder: (_, _) => const LibraryLockScreen(),
+      ),
+      GoRoute(
+        path: '/settings/diagnostics',
+        builder: (_, _) => const DiagnosticsScreen(),
       ),
       GoRoute(
         path: '/settings/storage',
