@@ -61,14 +61,17 @@ void main() {
     await tester.pump();
 
     // The lock gate is shown (not the grid).
-    expect(find.widgetWithText(FilledButton, 'Unlock'), findsOneWidget);
+    expect(find.text('Unlock'), findsOneWidget);
 
-    // Unlocking authenticates and clears the gate.
-    await tester.tap(find.widgetWithText(FilledButton, 'Unlock'));
-    await tester.pump();
-    await tester.pump();
+    // Unlocking authenticates, persists the cleared lock, and swaps to the grid.
+    // The unlock writes the pref and invalidates the lock provider, so allow a
+    // few async turns for the rebuild.
+    await tester.tap(find.text('Unlock'));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     expect(auth.calls, 1);
-    expect(find.widgetWithText(FilledButton, 'Unlock'), findsNothing);
+    expect(find.text('Unlock'), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
@@ -100,12 +103,12 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Unlock'));
+    await tester.tap(find.text('Unlock'));
     await tester.pump();
     await tester.pump();
     expect(auth.calls, 1);
     // Still locked.
-    expect(find.widgetWithText(FilledButton, 'Unlock'), findsOneWidget);
+    expect(find.text('Unlock'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
