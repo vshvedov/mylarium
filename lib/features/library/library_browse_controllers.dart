@@ -179,6 +179,19 @@ Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
   }
 }
 
+/// Recently finished chapters for the active source, newest first. Cache-backed
+/// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+/// offline.
+@riverpod
+Stream<List<Book>> recentlyRead(Ref ref) async* {
+  final sourceId = await ref.watch(activeSourceIdProvider.future);
+  if (sourceId == null) {
+    yield const [];
+    return;
+  }
+  yield* ref.watch(appDatabaseProvider).watchRecentlyReadBooks(sourceId);
+}
+
 @riverpod
 Future<List<CollectionDto>> collections(Ref ref) async {
   final repo = await ref.watch(collectionRepositoryProvider.future);

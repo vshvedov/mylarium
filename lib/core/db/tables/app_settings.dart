@@ -35,6 +35,10 @@ class AppSettings extends Table {
   IntColumn get imageQualityManualLevel =>
       integer().withDefault(const Constant(2))();
 
+  /// JSON-encoded home-screen row layout (order + per-row visibility). NULL until
+  /// the user customizes it, in which case the default order/visibility applies.
+  TextColumn get homeLayout => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

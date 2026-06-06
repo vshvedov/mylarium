@@ -97,6 +97,12 @@ abstract final class AppIcons {
       IconData(0xe6a2, fontFamily: _family, fontPackage: _package); // sparkle
   static const series =
       IconData(0xe466, fontFamily: _family, fontPackage: _package); // stack
+  static const recentlyRead = IconData(0xe1a0,
+      fontFamily: _family, fontPackage: _package); // clockCounterClockwise
+
+  // Drag handle for reorderable lists.
+  static const dragHandle = IconData(0xeae2,
+      fontFamily: _family, fontPackage: _package); // dotsSixVertical
 
   // Reader
   static const read =

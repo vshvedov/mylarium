@@ -124,6 +124,17 @@ class $AppSettingsTable extends AppSettings
         requiredDuringInsert: false,
         defaultValue: const Constant(2),
       );
+  static const VerificationMeta _homeLayoutMeta = const VerificationMeta(
+    'homeLayout',
+  );
+  @override
+  late final GeneratedColumn<String> homeLayout = GeneratedColumn<String>(
+    'home_layout',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -135,6 +146,7 @@ class $AppSettingsTable extends AppSettings
     deviceId,
     imageQualitySmart,
     imageQualityManualLevel,
+    homeLayout,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -217,6 +229,12 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('home_layout')) {
+      context.handle(
+        _homeLayoutMeta,
+        homeLayout.isAcceptableOrUnknown(data['home_layout']!, _homeLayoutMeta),
+      );
+    }
     return context;
   }
 
@@ -262,6 +280,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.int,
         data['${effectivePrefix}image_quality_manual_level'],
       )!,
+      homeLayout: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_layout'],
+      ),
     );
   }
 
@@ -296,6 +318,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// Manual quality stop (index into the reader's ceiling table), used only when
   /// [imageQualitySmart] is false. Defaults to the middle stop.
   final int imageQualityManualLevel;
+
+  /// JSON-encoded home-screen row layout (order + per-row visibility). NULL until
+  /// the user customizes it, in which case the default order/visibility applies.
+  final String? homeLayout;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -306,6 +332,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     this.deviceId,
     required this.imageQualitySmart,
     required this.imageQualityManualLevel,
+    this.homeLayout,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -321,6 +348,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     }
     map['image_quality_smart'] = Variable<bool>(imageQualitySmart);
     map['image_quality_manual_level'] = Variable<int>(imageQualityManualLevel);
+    if (!nullToAbsent || homeLayout != null) {
+      map['home_layout'] = Variable<String>(homeLayout);
+    }
     return map;
   }
 
@@ -337,6 +367,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           : Value(deviceId),
       imageQualitySmart: Value(imageQualitySmart),
       imageQualityManualLevel: Value(imageQualityManualLevel),
+      homeLayout: homeLayout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeLayout),
     );
   }
 
@@ -359,6 +392,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       imageQualityManualLevel: serializer.fromJson<int>(
         json['imageQualityManualLevel'],
       ),
+      homeLayout: serializer.fromJson<String?>(json['homeLayout']),
     );
   }
   @override
@@ -376,6 +410,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'imageQualityManualLevel': serializer.toJson<int>(
         imageQualityManualLevel,
       ),
+      'homeLayout': serializer.toJson<String?>(homeLayout),
     };
   }
 
@@ -389,6 +424,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     Value<String?> deviceId = const Value.absent(),
     bool? imageQualitySmart,
     int? imageQualityManualLevel,
+    Value<String?> homeLayout = const Value.absent(),
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -400,6 +436,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     imageQualitySmart: imageQualitySmart ?? this.imageQualitySmart,
     imageQualityManualLevel:
         imageQualityManualLevel ?? this.imageQualityManualLevel,
+    homeLayout: homeLayout.present ? homeLayout.value : this.homeLayout,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -424,6 +461,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       imageQualityManualLevel: data.imageQualityManualLevel.present
           ? data.imageQualityManualLevel.value
           : this.imageQualityManualLevel,
+      homeLayout: data.homeLayout.present
+          ? data.homeLayout.value
+          : this.homeLayout,
     );
   }
 
@@ -438,7 +478,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('downloadWifiOnly: $downloadWifiOnly, ')
           ..write('deviceId: $deviceId, ')
           ..write('imageQualitySmart: $imageQualitySmart, ')
-          ..write('imageQualityManualLevel: $imageQualityManualLevel')
+          ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
+          ..write('homeLayout: $homeLayout')
           ..write(')'))
         .toString();
   }
@@ -454,6 +495,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     deviceId,
     imageQualitySmart,
     imageQualityManualLevel,
+    homeLayout,
   );
   @override
   bool operator ==(Object other) =>
@@ -467,7 +509,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.downloadWifiOnly == this.downloadWifiOnly &&
           other.deviceId == this.deviceId &&
           other.imageQualitySmart == this.imageQualitySmart &&
-          other.imageQualityManualLevel == this.imageQualityManualLevel);
+          other.imageQualityManualLevel == this.imageQualityManualLevel &&
+          other.homeLayout == this.homeLayout);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -480,6 +523,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<String?> deviceId;
   final Value<bool> imageQualitySmart;
   final Value<int> imageQualityManualLevel;
+  final Value<String?> homeLayout;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -490,6 +534,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.deviceId = const Value.absent(),
     this.imageQualitySmart = const Value.absent(),
     this.imageQualityManualLevel = const Value.absent(),
+    this.homeLayout = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -501,6 +546,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.deviceId = const Value.absent(),
     this.imageQualitySmart = const Value.absent(),
     this.imageQualityManualLevel = const Value.absent(),
+    this.homeLayout = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -512,6 +558,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<String>? deviceId,
     Expression<bool>? imageQualitySmart,
     Expression<int>? imageQualityManualLevel,
+    Expression<String>? homeLayout,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -525,6 +572,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (imageQualitySmart != null) 'image_quality_smart': imageQualitySmart,
       if (imageQualityManualLevel != null)
         'image_quality_manual_level': imageQualityManualLevel,
+      if (homeLayout != null) 'home_layout': homeLayout,
     });
   }
 
@@ -538,6 +586,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<String?>? deviceId,
     Value<bool>? imageQualitySmart,
     Value<int>? imageQualityManualLevel,
+    Value<String?>? homeLayout,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -550,6 +599,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       imageQualitySmart: imageQualitySmart ?? this.imageQualitySmart,
       imageQualityManualLevel:
           imageQualityManualLevel ?? this.imageQualityManualLevel,
+      homeLayout: homeLayout ?? this.homeLayout,
     );
   }
 
@@ -587,6 +637,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         imageQualityManualLevel.value,
       );
     }
+    if (homeLayout.present) {
+      map['home_layout'] = Variable<String>(homeLayout.value);
+    }
     return map;
   }
 
@@ -601,7 +654,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('downloadWifiOnly: $downloadWifiOnly, ')
           ..write('deviceId: $deviceId, ')
           ..write('imageQualitySmart: $imageQualitySmart, ')
-          ..write('imageQualityManualLevel: $imageQualityManualLevel')
+          ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
+          ..write('homeLayout: $homeLayout')
           ..write(')'))
         .toString();
   }
@@ -9116,6 +9170,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String?> deviceId,
       Value<bool> imageQualitySmart,
       Value<int> imageQualityManualLevel,
+      Value<String?> homeLayout,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -9128,6 +9183,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String?> deviceId,
       Value<bool> imageQualitySmart,
       Value<int> imageQualityManualLevel,
+      Value<String?> homeLayout,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -9181,6 +9237,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<int> get imageQualityManualLevel => $composableBuilder(
     column: $table.imageQualityManualLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9238,6 +9299,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.imageQualityManualLevel,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -9287,6 +9353,11 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.imageQualityManualLevel,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get homeLayout => $composableBuilder(
+    column: $table.homeLayout,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -9329,6 +9400,7 @@ class $$AppSettingsTableTableManager
                 Value<String?> deviceId = const Value.absent(),
                 Value<bool> imageQualitySmart = const Value.absent(),
                 Value<int> imageQualityManualLevel = const Value.absent(),
+                Value<String?> homeLayout = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -9339,6 +9411,7 @@ class $$AppSettingsTableTableManager
                 deviceId: deviceId,
                 imageQualitySmart: imageQualitySmart,
                 imageQualityManualLevel: imageQualityManualLevel,
+                homeLayout: homeLayout,
               ),
           createCompanionCallback:
               ({
@@ -9351,6 +9424,7 @@ class $$AppSettingsTableTableManager
                 Value<String?> deviceId = const Value.absent(),
                 Value<bool> imageQualitySmart = const Value.absent(),
                 Value<int> imageQualityManualLevel = const Value.absent(),
+                Value<String?> homeLayout = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -9361,6 +9435,7 @@ class $$AppSettingsTableTableManager
                 deviceId: deviceId,
                 imageQualitySmart: imageQualitySmart,
                 imageQualityManualLevel: imageQualityManualLevel,
+                homeLayout: homeLayout,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

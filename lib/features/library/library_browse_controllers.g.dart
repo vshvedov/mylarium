@@ -100,6 +100,27 @@ final recentlyAddedBooksProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef RecentlyAddedBooksRef = AutoDisposeFutureProviderRef<List<BookDto>>;
+String _$recentlyReadHash() => r'853706e990bf83552dd9ee20c89e2c5e5c805f57';
+
+/// Recently finished chapters for the active source, newest first. Cache-backed
+/// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+/// offline.
+///
+/// Copied from [recentlyRead].
+@ProviderFor(recentlyRead)
+final recentlyReadProvider = AutoDisposeStreamProvider<List<Book>>.internal(
+  recentlyRead,
+  name: r'recentlyReadProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$recentlyReadHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef RecentlyReadRef = AutoDisposeStreamProviderRef<List<Book>>;
 String _$collectionsHash() => r'dbb2113e61fd88c65bc6e0abef96f923f4100e91';
 
 /// See also [collections].

@@ -15,6 +15,7 @@ import '../features/onboarding/komga_connect_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/sources/debug_sources_screen.dart';
 import '../features/stats/stats_screen.dart';
 
@@ -90,6 +91,10 @@ final appRouterProvider = Provider<GoRouter>(
           sourceId: state.pathParameters['sourceId']!,
           readListId: state.pathParameters['readListId']!,
         ),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (_, _) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/settings/library-lock',

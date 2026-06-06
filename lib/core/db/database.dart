@@ -66,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -182,6 +182,11 @@ class AppDatabase extends _$AppDatabase {
           if (from < 12 && to >= 12) {
             await m.createTable(pins);
           }
+          // v12 -> v13: persisted home-screen row layout (order + visibility), a
+          // single nullable JSON column on the settings row. Additive.
+          if (from < 13 && to >= 13) {
+            await m.addColumn(appSettings, appSettings.homeLayout);
+          }
         },
       );
 
@@ -237,6 +242,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateImageQualityManualLevel(int level) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(imageQualityManualLevel: Value(level)));
+
+  Future<void> updateHomeLayout(String json) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(homeLayout: Value(json)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();
@@ -573,6 +582,26 @@ class AppDatabase extends _$AppDatabase {
     ])
       ..where(cachedAssets.sourceId.equals(sourceId))
       ..orderBy([OrderingTerm.desc(cachedAssets.lastAccessedAt)]);
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.readTable(books)).toList());
+  }
+
+  /// Books finished most recently first (the "Recently read" home rail): books
+  /// with a local completed state, ordered by when they were finished. Cache-
+  /// backed (local BookState), so it works offline.
+  Stream<List<Book>> watchRecentlyReadBooks(String sourceId, {int limit = 20}) {
+    final query = select(books).join([
+      innerJoin(
+        bookState,
+        bookState.sourceId.equalsExp(books.sourceId) &
+            bookState.bookId.equalsExp(books.id),
+      ),
+    ])
+      ..where(bookState.sourceId.equals(sourceId) &
+          bookState.status.equals('completed'))
+      ..orderBy([OrderingTerm.desc(bookState.finishedAt)])
+      ..limit(limit);
     return query
         .watch()
         .map((rows) => rows.map((r) => r.readTable(books)).toList());

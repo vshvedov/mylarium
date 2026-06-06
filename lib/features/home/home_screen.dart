@@ -14,6 +14,8 @@ import '../library/widgets/item_context_menu.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
 import '../offline/offline_providers.dart';
+import 'home_layout.dart';
+import 'home_layout_controller.dart';
 
 /// The home shelf: Keep-Reading (On-Deck) plus Recently Added/Updated rails,
 /// over the active source. A "Browse" action opens the full virtualized grid.
@@ -29,6 +31,8 @@ class HomeScreen extends ConsumerWidget {
     final addedBooks = ref.watch(recentlyAddedBooksProvider);
     final added = ref.watch(recentlyAddedSeriesProvider);
     final updated = ref.watch(recentlyUpdatedSeriesProvider);
+    final recentRead = ref.watch(recentlyReadProvider);
+    final visibleRails = ref.watch(visibleHomeRailsProvider);
 
     List<Widget> seriesTiles(List<dynamic> series) => [
           for (final s in series)
@@ -51,6 +55,85 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
         ];
+
+    // A chapter tile (used by every book-backed rail). [withBadge] shows the
+    // available-offline indicator; the Downloaded rail omits it (all offline).
+    CoverTile bookTile(dynamic b, {bool withBadge = true}) => CoverTile(
+          sourceId: sourceId ?? '',
+          ownerType: 'book',
+          ownerId: b.id as String,
+          title: b.title as String,
+          subtitle: (b.number as String).isEmpty ? null : 'No. ${b.number}',
+          leadingBadge: withBadge
+              ? OfflineBadge(sourceId: sourceId ?? '', bookId: b.id as String)
+              : null,
+          onTap: () => context.push('/reader/$sourceId/${b.id}'),
+          onLongPress: () => showItemContextMenu(
+            context,
+            sourceId: sourceId ?? '',
+            ownerType: 'book',
+            ownerId: b.id as String,
+            title: b.title as String,
+          ),
+        );
+
+    // Builds the rail for a given row kind, reading the already-watched data.
+    Rail railFor(HomeRailKind kind) {
+      final children = switch (kind) {
+        HomeRailKind.pinned => [
+            for (final e in pinned.valueOrNull ?? const [])
+              CoverTile(
+                sourceId: sourceId ?? '',
+                ownerType: e.ownerType,
+                ownerId: e.ownerId,
+                title: e.title,
+                subtitle: e.subtitle,
+                stacked: e.stacked,
+                leadingBadge: e.ownerType == 'book'
+                    ? OfflineBadge(sourceId: sourceId ?? '', bookId: e.ownerId)
+                    : null,
+                onTap: () => context.push(
+                  e.ownerType == 'series'
+                      ? '/series/$sourceId/${e.ownerId}'
+                      : '/book/$sourceId/${e.ownerId}',
+                ),
+                onLongPress: () => showItemContextMenu(
+                  context,
+                  sourceId: sourceId ?? '',
+                  ownerType: e.ownerType,
+                  ownerId: e.ownerId,
+                  title: e.title,
+                ),
+              ),
+          ],
+        HomeRailKind.keepReading => [
+            for (final b in keepReading.valueOrNull ?? const []) bookTile(b),
+          ],
+        HomeRailKind.recentlyAddedChapters => [
+            for (final b in addedBooks.valueOrNull ?? const []) bookTile(b),
+          ],
+        HomeRailKind.recentlyAddedSeries =>
+          seriesTiles(added.valueOrNull ?? const []),
+        HomeRailKind.recentlyUpdatedSeries =>
+          seriesTiles(updated.valueOrNull ?? const []),
+        HomeRailKind.downloaded => [
+            for (final b in downloaded.valueOrNull ?? const [])
+              bookTile(b, withBadge: false),
+          ],
+        HomeRailKind.recentlyRead => [
+            for (final b in recentRead.valueOrNull ?? const []) bookTile(b),
+          ],
+      };
+      return Rail(title: kind.title, icon: kind.icon, children: children);
+    }
+
+    final everythingEmpty = (pinned.valueOrNull ?? const []).isEmpty &&
+        (keepReading.valueOrNull ?? const []).isEmpty &&
+        (downloaded.valueOrNull ?? const []).isEmpty &&
+        (addedBooks.valueOrNull ?? const []).isEmpty &&
+        (added.valueOrNull ?? const []).isEmpty &&
+        (updated.valueOrNull ?? const []).isEmpty &&
+        (recentRead.valueOrNull ?? const []).isEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -92,133 +175,8 @@ class HomeScreen extends ConsumerWidget {
                   constraints: const BoxConstraints(maxWidth: 820),
                   child: ListView(
                 children: [
-                  Rail(
-                    title: 'Pinned',
-                    icon: AppIcons.pin,
-                    children: [
-                      for (final e in pinned.valueOrNull ?? const [])
-                        CoverTile(
-                          sourceId: sourceId,
-                          ownerType: e.ownerType,
-                          ownerId: e.ownerId,
-                          title: e.title,
-                          subtitle: e.subtitle,
-                          stacked: e.stacked,
-                          leadingBadge: e.ownerType == 'book'
-                              ? OfflineBadge(
-                                  sourceId: sourceId,
-                                  bookId: e.ownerId,
-                                )
-                              : null,
-                          onTap: () => context.push(
-                            e.ownerType == 'series'
-                                ? '/series/$sourceId/${e.ownerId}'
-                                : '/book/$sourceId/${e.ownerId}',
-                          ),
-                          onLongPress: () => showItemContextMenu(
-                            context,
-                            sourceId: sourceId,
-                            ownerType: e.ownerType,
-                            ownerId: e.ownerId,
-                            title: e.title,
-                          ),
-                        ),
-                    ],
-                  ),
-                  Rail(
-                    title: 'Keep reading',
-                    icon: AppIcons.read,
-                    children: [
-                      for (final b in keepReading.valueOrNull ?? const [])
-                        CoverTile(
-                          sourceId: sourceId,
-                          ownerType: 'book',
-                          ownerId: b.id,
-                          title: b.title,
-                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                          leadingBadge: OfflineBadge(
-                            sourceId: sourceId,
-                            bookId: b.id,
-                          ),
-                          onTap: () =>
-                              context.push('/reader/$sourceId/${b.id}'),
-                          onLongPress: () => showItemContextMenu(
-                            context,
-                            sourceId: sourceId,
-                            ownerType: 'book',
-                            ownerId: b.id,
-                            title: b.title,
-                          ),
-                        ),
-                    ],
-                  ),
-                  Rail(
-                    title: 'Recently added chapters',
-                    icon: AppIcons.recentlyAdded,
-                    children: [
-                      for (final b in addedBooks.valueOrNull ?? const [])
-                        CoverTile(
-                          sourceId: sourceId,
-                          ownerType: 'book',
-                          ownerId: b.id,
-                          title: b.title,
-                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                          leadingBadge: OfflineBadge(
-                            sourceId: sourceId,
-                            bookId: b.id,
-                          ),
-                          onTap: () =>
-                              context.push('/reader/$sourceId/${b.id}'),
-                          onLongPress: () => showItemContextMenu(
-                            context,
-                            sourceId: sourceId,
-                            ownerType: 'book',
-                            ownerId: b.id,
-                            title: b.title,
-                          ),
-                        ),
-                    ],
-                  ),
-                  Rail(
-                    title: 'Recently added series',
-                    icon: AppIcons.series,
-                    children: seriesTiles(added.valueOrNull ?? const []),
-                  ),
-                  Rail(
-                    title: 'Recently updated series',
-                    icon: AppIcons.refresh,
-                    children: seriesTiles(updated.valueOrNull ?? const []),
-                  ),
-                  Rail(
-                    title: 'Downloaded',
-                    icon: AppIcons.savedOffline,
-                    children: [
-                      for (final b in downloaded.valueOrNull ?? const [])
-                        CoverTile(
-                          sourceId: sourceId,
-                          ownerType: 'book',
-                          ownerId: b.id,
-                          title: b.title,
-                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                          onTap: () =>
-                              context.push('/reader/$sourceId/${b.id}'),
-                          onLongPress: () => showItemContextMenu(
-                            context,
-                            sourceId: sourceId,
-                            ownerType: 'book',
-                            ownerId: b.id,
-                            title: b.title,
-                          ),
-                        ),
-                    ],
-                  ),
-                  if ((pinned.valueOrNull ?? const []).isEmpty &&
-                      (keepReading.valueOrNull ?? const []).isEmpty &&
-                      (downloaded.valueOrNull ?? const []).isEmpty &&
-                      (addedBooks.valueOrNull ?? const []).isEmpty &&
-                      (added.valueOrNull ?? const []).isEmpty &&
-                      (updated.valueOrNull ?? const []).isEmpty)
-                    const _EmptyHome(),
+                  for (final kind in visibleRails) railFor(kind),
+                  if (everythingEmpty) const _EmptyHome(),
                 ],
                   ),
                 ),
@@ -255,6 +213,15 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 16),
+            AppListRow(
+              icon: AppIcons.options,
+              title: 'Settings',
+              subtitle: 'Home rows and more',
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/settings');
+              },
+            ),
             Consumer(
               builder: (context, ref, _) {
                 final sourceId =
