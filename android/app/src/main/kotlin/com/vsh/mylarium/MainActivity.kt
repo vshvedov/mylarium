@@ -1,4 +1,4 @@
-package com.example.mylarium
+package com.vsh.mylarium
 
 import android.graphics.Rect
 import android.os.Build
