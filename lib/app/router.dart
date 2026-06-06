@@ -108,6 +108,7 @@ final appRouterProvider = Provider<GoRouter>(
         builder: (_, state) => ReaderScreen(
           sourceId: state.pathParameters['sourceId']!,
           bookId: state.pathParameters['bookId']!,
+          preview: state.uri.queryParameters['preview'] == 'true',
         ),
       ),
       GoRoute(

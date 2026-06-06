@@ -86,7 +86,8 @@ class ReaderData {
 @riverpod
 class ReaderController extends _$ReaderController {
   @override
-  Future<ReaderData> build(String sourceId, String bookId) async {
+  Future<ReaderData> build(String sourceId, String bookId,
+      [bool preview = false]) async {
     final db = ref.watch(appDatabaseProvider);
     final settingsRepo = ReaderSettingsRepository(db);
 
@@ -157,11 +158,14 @@ class ReaderController extends _$ReaderController {
     final colorAdjustments =
         await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
 
-    // Background full-chapter download (idempotent, fire-and-forget).
-    unawaited(ref
-        .read(downloadManagerProvider)
-        .enqueueBook(sourceId, bookId)
-        .catchError((_) {}));
+    // Background full-chapter download (idempotent, fire-and-forget). Skipped in
+    // preview mode: a peek must not auto-cache the chapter.
+    if (!preview) {
+      unawaited(ref
+          .read(downloadManagerProvider)
+          .enqueueBook(sourceId, bookId)
+          .catchError((_) {}));
+    }
 
     return ReaderData(
       sourceId: sourceId,

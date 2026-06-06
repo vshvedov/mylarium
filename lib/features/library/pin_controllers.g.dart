@@ -6,7 +6,7 @@ part of 'pin_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pinnedItemsHash() => r'd4e0cc1cb83d1b7fc5d232491c7d2e81d65476e2';
+String _$pinnedItemsHash() => r'e460ba0a831b1175004ebf5c472d341ba613b9dc';
 
 /// The active source's pinned items, newest first, AGE-GATED exactly like the
 /// other home rails: a restricted series (or a book whose series is restricted)

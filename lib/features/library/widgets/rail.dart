@@ -7,11 +7,15 @@ class Rail extends StatelessWidget {
     super.key,
     required this.title,
     required this.children,
+    this.icon,
     this.height = 230,
     this.tileWidth = 130,
   });
 
   final String title;
+
+  /// Optional leading glyph shown before the title (one per home category).
+  final IconData? icon;
   final List<Widget> children;
   final double height;
   final double tileWidth;
@@ -24,7 +28,16 @@ class Rail extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+          child: Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 8),
+              ],
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
         ),
         SizedBox(
           height: height,

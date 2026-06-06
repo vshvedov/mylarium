@@ -6,7 +6,7 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keepReadingHash() => r'c0f42a37cb39c1a08362a9ebb3a6bd1fd14e657b';
+String _$keepReadingHash() => r'b845c153d180032f67cf420d8cf0af5840b2b9d8';
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a
@@ -30,7 +30,7 @@ final keepReadingProvider = AutoDisposeFutureProvider<List<BookDto>>.internal(
 // ignore: unused_element
 typedef KeepReadingRef = AutoDisposeFutureProviderRef<List<BookDto>>;
 String _$recentlyAddedSeriesHash() =>
-    r'8047f2bfa7df4ceb29d1c9890109dfb48a409be5';
+    r'd364185bc63be470c98b7f63bbb0fcb8cfb8fb76';
 
 /// Recently added series. Age-gated by each series' own ageRating + its
 /// library's prefs (no series cache needed, so no leak on a fresh install).
@@ -52,7 +52,7 @@ final recentlyAddedSeriesProvider =
 // ignore: unused_element
 typedef RecentlyAddedSeriesRef = AutoDisposeFutureProviderRef<List<SeriesDto>>;
 String _$recentlyUpdatedSeriesHash() =>
-    r'd2b5072d78c44086a6dd303ff01dd75a956c5d74';
+    r'34af8af4446aa987eff9ac1096909c147428423e';
 
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 ///
@@ -74,7 +74,7 @@ final recentlyUpdatedSeriesProvider =
 typedef RecentlyUpdatedSeriesRef =
     AutoDisposeFutureProviderRef<List<SeriesDto>>;
 String _$recentlyAddedBooksHash() =>
-    r'437c32a8983d9b34e9059ebf4d744e32c0ecf0a8';
+    r'd35af5cbe1a664b5a33d8589d33e617f77bc530e';
 
 /// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
 /// each is gated by its series' rating: resolve every distinct series once from

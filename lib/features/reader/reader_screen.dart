@@ -41,15 +41,24 @@ import 'widgets/reader_seam.dart';
 /// The reader. Loads the book online, then renders the current mode's view with
 /// immersive chrome, tap-zone gestures, and a precache-ahead pipeline.
 class ReaderScreen extends ConsumerWidget {
-  const ReaderScreen({super.key, required this.sourceId, required this.bookId});
+  const ReaderScreen({
+    super.key,
+    required this.sourceId,
+    required this.bookId,
+    this.preview = false,
+  });
 
   final String sourceId;
   final String bookId;
 
+  /// "Preview" mode: read the book without reporting any progress to the source
+  /// (Komga never sees it as currently-reading) or recording a reading session.
+  final bool preview;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<DesignTokens>()!;
-    final async = ref.watch(readerControllerProvider(sourceId, bookId));
+    final async = ref.watch(readerControllerProvider(sourceId, bookId, preview));
     return Scaffold(
       backgroundColor: tokens.readerBackground,
       body: async.when(
@@ -57,8 +66,8 @@ class ReaderScreen extends ConsumerWidget {
         error: (e, _) => _ErrorState(
           title: 'Could not open this book',
           detail: friendlyError(e),
-          onRetry: () =>
-              ref.invalidate(readerControllerProvider(sourceId, bookId)),
+          onRetry: () => ref
+              .invalidate(readerControllerProvider(sourceId, bookId, preview)),
         ),
         data: (data) => _readerPageCount(data) == 0
             ? const _ErrorState(title: 'This book has no pages')
@@ -70,6 +79,7 @@ class ReaderScreen extends ConsumerWidget {
                 sourceId: sourceId,
                 bookId: bookId,
                 data: data,
+                preview: preview,
               ),
       ),
     );
@@ -95,11 +105,13 @@ class _ReaderBody extends ConsumerStatefulWidget {
     required this.sourceId,
     required this.bookId,
     required this.data,
+    required this.preview,
   });
 
   final String sourceId;
   final String bookId;
   final ReaderData data;
+  final bool preview;
 
   @override
   ConsumerState<_ReaderBody> createState() => _ReaderBodyState();
@@ -211,6 +223,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   }
 
   void _pushProgress(int page, {required bool completed}) {
+    // Preview mode is a non-committal peek: never report progress (local or to
+    // the source), so the book is not marked currently-reading anywhere.
+    if (widget.preview) return;
     final sourceId = widget.sourceId;
     final bookId = widget.bookId;
     _syncEngine
@@ -221,6 +236,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Appends the current reading session (if it has measurable activity) and
   /// resets the recorder so a later checkpoint or dispose does not double-emit.
   void _finalizeSession() {
+    // Preview mode records no reading session (no stats, no completion).
+    if (widget.preview) return;
     final span = _recorder.build(
       sourceId: widget.sourceId,
       bookId: widget.bookId,

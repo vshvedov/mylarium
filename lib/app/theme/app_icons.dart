@@ -79,6 +79,10 @@ abstract final class AppIcons {
   static const markUnread = IconData(0xe18a,
       fontFamily: _family, fontPackage: _package); // circle
 
+  // Preview (open a chapter without marking it read/in-progress).
+  static const preview =
+      IconData(0xe220, fontFamily: _family, fontPackage: _package); // eye
+
   // Home pins (curation): an outline pin, its filled counterpart (same glyph,
   // fill weight), and the slashed glyph used for the "Unpin" action.
   static const pin =
@@ -87,6 +91,12 @@ abstract final class AppIcons {
       fontFamily: _fillFamily, fontPackage: _package); // pushPin
   static const unpin = IconData(0xe3e4,
       fontFamily: _family, fontPackage: _package); // pushPinSlash
+
+  // Home rail headers (one per category).
+  static const recentlyAdded =
+      IconData(0xe6a2, fontFamily: _family, fontPackage: _package); // sparkle
+  static const series =
+      IconData(0xe466, fontFamily: _family, fontPackage: _package); // stack
 
   // Reader
   static const read =

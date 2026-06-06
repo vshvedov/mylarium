@@ -94,6 +94,7 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   Rail(
                     title: 'Pinned',
+                    icon: AppIcons.pin,
                     children: [
                       for (final e in pinned.valueOrNull ?? const [])
                         CoverTile(
@@ -126,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   Rail(
                     title: 'Keep reading',
+                    icon: AppIcons.read,
                     children: [
                       for (final b in keepReading.valueOrNull ?? const [])
                         CoverTile(
@@ -152,6 +154,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   Rail(
                     title: 'Recently added chapters',
+                    icon: AppIcons.recentlyAdded,
                     children: [
                       for (final b in addedBooks.valueOrNull ?? const [])
                         CoverTile(
@@ -178,14 +181,17 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   Rail(
                     title: 'Recently added series',
+                    icon: AppIcons.series,
                     children: seriesTiles(added.valueOrNull ?? const []),
                   ),
                   Rail(
                     title: 'Recently updated series',
+                    icon: AppIcons.refresh,
                     children: seriesTiles(updated.valueOrNull ?? const []),
                   ),
                   Rail(
                     title: 'Downloaded',
+                    icon: AppIcons.savedOffline,
                     children: [
                       for (final b in downloaded.valueOrNull ?? const [])
                         CoverTile(

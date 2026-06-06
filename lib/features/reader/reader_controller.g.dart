@@ -6,7 +6,7 @@ part of 'reader_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$readerControllerHash() => r'0868db0ed8dc8df8b19a917c9b598c417aab6215';
+String _$readerControllerHash() => r'65f893153dc80b67955357f46194d19259153cc1';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -33,8 +33,13 @@ abstract class _$ReaderController
     extends BuildlessAutoDisposeAsyncNotifier<ReaderData> {
   late final String sourceId;
   late final String bookId;
+  late final bool preview;
 
-  FutureOr<ReaderData> build(String sourceId, String bookId);
+  FutureOr<ReaderData> build(
+    String sourceId,
+    String bookId, [
+    bool preview = false,
+  ]);
 }
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
@@ -63,15 +68,19 @@ class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
   /// enqueued. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
-  ReaderControllerProvider call(String sourceId, String bookId) {
-    return ReaderControllerProvider(sourceId, bookId);
+  ReaderControllerProvider call(
+    String sourceId,
+    String bookId, [
+    bool preview = false,
+  ]) {
+    return ReaderControllerProvider(sourceId, bookId, preview);
   }
 
   @override
   ReaderControllerProvider getProviderOverride(
     covariant ReaderControllerProvider provider,
   ) {
-    return call(provider.sourceId, provider.bookId);
+    return call(provider.sourceId, provider.bookId, provider.preview);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -101,22 +110,27 @@ class ReaderControllerProvider
   /// enqueued. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
-  ReaderControllerProvider(String sourceId, String bookId)
-    : this._internal(
-        () => ReaderController()
-          ..sourceId = sourceId
-          ..bookId = bookId,
-        from: readerControllerProvider,
-        name: r'readerControllerProvider',
-        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-            ? null
-            : _$readerControllerHash,
-        dependencies: ReaderControllerFamily._dependencies,
-        allTransitiveDependencies:
-            ReaderControllerFamily._allTransitiveDependencies,
-        sourceId: sourceId,
-        bookId: bookId,
-      );
+  ReaderControllerProvider(
+    String sourceId,
+    String bookId, [
+    bool preview = false,
+  ]) : this._internal(
+         () => ReaderController()
+           ..sourceId = sourceId
+           ..bookId = bookId
+           ..preview = preview,
+         from: readerControllerProvider,
+         name: r'readerControllerProvider',
+         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+             ? null
+             : _$readerControllerHash,
+         dependencies: ReaderControllerFamily._dependencies,
+         allTransitiveDependencies:
+             ReaderControllerFamily._allTransitiveDependencies,
+         sourceId: sourceId,
+         bookId: bookId,
+         preview: preview,
+       );
 
   ReaderControllerProvider._internal(
     super._createNotifier, {
@@ -127,14 +141,16 @@ class ReaderControllerProvider
     required super.from,
     required this.sourceId,
     required this.bookId,
+    required this.preview,
   }) : super.internal();
 
   final String sourceId;
   final String bookId;
+  final bool preview;
 
   @override
   FutureOr<ReaderData> runNotifierBuild(covariant ReaderController notifier) {
-    return notifier.build(sourceId, bookId);
+    return notifier.build(sourceId, bookId, preview);
   }
 
   @override
@@ -144,7 +160,8 @@ class ReaderControllerProvider
       override: ReaderControllerProvider._internal(
         () => create()
           ..sourceId = sourceId
-          ..bookId = bookId,
+          ..bookId = bookId
+          ..preview = preview,
         from: from,
         name: null,
         dependencies: null,
@@ -152,6 +169,7 @@ class ReaderControllerProvider
         debugGetCreateSourceHash: null,
         sourceId: sourceId,
         bookId: bookId,
+        preview: preview,
       ),
     );
   }
@@ -166,7 +184,8 @@ class ReaderControllerProvider
   bool operator ==(Object other) {
     return other is ReaderControllerProvider &&
         other.sourceId == sourceId &&
-        other.bookId == bookId;
+        other.bookId == bookId &&
+        other.preview == preview;
   }
 
   @override
@@ -174,6 +193,7 @@ class ReaderControllerProvider
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, sourceId.hashCode);
     hash = _SystemHash.combine(hash, bookId.hashCode);
+    hash = _SystemHash.combine(hash, preview.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -187,6 +207,9 @@ mixin ReaderControllerRef on AutoDisposeAsyncNotifierProviderRef<ReaderData> {
 
   /// The parameter `bookId` of this provider.
   String get bookId;
+
+  /// The parameter `preview` of this provider.
+  bool get preview;
 }
 
 class _ReaderControllerProviderElement
@@ -199,6 +222,8 @@ class _ReaderControllerProviderElement
   String get sourceId => (origin as ReaderControllerProvider).sourceId;
   @override
   String get bookId => (origin as ReaderControllerProvider).bookId;
+  @override
+  bool get preview => (origin as ReaderControllerProvider).preview;
 }
 
 // ignore_for_file: type=lint
