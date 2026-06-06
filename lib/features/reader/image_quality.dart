@@ -5,15 +5,9 @@ import '../../app/theme/theme_controller.dart'
 
 part 'image_quality.g.dart';
 
-/// Ceiling (physical px) the reader decodes to in Smart mode. The reader takes
-/// `min(viewport, ceiling)` and never upscales, so this only bites on large
-/// hi-DPI screens (phones decode native); it is the tuned default. Left as a
-/// fixed value for now, with room to make Smart device/memory-aware later
-/// without any UI change.
-const int kSmartDecodeCeiling = 2048;
-
 /// A "no practical cap" sentinel for the sharpest manual stop: far above any
-/// viewport, so `min(viewport, ceiling)` resolves to the viewport (native).
+/// viewport or texture cap, so the reader's `min(...)` resolves to the hardware
+/// cap (effectively native).
 const int kNativeDecodeCeiling = 1 << 20;
 
 /// Manual quality stops, smoothest (smallest decode) to sharpest (native).
@@ -26,10 +20,6 @@ const List<int> kManualDecodeCeilings = [
   kNativeDecodeCeiling,
 ];
 
-/// Default manual stop (the middle, ~matches Smart) used before the user moves
-/// the slider.
-const int kDefaultManualLevel = 2;
-
 /// The global reader image-quality preference. [smart] true means Mylarium
 /// picks the decode ceiling; when false, [manualLevel] indexes
 /// [kManualDecodeCeilings].
@@ -39,16 +29,10 @@ class ImageQuality {
   final bool smart;
   final int manualLevel;
 
-  /// The decode-width ceiling implied by this preference. Pure; unit-tested.
-  int get ceiling {
-    if (smart) return kSmartDecodeCeiling;
-    final i = manualLevel.clamp(0, kManualDecodeCeilings.length - 1);
-    return kManualDecodeCeilings[i];
-  }
-
-  /// The focused-page decode ceiling. In Smart mode this is the device tier's cap
-  /// ([deviceCap], so normal/high devices decode sharper while low devices stay
-  /// conservative); in manual mode it is the chosen stop, independent of device.
+  /// The focused-page decode ceiling. In Smart mode this is [deviceCap] (the
+  /// reader passes the probed GPU max-texture cap, so capable devices decode
+  /// sharper while weak GPUs stay within their limit); in manual mode it is the
+  /// chosen stop, independent of the device. Pure; unit-tested.
   int focusCeiling(int deviceCap) {
     if (smart) return deviceCap;
     final i = manualLevel.clamp(0, kManualDecodeCeilings.length - 1);
