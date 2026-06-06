@@ -285,6 +285,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertSeries(SeriesCompanion row) =>
       into(series).insertOnConflictUpdate(row);
 
+  /// Sets a series' cached book count (the number the grid shows). Used after a
+  /// book-list load so sources whose series-list endpoint omits counts (Kavita)
+  /// get an accurate count once the series has been browsed.
+  Future<void> setSeriesBooksCount(
+    String sourceId,
+    String seriesId,
+    int count,
+  ) =>
+      (update(series)
+            ..where((s) => s.sourceId.equals(sourceId) & s.id.equals(seriesId)))
+          .write(SeriesCompanion(booksCount: Value(count)));
+
   Future<void> upsertBook(BooksCompanion row) =>
       into(books).insertOnConflictUpdate(row);
 

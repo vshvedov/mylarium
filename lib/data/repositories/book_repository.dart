@@ -27,6 +27,11 @@ class BookRepository {
     for (final dto in result.content) {
       await _db.upsertBook(bookToRow(sourceId, dto));
     }
+    // Keep the series' cached book count accurate (sources whose series-list
+    // endpoint omits counts, e.g. Kavita, only learn it here).
+    if (seriesId != null) {
+      await _db.setSeriesBooksCount(sourceId, seriesId, result.totalElements);
+    }
     return result.totalElements;
   }
 }
