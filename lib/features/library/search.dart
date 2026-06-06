@@ -196,6 +196,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ownerType: 'series',
                           ownerId: s.id,
                           title: s.title,
+                          stacked: s.booksCount > 1,
                           onTap: () => _openSeries(context, s),
                         );
                       },

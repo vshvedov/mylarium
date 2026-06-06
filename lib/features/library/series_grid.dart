@@ -162,6 +162,7 @@ class SeriesGridBody extends StatelessWidget {
                 subtitle: series.booksCount == 1
                     ? '1 book'
                     : '${series.booksCount} books',
+                stacked: series.booksCount > 1,
                 onTap: () => onTap(series),
               ),
               noItemsFoundIndicatorBuilder: (_) => const Center(

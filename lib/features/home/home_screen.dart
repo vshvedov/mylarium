@@ -23,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull;
     final keepReading = ref.watch(keepReadingProvider);
     final downloaded = ref.watch(downloadedBooksProvider);
+    final addedBooks = ref.watch(recentlyAddedBooksProvider);
     final added = ref.watch(recentlyAddedSeriesProvider);
     final updated = ref.watch(recentlyUpdatedSeriesProvider);
 
@@ -33,6 +34,9 @@ class HomeScreen extends ConsumerWidget {
               ownerType: 'series',
               ownerId: s.id as String,
               title: s.title as String,
+              // A multi-book series reads as a "stack of books"; a one-book
+              // series stays flat, like a single chapter.
+              stacked: (s.booksCount as int) > 1,
               onTap: () =>
                   context.push('/series/$sourceId/${s.id}'),
             ),
@@ -69,6 +73,7 @@ class HomeScreen extends ConsumerWidget {
           : RefreshIndicator(
               onRefresh: () async {
                 ref.invalidate(keepReadingProvider);
+                ref.invalidate(recentlyAddedBooksProvider);
                 ref.invalidate(recentlyAddedSeriesProvider);
                 ref.invalidate(recentlyUpdatedSeriesProvider);
               },
@@ -97,11 +102,30 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                   Rail(
-                    title: 'Recently added',
+                    title: 'Recently added chapters',
+                    children: [
+                      for (final b in addedBooks.valueOrNull ?? const [])
+                        CoverTile(
+                          sourceId: sourceId,
+                          ownerType: 'book',
+                          ownerId: b.id,
+                          title: b.title,
+                          subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                          leadingBadge: OfflineBadge(
+                            sourceId: sourceId,
+                            bookId: b.id,
+                          ),
+                          onTap: () =>
+                              context.push('/reader/$sourceId/${b.id}'),
+                        ),
+                    ],
+                  ),
+                  Rail(
+                    title: 'Recently added series',
                     children: seriesTiles(added.valueOrNull ?? const []),
                   ),
                   Rail(
-                    title: 'Recently updated',
+                    title: 'Recently updated series',
                     children: seriesTiles(updated.valueOrNull ?? const []),
                   ),
                   Rail(
@@ -121,6 +145,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   if ((keepReading.valueOrNull ?? const []).isEmpty &&
                       (downloaded.valueOrNull ?? const []).isEmpty &&
+                      (addedBooks.valueOrNull ?? const []).isEmpty &&
                       (added.valueOrNull ?? const []).isEmpty &&
                       (updated.valueOrNull ?? const []).isEmpty)
                     const _EmptyHome(),

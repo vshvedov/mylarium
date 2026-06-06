@@ -69,6 +69,8 @@ void main() {
     };
     adapter.onGet('/api/v1/books/ondeck', (s) => s.reply(200, page(const [])),
         queryParameters: {'page': 0, 'size': 20});
+    adapter.onGet('/api/v1/books/latest', (s) => s.reply(200, page(const [])),
+        queryParameters: {'page': 0, 'size': 20});
     adapter.onGet('/api/v1/series/new', (s) => s.reply(200, page(const [akira])),
         queryParameters: {'page': 0, 'size': 20});
     adapter.onGet('/api/v1/series/updated', (s) => s.reply(200, page(const [])),
@@ -110,7 +112,7 @@ void main() {
     // recently-added rail showing the fetched series.
     expect(find.text('Mylarium'), findsOneWidget);
     expect(find.text('Sources (debug)'), findsNothing);
-    expect(find.text('Recently added'), findsOneWidget);
+    expect(find.text('Recently added series'), findsOneWidget);
     expect(find.text('Akira'), findsOneWidget);
 
     // Tear down the widget tree inside the test so stream subscriptions and any
