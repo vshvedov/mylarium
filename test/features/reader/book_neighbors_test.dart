@@ -29,7 +29,7 @@ void main() {
   ProviderContainer container() {
     final c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      komgaApiForProvider('s').overrideWith((ref) async => null),
+      contentApiForProvider('s').overrideWith((ref) async => null),
     ]);
     addTearDown(c.dispose);
     return c;

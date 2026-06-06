@@ -7,7 +7,7 @@ part of 'onboarding_controller.dart';
 // **************************************************************************
 
 String _$onboardingControllerHash() =>
-    r'efaa810bb221409526162f5b73c83a1d3c9b1c7c';
+    r'29d393e6dc69a2c89dd80c7152907dacd33497c4';
 
 /// Drives the onboarding screen. State is the latest [ConnectionResult] (null
 /// before the first attempt); [AsyncLoading] while a connection is in flight.

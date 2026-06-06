@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../data/komga/auth/api_key_auth.dart';
 import '../../data/komga/auth/basic_auth.dart';
 import '../../data/komga/auth/komga_auth.dart';
@@ -116,12 +116,12 @@ class OnboardingController extends _$OnboardingController {
       if (missing.isNotEmpty) return ConnMissingRoles(missing);
 
       return _persist(baseUrl: baseUrl, label: uri.host, credential: credential);
-    } on KomgaException catch (e) {
+    } on ContentException catch (e) {
       return switch (e.kind) {
-        KomgaErrorKind.unauthorized => const ConnUnauthorized(),
-        KomgaErrorKind.forbidden => const ConnUnauthorized(),
-        KomgaErrorKind.unreachable => const ConnUnreachable(),
-        KomgaErrorKind.tls => const ConnTlsError(),
+        ContentErrorKind.unauthorized => const ConnUnauthorized(),
+        ContentErrorKind.forbidden => const ConnUnauthorized(),
+        ContentErrorKind.unreachable => const ConnUnreachable(),
+        ContentErrorKind.tls => const ConnTlsError(),
         _ => ConnUnknown(e.message),
       };
     } catch (e, st) {

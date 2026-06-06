@@ -55,7 +55,7 @@ void main() {
   ProviderContainer container() {
     final c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      activeKomgaApiProvider.overrideWith((ref) async => api),
+      contentApiForProvider('s1').overrideWith((ref) async => api),
     ]);
     addTearDown(c.dispose);
     return c;
@@ -73,7 +73,7 @@ void main() {
     await seedSource();
     stubLatest('b1');
 
-    final result = await container().read(recentlyAddedBooksProvider.future);
+    final result = await container().read(recentlyAddedBooksProvider('s1').future);
     expect(result.map((b) => b.id), ['b1']);
   });
 
@@ -82,7 +82,7 @@ void main() {
     await lockLibrary('lib1');
     stubLatest('b1');
 
-    final result = await container().read(recentlyAddedBooksProvider.future);
+    final result = await container().read(recentlyAddedBooksProvider('s1').future);
     expect(result, isEmpty);
   });
 
@@ -94,7 +94,7 @@ void main() {
       queryParameters: {'page': 0, 'size': 20},
     );
 
-    final result = await container().read(recentlyAddedBooksProvider.future);
+    final result = await container().read(recentlyAddedBooksProvider('s1').future);
     expect(result, isEmpty);
   });
 }

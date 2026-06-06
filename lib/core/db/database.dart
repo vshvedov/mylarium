@@ -285,6 +285,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertSeries(SeriesCompanion row) =>
       into(series).insertOnConflictUpdate(row);
 
+  /// Sets a series' cached book count (the number the grid shows). Used after a
+  /// book-list load so sources whose series-list endpoint omits counts (Kavita)
+  /// get an accurate count once the series has been browsed.
+  Future<void> setSeriesBooksCount(
+    String sourceId,
+    String seriesId,
+    int count,
+  ) =>
+      (update(series)
+            ..where((s) => s.sourceId.equals(sourceId) & s.id.equals(seriesId)))
+          .write(SeriesCompanion(booksCount: Value(count)));
+
   Future<void> upsertBook(BooksCompanion row) =>
       into(books).insertOnConflictUpdate(row);
 
@@ -612,7 +624,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Live (total books, downloaded books) for a series, for the series-detail
   /// download control. Reactive to both the books cache and cached assets.
-  Stream<({int total, int downloaded})> watchSeriesDownloadCounts(
+  Stream<({int total, int downloaded, int active})> watchSeriesDownloadCounts(
     String sourceId,
     String seriesId,
   ) =>
@@ -622,13 +634,20 @@ class AppDatabase extends _$AppDatabase {
         'AS total, '
         '(SELECT COUNT(*) FROM cached_assets ca JOIN books b '
         'ON b.source_id = ca.source_id AND b.id = ca.book_id '
-        'WHERE b.source_id = ?1 AND b.series_id = ?2) AS downloaded',
+        'WHERE b.source_id = ?1 AND b.series_id = ?2) AS downloaded, '
+        // In-flight tasks (queued/running/paused, not terminal): the difference
+        // between "actively downloading" and "partially downloaded but idle".
+        "(SELECT COUNT(*) FROM download_tasks dt JOIN books b "
+        'ON b.source_id = dt.source_id AND b.id = dt.book_id '
+        "WHERE b.source_id = ?1 AND b.series_id = ?2 "
+        "AND dt.state NOT IN ('complete', 'failed')) AS active",
         variables: [Variable.withString(sourceId), Variable.withString(seriesId)],
-        readsFrom: {books, cachedAssets},
+        readsFrom: {books, cachedAssets, downloadTasks},
       ).watchSingle().map(
             (row) => (
               total: row.read<int>('total'),
               downloaded: row.read<int>('downloaded'),
+              active: row.read<int>('active'),
             ),
           );
 

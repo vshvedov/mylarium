@@ -10,8 +10,8 @@ import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
 import '../../core/fs/app_paths.dart';
 import '../../core/fs/backup_exclusion.dart';
-import '../../core/network/komga_exception.dart';
-import '../../data/komga/komga_api.dart';
+import '../../core/network/content_exception.dart';
+import '../../data/source/content_api.dart';
 import '../../data/source/source_providers.dart';
 
 part 'thumbnail_cache.g.dart';
@@ -27,7 +27,7 @@ class ThumbnailCache {
   const ThumbnailCache(this._db, this._api, this._sourceId);
 
   final AppDatabase _db;
-  final KomgaApi _api;
+  final ContentApi _api;
   final String _sourceId;
 
   Future<ImageProvider?> provider(String ownerType, String ownerId) async {
@@ -59,7 +59,7 @@ class ThumbnailCache {
           : await _api.bookThumbnail(ownerId);
       bytes = b;
       etag = e;
-    } on KomgaException {
+    } on ContentException {
       return null; // Cover falls back to a placeholder; never throws.
     }
     if (bytes.isEmpty) return null;
@@ -105,7 +105,7 @@ Future<ImageProvider?> coverImage(
   String ownerType,
   String ownerId,
 ) async {
-  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return null;
   final db = ref.watch(appDatabaseProvider);
   return ThumbnailCache(db, api, sourceId).provider(ownerType, ownerId);

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/core/db/database.dart';
@@ -63,6 +64,32 @@ void main() {
     final counts = await db.watchSeriesDownloadCounts('s', 'ser1').first;
     expect(counts.total, 3);
     expect(counts.downloaded, 2);
+    // Cached assets are completed downloads, not in-flight tasks.
+    expect(counts.active, 0);
+  });
+
+  test('watchSeriesDownloadCounts counts only in-flight tasks as active',
+      () async {
+    await book('b1', 'ser1');
+    await book('b2', 'ser1');
+    await book('b3', 'ser1');
+    await db.upsertDownloadTask(DownloadTasksCompanion.insert(
+      sourceId: 's',
+      bookId: 'b1',
+      taskId: 's|b1',
+      updatedAt: 0,
+      state: const Value('running'),
+    ));
+    await db.upsertDownloadTask(DownloadTasksCompanion.insert(
+      sourceId: 's',
+      bookId: 'b2',
+      taskId: 's|b2',
+      updatedAt: 0,
+      state: const Value('failed'),
+    ));
+
+    final counts = await db.watchSeriesDownloadCounts('s', 'ser1').first;
+    expect(counts.active, 1, reason: 'running counts; failed does not');
   });
 
   test('OfflineCacheManager.deleteSeries removes every cached book of a series',

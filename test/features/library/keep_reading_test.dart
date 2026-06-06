@@ -63,11 +63,11 @@ void main() {
     addTearDown(db.close);
     final c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      activeKomgaApiProvider.overrideWith((ref) async => api),
+      contentApiForProvider('s1').overrideWith((ref) async => api),
     ]);
     addTearDown(c.dispose);
 
-    final result = await c.read(keepReadingProvider.future);
+    final result = await c.read(keepReadingProvider('s1').future);
     expect(result.map((b) => b.id), ['b1', 'b2', 'b3'],
         reason: 'in-progress first, on-deck appended, b2 de-duplicated');
   });
@@ -99,10 +99,10 @@ void main() {
     addTearDown(db.close);
     final c = ProviderContainer(overrides: [
       appDatabaseProvider.overrideWithValue(db),
-      activeKomgaApiProvider.overrideWith((ref) async => api),
+      contentApiForProvider('s1').overrideWith((ref) async => api),
     ]);
     addTearDown(c.dispose);
 
-    expect(await c.read(keepReadingProvider.future), isEmpty);
+    expect(await c.read(keepReadingProvider('s1').future), isEmpty);
   });
 }

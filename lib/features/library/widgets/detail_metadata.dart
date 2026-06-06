@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../data/komga/models/book_dto.dart';
-import '../../../data/komga/models/series_dto.dart';
+import '../../../data/source/models/book_dto.dart';
+import '../../../data/source/models/series_dto.dart';
 import 'detail_header.dart' show DetailPill;
 
 /// The richer T3 metadata block for a book or series detail: genre/tag chips and

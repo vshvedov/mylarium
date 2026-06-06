@@ -11,12 +11,12 @@ import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
 import '../features/integrations/comic_vine/comic_vine_settings_screen.dart';
 import '../features/offline/storage_screen.dart';
+import '../features/onboarding/kavita_connect_screen.dart';
 import '../features/onboarding/komga_connect_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/reader/reader_screen.dart';
 import '../features/settings/library_lock.dart';
 import '../features/settings/settings_screen.dart';
-import '../features/sources/debug_sources_screen.dart';
 import '../features/stats/stats_screen.dart';
 
 /// The route the app boots to. Overridden in main() to `/onboarding` when no
@@ -39,6 +39,11 @@ final appRouterProvider = Provider<GoRouter>(
         path: '/onboarding/komga',
         builder: (_, state) =>
             KomgaConnectScreen(initialUrl: state.uri.queryParameters['url']),
+      ),
+      GoRoute(
+        path: '/onboarding/kavita',
+        builder: (_, state) =>
+            KavitaConnectScreen(initialUrl: state.uri.queryParameters['url']),
       ),
       GoRoute(
         path: '/browse/:sourceId',
@@ -115,10 +120,6 @@ final appRouterProvider = Provider<GoRouter>(
           bookId: state.pathParameters['bookId']!,
           preview: state.uri.queryParameters['preview'] == 'true',
         ),
-      ),
-      GoRoute(
-        path: '/debug/sources',
-        builder: (_, _) => const DebugSourcesScreen(),
       ),
     ],
     errorBuilder: (_, state) =>

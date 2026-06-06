@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/core/network/komga_exception.dart';
+import 'package:mylarium/core/network/content_exception.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/repositories/collection_repository.dart';
 
@@ -87,7 +87,7 @@ void main() {
       },
     );
 
-    await expectLater(repo.addSeries('c1', 's2'), throwsA(isA<KomgaException>()));
+    await expectLater(repo.addSeries('c1', 's2'), throwsA(isA<ContentException>()));
     expect(await cachedSeriesIds('c1'), ['s1'], reason: 'cache reverted');
   });
 }

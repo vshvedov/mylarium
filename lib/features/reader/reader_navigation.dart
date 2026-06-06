@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../data/repositories/book_repository.dart';
 import '../../data/source/source_providers.dart';
 
@@ -41,12 +41,12 @@ Future<BookNeighbors> bookNeighbors(
   String bookId,
 ) async {
   final db = ref.watch(appDatabaseProvider);
-  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api != null) {
     try {
       await BookRepository(db, api)
           .refresh(sourceId, seriesId: seriesId, size: 100);
-    } on KomgaException {
+    } on ContentException {
       // Server unreachable / auth expired: resolve from the cache below.
     }
   }

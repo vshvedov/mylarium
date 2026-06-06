@@ -6,11 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../../core/db/database.dart';
 import '../../../core/network/connectivity.dart';
-import '../../../core/network/komga_exception.dart';
+import '../../../core/network/content_exception.dart';
 import '../../../data/comicvine/comic_vine_api.dart';
 import '../../../data/comicvine/comic_vine_models.dart';
 import '../../../data/komga/komga_providers.dart' show secureStoreProvider;
-import '../../../data/komga/models/mappers.dart';
+import '../../../data/source/models/mappers.dart';
 import '../../../data/source/source_providers.dart';
 
 const _kComicVineApiKey = 'comicvine.apiKey';
@@ -141,7 +141,7 @@ final comicVineVolumeProvider =
           if (repo == null) return null;
           try {
             series = await repo.fetchSeries(sourceId, seriesId);
-          } on KomgaException {
+          } on ContentException {
             return null;
           }
         }
@@ -210,12 +210,12 @@ final comicVineIssueProvider =
         // volume provider above.
         var book = await db.getBook(sourceId, bookId);
         if (book == null) {
-          final komgaApi = await ref.watch(komgaApiForProvider(sourceId).future);
-          if (komgaApi == null) return null;
+          final api = await ref.watch(contentApiForProvider(sourceId).future);
+          if (api == null) return null;
           try {
-            await db.upsertBook(bookToRow(sourceId, await komgaApi.getBook(bookId)));
+            await db.upsertBook(bookToRow(sourceId, await api.getBook(bookId)));
             book = await db.getBook(sourceId, bookId);
-          } on KomgaException {
+          } on ContentException {
             return null;
           }
         }

@@ -6,7 +6,28 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keepReadingHash() => r'1c969fa75d12a48bfa4d658ef9ae4031d44f2b9e';
+String _$keepReadingHash() => r'c979d62746114f24b74c3a7b9f8c6d3f4db5233c';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a
@@ -16,86 +37,569 @@ String _$keepReadingHash() => r'1c969fa75d12a48bfa4d658ef9ae4031d44f2b9e';
 ///
 /// Copied from [keepReading].
 @ProviderFor(keepReading)
-final keepReadingProvider = AutoDisposeFutureProvider<List<BookDto>>.internal(
-  keepReading,
-  name: r'keepReadingProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$keepReadingHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const keepReadingProvider = KeepReadingFamily();
+
+/// Keep-reading books for the active source: the user's in-progress books first
+/// (most recently read), then on-deck (the next book in a series with a
+/// completed book) appended and de-duplicated. Books in a locked library are
+/// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+/// reader mid-book would see an empty rail; the in-progress query fixes it.
+///
+/// Copied from [keepReading].
+class KeepReadingFamily extends Family<AsyncValue<List<BookDto>>> {
+  /// Keep-reading books for the active source: the user's in-progress books first
+  /// (most recently read), then on-deck (the next book in a series with a
+  /// completed book) appended and de-duplicated. Books in a locked library are
+  /// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+  /// reader mid-book would see an empty rail; the in-progress query fixes it.
+  ///
+  /// Copied from [keepReading].
+  const KeepReadingFamily();
+
+  /// Keep-reading books for the active source: the user's in-progress books first
+  /// (most recently read), then on-deck (the next book in a series with a
+  /// completed book) appended and de-duplicated. Books in a locked library are
+  /// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+  /// reader mid-book would see an empty rail; the in-progress query fixes it.
+  ///
+  /// Copied from [keepReading].
+  KeepReadingProvider call(String sourceId) {
+    return KeepReadingProvider(sourceId);
+  }
+
+  @override
+  KeepReadingProvider getProviderOverride(
+    covariant KeepReadingProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'keepReadingProvider';
+}
+
+/// Keep-reading books for the active source: the user's in-progress books first
+/// (most recently read), then on-deck (the next book in a series with a
+/// completed book) appended and de-duplicated. Books in a locked library are
+/// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+/// reader mid-book would see an empty rail; the in-progress query fixes it.
+///
+/// Copied from [keepReading].
+class KeepReadingProvider extends AutoDisposeFutureProvider<List<BookDto>> {
+  /// Keep-reading books for the active source: the user's in-progress books first
+  /// (most recently read), then on-deck (the next book in a series with a
+  /// completed book) appended and de-duplicated. Books in a locked library are
+  /// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+  /// reader mid-book would see an empty rail; the in-progress query fixes it.
+  ///
+  /// Copied from [keepReading].
+  KeepReadingProvider(String sourceId)
+    : this._internal(
+        (ref) => keepReading(ref as KeepReadingRef, sourceId),
+        from: keepReadingProvider,
+        name: r'keepReadingProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$keepReadingHash,
+        dependencies: KeepReadingFamily._dependencies,
+        allTransitiveDependencies: KeepReadingFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  KeepReadingProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<BookDto>> Function(KeepReadingRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: KeepReadingProvider._internal(
+        (ref) => create(ref as KeepReadingRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<BookDto>> createElement() {
+    return _KeepReadingProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is KeepReadingProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef KeepReadingRef = AutoDisposeFutureProviderRef<List<BookDto>>;
+mixin KeepReadingRef on AutoDisposeFutureProviderRef<List<BookDto>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _KeepReadingProviderElement
+    extends AutoDisposeFutureProviderElement<List<BookDto>>
+    with KeepReadingRef {
+  _KeepReadingProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as KeepReadingProvider).sourceId;
+}
+
 String _$recentlyAddedSeriesHash() =>
-    r'd364185bc63be470c98b7f63bbb0fcb8cfb8fb76';
+    r'dc1a0b0669e98566fedca5a79265f2ae17a6e168';
 
 /// Recently added series. Age-gated by each series' own ageRating + its
 /// library's prefs (no series cache needed, so no leak on a fresh install).
 ///
 /// Copied from [recentlyAddedSeries].
 @ProviderFor(recentlyAddedSeries)
-final recentlyAddedSeriesProvider =
-    AutoDisposeFutureProvider<List<SeriesDto>>.internal(
-      recentlyAddedSeries,
-      name: r'recentlyAddedSeriesProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$recentlyAddedSeriesHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
+const recentlyAddedSeriesProvider = RecentlyAddedSeriesFamily();
+
+/// Recently added series. Age-gated by each series' own ageRating + its
+/// library's prefs (no series cache needed, so no leak on a fresh install).
+///
+/// Copied from [recentlyAddedSeries].
+class RecentlyAddedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
+  /// Recently added series. Age-gated by each series' own ageRating + its
+  /// library's prefs (no series cache needed, so no leak on a fresh install).
+  ///
+  /// Copied from [recentlyAddedSeries].
+  const RecentlyAddedSeriesFamily();
+
+  /// Recently added series. Age-gated by each series' own ageRating + its
+  /// library's prefs (no series cache needed, so no leak on a fresh install).
+  ///
+  /// Copied from [recentlyAddedSeries].
+  RecentlyAddedSeriesProvider call(String sourceId) {
+    return RecentlyAddedSeriesProvider(sourceId);
+  }
+
+  @override
+  RecentlyAddedSeriesProvider getProviderOverride(
+    covariant RecentlyAddedSeriesProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'recentlyAddedSeriesProvider';
+}
+
+/// Recently added series. Age-gated by each series' own ageRating + its
+/// library's prefs (no series cache needed, so no leak on a fresh install).
+///
+/// Copied from [recentlyAddedSeries].
+class RecentlyAddedSeriesProvider
+    extends AutoDisposeFutureProvider<List<SeriesDto>> {
+  /// Recently added series. Age-gated by each series' own ageRating + its
+  /// library's prefs (no series cache needed, so no leak on a fresh install).
+  ///
+  /// Copied from [recentlyAddedSeries].
+  RecentlyAddedSeriesProvider(String sourceId)
+    : this._internal(
+        (ref) => recentlyAddedSeries(ref as RecentlyAddedSeriesRef, sourceId),
+        from: recentlyAddedSeriesProvider,
+        name: r'recentlyAddedSeriesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$recentlyAddedSeriesHash,
+        dependencies: RecentlyAddedSeriesFamily._dependencies,
+        allTransitiveDependencies:
+            RecentlyAddedSeriesFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  RecentlyAddedSeriesProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<SeriesDto>> Function(RecentlyAddedSeriesRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: RecentlyAddedSeriesProvider._internal(
+        (ref) => create(ref as RecentlyAddedSeriesRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
     );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<SeriesDto>> createElement() {
+    return _RecentlyAddedSeriesProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RecentlyAddedSeriesProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef RecentlyAddedSeriesRef = AutoDisposeFutureProviderRef<List<SeriesDto>>;
+mixin RecentlyAddedSeriesRef on AutoDisposeFutureProviderRef<List<SeriesDto>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _RecentlyAddedSeriesProviderElement
+    extends AutoDisposeFutureProviderElement<List<SeriesDto>>
+    with RecentlyAddedSeriesRef {
+  _RecentlyAddedSeriesProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as RecentlyAddedSeriesProvider).sourceId;
+}
+
 String _$recentlyUpdatedSeriesHash() =>
-    r'34af8af4446aa987eff9ac1096909c147428423e';
+    r'c14c8b2a41fd55e35d9ca4ea7e85447ac68a89ba';
 
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 ///
 /// Copied from [recentlyUpdatedSeries].
 @ProviderFor(recentlyUpdatedSeries)
-final recentlyUpdatedSeriesProvider =
-    AutoDisposeFutureProvider<List<SeriesDto>>.internal(
-      recentlyUpdatedSeries,
-      name: r'recentlyUpdatedSeriesProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$recentlyUpdatedSeriesHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
+const recentlyUpdatedSeriesProvider = RecentlyUpdatedSeriesFamily();
+
+/// Recently updated series. Age-gated like [recentlyAddedSeries].
+///
+/// Copied from [recentlyUpdatedSeries].
+class RecentlyUpdatedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
+  /// Recently updated series. Age-gated like [recentlyAddedSeries].
+  ///
+  /// Copied from [recentlyUpdatedSeries].
+  const RecentlyUpdatedSeriesFamily();
+
+  /// Recently updated series. Age-gated like [recentlyAddedSeries].
+  ///
+  /// Copied from [recentlyUpdatedSeries].
+  RecentlyUpdatedSeriesProvider call(String sourceId) {
+    return RecentlyUpdatedSeriesProvider(sourceId);
+  }
+
+  @override
+  RecentlyUpdatedSeriesProvider getProviderOverride(
+    covariant RecentlyUpdatedSeriesProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'recentlyUpdatedSeriesProvider';
+}
+
+/// Recently updated series. Age-gated like [recentlyAddedSeries].
+///
+/// Copied from [recentlyUpdatedSeries].
+class RecentlyUpdatedSeriesProvider
+    extends AutoDisposeFutureProvider<List<SeriesDto>> {
+  /// Recently updated series. Age-gated like [recentlyAddedSeries].
+  ///
+  /// Copied from [recentlyUpdatedSeries].
+  RecentlyUpdatedSeriesProvider(String sourceId)
+    : this._internal(
+        (ref) =>
+            recentlyUpdatedSeries(ref as RecentlyUpdatedSeriesRef, sourceId),
+        from: recentlyUpdatedSeriesProvider,
+        name: r'recentlyUpdatedSeriesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$recentlyUpdatedSeriesHash,
+        dependencies: RecentlyUpdatedSeriesFamily._dependencies,
+        allTransitiveDependencies:
+            RecentlyUpdatedSeriesFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  RecentlyUpdatedSeriesProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<SeriesDto>> Function(RecentlyUpdatedSeriesRef provider)
+    create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: RecentlyUpdatedSeriesProvider._internal(
+        (ref) => create(ref as RecentlyUpdatedSeriesRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
     );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<SeriesDto>> createElement() {
+    return _RecentlyUpdatedSeriesProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RecentlyUpdatedSeriesProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef RecentlyUpdatedSeriesRef =
-    AutoDisposeFutureProviderRef<List<SeriesDto>>;
+mixin RecentlyUpdatedSeriesRef
+    on AutoDisposeFutureProviderRef<List<SeriesDto>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _RecentlyUpdatedSeriesProviderElement
+    extends AutoDisposeFutureProviderElement<List<SeriesDto>>
+    with RecentlyUpdatedSeriesRef {
+  _RecentlyUpdatedSeriesProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as RecentlyUpdatedSeriesProvider).sourceId;
+}
+
 String _$recentlyAddedBooksHash() =>
-    r'630d44f77b0f8bc59caa873bb1f3eae7c78b25ae';
+    r'42a3c9b3e2fc77375daba6de9a408b0b61092c86';
 
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
 /// Copied from [recentlyAddedBooks].
 @ProviderFor(recentlyAddedBooks)
-final recentlyAddedBooksProvider =
-    AutoDisposeFutureProvider<List<BookDto>>.internal(
-      recentlyAddedBooks,
-      name: r'recentlyAddedBooksProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$recentlyAddedBooksHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
+const recentlyAddedBooksProvider = RecentlyAddedBooksFamily();
+
+/// Recently added chapters (Komga `books/latest`). Books in a locked library are
+/// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+///
+/// Copied from [recentlyAddedBooks].
+class RecentlyAddedBooksFamily extends Family<AsyncValue<List<BookDto>>> {
+  /// Recently added chapters (Komga `books/latest`). Books in a locked library are
+  /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// Copied from [recentlyAddedBooks].
+  const RecentlyAddedBooksFamily();
+
+  /// Recently added chapters (Komga `books/latest`). Books in a locked library are
+  /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// Copied from [recentlyAddedBooks].
+  RecentlyAddedBooksProvider call(String sourceId) {
+    return RecentlyAddedBooksProvider(sourceId);
+  }
+
+  @override
+  RecentlyAddedBooksProvider getProviderOverride(
+    covariant RecentlyAddedBooksProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'recentlyAddedBooksProvider';
+}
+
+/// Recently added chapters (Komga `books/latest`). Books in a locked library are
+/// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+///
+/// Copied from [recentlyAddedBooks].
+class RecentlyAddedBooksProvider
+    extends AutoDisposeFutureProvider<List<BookDto>> {
+  /// Recently added chapters (Komga `books/latest`). Books in a locked library are
+  /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// Copied from [recentlyAddedBooks].
+  RecentlyAddedBooksProvider(String sourceId)
+    : this._internal(
+        (ref) => recentlyAddedBooks(ref as RecentlyAddedBooksRef, sourceId),
+        from: recentlyAddedBooksProvider,
+        name: r'recentlyAddedBooksProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$recentlyAddedBooksHash,
+        dependencies: RecentlyAddedBooksFamily._dependencies,
+        allTransitiveDependencies:
+            RecentlyAddedBooksFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  RecentlyAddedBooksProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    FutureOr<List<BookDto>> Function(RecentlyAddedBooksRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: RecentlyAddedBooksProvider._internal(
+        (ref) => create(ref as RecentlyAddedBooksRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
     );
+  }
+
+  @override
+  AutoDisposeFutureProviderElement<List<BookDto>> createElement() {
+    return _RecentlyAddedBooksProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RecentlyAddedBooksProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef RecentlyAddedBooksRef = AutoDisposeFutureProviderRef<List<BookDto>>;
-String _$recentlyReadHash() => r'a7aebcb69f46363be48831d94987c6152d5cf26c';
+mixin RecentlyAddedBooksRef on AutoDisposeFutureProviderRef<List<BookDto>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _RecentlyAddedBooksProviderElement
+    extends AutoDisposeFutureProviderElement<List<BookDto>>
+    with RecentlyAddedBooksRef {
+  _RecentlyAddedBooksProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as RecentlyAddedBooksProvider).sourceId;
+}
+
+String _$recentlyReadHash() => r'a28ca19e4fd9b16f9f272f9a74b17aad21ddf100';
 
 /// Recently finished chapters for the active source, newest first. Cache-backed
 /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
@@ -103,19 +607,142 @@ String _$recentlyReadHash() => r'a7aebcb69f46363be48831d94987c6152d5cf26c';
 ///
 /// Copied from [recentlyRead].
 @ProviderFor(recentlyRead)
-final recentlyReadProvider = AutoDisposeStreamProvider<List<Book>>.internal(
-  recentlyRead,
-  name: r'recentlyReadProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$recentlyReadHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const recentlyReadProvider = RecentlyReadFamily();
+
+/// Recently finished chapters for the active source, newest first. Cache-backed
+/// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+/// offline. Books in a locked library are hidden.
+///
+/// Copied from [recentlyRead].
+class RecentlyReadFamily extends Family<AsyncValue<List<Book>>> {
+  /// Recently finished chapters for the active source, newest first. Cache-backed
+  /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+  /// offline. Books in a locked library are hidden.
+  ///
+  /// Copied from [recentlyRead].
+  const RecentlyReadFamily();
+
+  /// Recently finished chapters for the active source, newest first. Cache-backed
+  /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+  /// offline. Books in a locked library are hidden.
+  ///
+  /// Copied from [recentlyRead].
+  RecentlyReadProvider call(String sourceId) {
+    return RecentlyReadProvider(sourceId);
+  }
+
+  @override
+  RecentlyReadProvider getProviderOverride(
+    covariant RecentlyReadProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'recentlyReadProvider';
+}
+
+/// Recently finished chapters for the active source, newest first. Cache-backed
+/// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+/// offline. Books in a locked library are hidden.
+///
+/// Copied from [recentlyRead].
+class RecentlyReadProvider extends AutoDisposeStreamProvider<List<Book>> {
+  /// Recently finished chapters for the active source, newest first. Cache-backed
+  /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
+  /// offline. Books in a locked library are hidden.
+  ///
+  /// Copied from [recentlyRead].
+  RecentlyReadProvider(String sourceId)
+    : this._internal(
+        (ref) => recentlyRead(ref as RecentlyReadRef, sourceId),
+        from: recentlyReadProvider,
+        name: r'recentlyReadProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$recentlyReadHash,
+        dependencies: RecentlyReadFamily._dependencies,
+        allTransitiveDependencies:
+            RecentlyReadFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  RecentlyReadProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    Stream<List<Book>> Function(RecentlyReadRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: RecentlyReadProvider._internal(
+        (ref) => create(ref as RecentlyReadRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<Book>> createElement() {
+    return _RecentlyReadProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RecentlyReadProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef RecentlyReadRef = AutoDisposeStreamProviderRef<List<Book>>;
+mixin RecentlyReadRef on AutoDisposeStreamProviderRef<List<Book>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _RecentlyReadProviderElement
+    extends AutoDisposeStreamProviderElement<List<Book>>
+    with RecentlyReadRef {
+  _RecentlyReadProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as RecentlyReadProvider).sourceId;
+}
+
 String _$collectionsHash() => r'dbb2113e61fd88c65bc6e0abef96f923f4100e91';
 
 /// See also [collections].
@@ -151,28 +778,7 @@ final readListsProvider = AutoDisposeFutureProvider<List<ReadListDto>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef ReadListsRef = AutoDisposeFutureProviderRef<List<ReadListDto>>;
-String _$collectionSeriesHash() => r'3d72a68b8a5afa5a450efe9d6a86d5b77be402d0';
-
-/// Copied from Dart SDK
-class _SystemHash {
-  _SystemHash._();
-
-  static int combine(int hash, int value) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + value);
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
-  }
-
-  static int finish(int hash) {
-    // ignore: parameter_assignments
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    // ignore: parameter_assignments
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
-}
+String _$collectionSeriesHash() => r'2b7540b781dbf687debfd77b1917512d5c2fd0eb';
 
 /// Series in a collection, age-gated like the rails (by each series' own
 /// ageRating + its library prefs).
@@ -312,7 +918,7 @@ class _CollectionSeriesProviderElement
   String get collectionId => (origin as CollectionSeriesProvider).collectionId;
 }
 
-String _$readListBooksHash() => r'26456e5b2ea4e6a793f06f2252920239c7c47704';
+String _$readListBooksHash() => r'91efb524d125180bd8c3010e4ea19ad5fe68b916';
 
 /// Books in a read list (not age-gated; a curated reading order).
 ///
@@ -444,7 +1050,7 @@ class _ReadListBooksProviderElement
   String get readListId => (origin as ReadListBooksProvider).readListId;
 }
 
-String _$librariesHash() => r'7b0ea1124dfdda79391603f4c6a79cd13aa623b1';
+String _$librariesHash() => r'263ec67963aaa500bb971a5e01239e5885d2e16b';
 
 /// Libraries for the active source (drives the lock-settings screen and library
 /// grid entry). Refreshes from the server on first watch, then streams the
@@ -465,7 +1071,7 @@ final librariesProvider = AutoDisposeStreamProvider<List<Library>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef LibrariesRef = AutoDisposeStreamProviderRef<List<Library>>;
-String _$seriesBooksHash() => r'a580c2d86698e42c42172dbb6c8ec7ad11a37abe';
+String _$seriesBooksHash() => r'83dd7cebc1ac6e56f856f56b7e38b29eef224e55';
 
 /// A series' books, streamed from the cache. Kicks an online refresh first.
 ///
@@ -910,7 +1516,7 @@ class _SeriesReadStatesProviderElement
   String get seriesId => (origin as SeriesReadStatesProvider).seriesId;
 }
 
-String _$bookDetailDtoHash() => r'fec150c9ea385d69f39f6f40d624f1e1a4d83b6c';
+String _$bookDetailDtoHash() => r'567bf6245133e6f28ccbe72e25199ad109293ca1';
 
 /// The live Komga book, fetched for the richer detail metadata. Null offline
 /// (the screen falls back to the cached row).
@@ -1060,7 +1666,7 @@ class _BookDetailDtoProviderElement
   String get bookId => (origin as BookDetailDtoProvider).bookId;
 }
 
-String _$seriesDetailDtoHash() => r'e3f67db35e441a4b194fbe3b21139cec5d4a75cc';
+String _$seriesDetailDtoHash() => r'f785e53b45df95c02cef816fa051f916b9fff86a';
 
 /// The live Komga series, fetched for the richer detail metadata. Null offline.
 ///
@@ -1490,7 +2096,7 @@ class _SeriesRatingProviderElement
   String get seriesId => (origin as SeriesRatingProvider).seriesId;
 }
 
-String _$genresHash() => r'571f4d16453a3fd1a1cbb9ed9937de0f6285f2a6';
+String _$genresHash() => r'00f7e51da6f8e41dc026b9c1f37f1f8a8a2596f0';
 
 /// All genres on the active source (filter chips). Empty on any error/offline.
 ///
@@ -1509,7 +2115,7 @@ final genresProvider = AutoDisposeFutureProvider<List<String>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef GenresRef = AutoDisposeFutureProviderRef<List<String>>;
-String _$tagsHash() => r'58f3888bca51cd8c5445b94d55b46d854f401da2';
+String _$tagsHash() => r'1348107bbc23438667e30d6579c047510f3281fa';
 
 /// All tags on the active source (filter chips). Empty on any error/offline.
 ///
@@ -1528,7 +2134,7 @@ final tagsProvider = AutoDisposeFutureProvider<List<String>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef TagsRef = AutoDisposeFutureProviderRef<List<String>>;
-String _$publishersHash() => r'a5fd0bb20933bf87ceea34117cb8582e85615f82';
+String _$publishersHash() => r'b1d68800346c94d59ba08419fe3ebd08499d2b87';
 
 /// All publishers on the active source (filter chips). Empty on error/offline.
 ///
@@ -1547,7 +2153,7 @@ final publishersProvider = AutoDisposeFutureProvider<List<String>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef PublishersRef = AutoDisposeFutureProviderRef<List<String>>;
-String _$ageRatingsHash() => r'3de9a70b697dfdb473ae660f2206b286716b6470';
+String _$ageRatingsHash() => r'8a36013dfbf06eaaac9ec75a37df98bad7527a1c';
 
 /// Age ratings present on the active source (filter chips). Empty hides the
 /// group (there is no fixed Komga age ladder).
@@ -1567,7 +2173,7 @@ final ageRatingsProvider = AutoDisposeFutureProvider<List<int>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AgeRatingsRef = AutoDisposeFutureProviderRef<List<int>>;
-String _$seriesDetailHash() => r'c9797d90c42c1fe1dc0605888766db37189b987f';
+String _$seriesDetailHash() => r'0aafea5887f3675ec12cb15016902a7567e5147f';
 
 /// A single cached series row (for the series-detail header).
 ///

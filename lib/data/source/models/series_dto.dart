@@ -1,4 +1,4 @@
-import 'komga_meta.dart';
+import 'content_meta.dart';
 
 /// Komga series resource. Title/sort/age/status/summary live under `metadata`.
 class SeriesDto {
@@ -45,7 +45,7 @@ class SeriesDto {
 
   /// Richer T3 detail metadata.
   final List<String> tags;
-  final List<KomgaLink> links;
+  final List<ContentLink> links;
   final String? language;
 
   factory SeriesDto.fromJson(Map<String, Object?> json) {

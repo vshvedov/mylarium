@@ -159,9 +159,13 @@ class SeriesGridBody extends StatelessWidget {
                 ownerType: 'series',
                 ownerId: series.id,
                 title: series.title,
-                subtitle: series.booksCount == 1
-                    ? '1 book'
-                    : '${series.booksCount} books',
+                // Unknown count (e.g. a Kavita series not yet browsed; its list
+                // endpoint omits counts) shows no subtitle rather than "0 books".
+                subtitle: series.booksCount <= 0
+                    ? null
+                    : series.booksCount == 1
+                        ? '1 book'
+                        : '${series.booksCount} books',
                 stacked: series.booksCount > 1,
                 onTap: () => onTap(series),
               ),

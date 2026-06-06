@@ -49,7 +49,7 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
     ProviderScope(
       overrides: [
         ...scope.overrides,
-        komgaApiForProvider('s1').overrideWith((ref) async => null),
+        contentApiForProvider('s1').overrideWith((ref) async => null),
         comicVineApiKeyProvider.overrideWith((ref) async => null),
         seriesDetailProvider(
           's1',
@@ -66,7 +66,7 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
         seriesRatingProvider('s1', 'se1').overrideWith((ref) async => null),
         // Offline providers: stub the live db streams so the golden is stable.
         seriesDownloadStatusProvider('s1', 'se1').overrideWith(
-          (ref) => Stream.value((total: 0, downloaded: 0)),
+          (ref) => Stream.value((total: 0, downloaded: 0, active: 0)),
         ),
         // The hero pin toggle opens a live db stream; stub it so the golden is
         // stable and no timer outlives the test.

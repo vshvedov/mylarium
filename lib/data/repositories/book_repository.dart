@@ -1,13 +1,13 @@
 import '../../core/db/database.dart';
-import '../komga/komga_api.dart';
-import '../komga/models/mappers.dart';
+import '../source/content_api.dart';
+import '../source/models/mappers.dart';
 
 /// Fetches books for a source and upserts them with [sourceId] attached.
 class BookRepository {
   const BookRepository(this._db, this._api);
 
   final AppDatabase _db;
-  final KomgaApi _api;
+  final ContentApi _api;
 
   /// Refreshes one page of books (optionally scoped to [seriesId]); returns the
   /// server's total element count.
@@ -26,6 +26,11 @@ class BookRepository {
     );
     for (final dto in result.content) {
       await _db.upsertBook(bookToRow(sourceId, dto));
+    }
+    // Keep the series' cached book count accurate (sources whose series-list
+    // endpoint omits counts, e.g. Kavita, only learn it here).
+    if (seriesId != null) {
+      await _db.setSeriesBooksCount(sourceId, seriesId, result.totalElements);
     }
     return result.totalElements;
   }

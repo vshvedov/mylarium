@@ -257,7 +257,11 @@ class _SeriesDownloadControl extends ConsumerWidget {
             .deleteSeries(sourceId, seriesId),
       );
     }
-    if (downloaded > 0 && downloaded < total) {
+    // Only show a (disabled) progress state while downloads are actually
+    // in-flight. A series that is partially downloaded but idle stays
+    // pressable so the remaining chapters can be downloaded (enqueueSeries is
+    // idempotent and skips already-cached chapters).
+    if (status.active > 0) {
       return HeroAction(
         label: 'Downloading $downloaded/$total...',
         icon: AppIcons.download,
@@ -266,7 +270,9 @@ class _SeriesDownloadControl extends ConsumerWidget {
       );
     }
     return HeroAction(
-      label: 'Download series',
+      label: downloaded > 0 && downloaded < total
+          ? 'Download remaining ($downloaded/$total)'
+          : 'Download series',
       icon: AppIcons.download,
       style: HeroActionStyle.ghost,
       onPressed: () =>

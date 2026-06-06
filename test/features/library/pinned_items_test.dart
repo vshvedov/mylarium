@@ -67,7 +67,7 @@ void main() {
     await seedSeries('serA', booksCount: 3);
     await db.setPinned('s1', 'series', 'serA', pinned: true, now: 100);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items.map((e) => e.ownerId), ['serA']);
     expect(items.single.stacked, isTrue);
   });
@@ -78,7 +78,7 @@ void main() {
     await lockLibrary('manga');
     await db.setPinned('s1', 'series', 'serM', pinned: true, now: 100);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items, isEmpty);
   });
 
@@ -88,7 +88,7 @@ void main() {
     await lockLibrary('manga');
     await db.setPinned('s1', 'book', 'b1', pinned: true, now: 100);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items, isEmpty);
   });
 
@@ -97,7 +97,7 @@ void main() {
     await seedBook('b1', 'serA', number: '4');
     await db.setPinned('s1', 'book', 'b1', pinned: true, now: 100);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items.single.ownerId, 'b1');
     expect(items.single.subtitle, 'No. 4');
   });
@@ -106,7 +106,7 @@ void main() {
     await seedSource();
     await db.setPinned('s1', 'series', 'serGone', pinned: true, now: 100);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items, isEmpty);
   });
 
@@ -117,7 +117,7 @@ void main() {
     await db.setPinned('s1', 'series', 'serA', pinned: true, now: 100);
     await db.setPinned('s1', 'series', 'serB', pinned: true, now: 200);
 
-    final items = await container().read(pinnedItemsProvider.future);
+    final items = await container().read(pinnedItemsProvider('s1').future);
     expect(items.map((e) => e.ownerId), ['serB', 'serA']);
   });
 }

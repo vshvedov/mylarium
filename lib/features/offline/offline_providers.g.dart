@@ -60,7 +60,7 @@ final offlineCacheManagerProvider = Provider<OfflineCacheManager>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef OfflineCacheManagerRef = ProviderRef<OfflineCacheManager>;
-String _$downloadManagerHash() => r'74baf8e5581ad3f949c9a81cad92c6ce5a1f192d';
+String _$downloadManagerHash() => r'155f5c2c7db3e98063d29de0b8f3b53c9dcb64b9';
 
 /// See also [downloadManager].
 @ProviderFor(downloadManager)
@@ -392,7 +392,7 @@ class _DownloadProgressProviderElement
   String get bookId => (origin as DownloadProgressProvider).bookId;
 }
 
-String _$downloadedBooksHash() => r'b1b70977ea7e8009270cbbc528d30089c74dcb87';
+String _$downloadedBooksHash() => r'6e9a5d25c37e51b20f01aa8e3198eca7919fb2e9';
 
 /// Books available offline for the active source, most-recent first (the
 /// "Downloaded" home rail). Books in a locked library are hidden. Empty when
@@ -400,21 +400,144 @@ String _$downloadedBooksHash() => r'b1b70977ea7e8009270cbbc528d30089c74dcb87';
 ///
 /// Copied from [downloadedBooks].
 @ProviderFor(downloadedBooks)
-final downloadedBooksProvider = AutoDisposeStreamProvider<List<Book>>.internal(
-  downloadedBooks,
-  name: r'downloadedBooksProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$downloadedBooksHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const downloadedBooksProvider = DownloadedBooksFamily();
+
+/// Books available offline for the active source, most-recent first (the
+/// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+/// there is no active source.
+///
+/// Copied from [downloadedBooks].
+class DownloadedBooksFamily extends Family<AsyncValue<List<Book>>> {
+  /// Books available offline for the active source, most-recent first (the
+  /// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+  /// there is no active source.
+  ///
+  /// Copied from [downloadedBooks].
+  const DownloadedBooksFamily();
+
+  /// Books available offline for the active source, most-recent first (the
+  /// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+  /// there is no active source.
+  ///
+  /// Copied from [downloadedBooks].
+  DownloadedBooksProvider call(String sourceId) {
+    return DownloadedBooksProvider(sourceId);
+  }
+
+  @override
+  DownloadedBooksProvider getProviderOverride(
+    covariant DownloadedBooksProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'downloadedBooksProvider';
+}
+
+/// Books available offline for the active source, most-recent first (the
+/// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+/// there is no active source.
+///
+/// Copied from [downloadedBooks].
+class DownloadedBooksProvider extends AutoDisposeStreamProvider<List<Book>> {
+  /// Books available offline for the active source, most-recent first (the
+  /// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+  /// there is no active source.
+  ///
+  /// Copied from [downloadedBooks].
+  DownloadedBooksProvider(String sourceId)
+    : this._internal(
+        (ref) => downloadedBooks(ref as DownloadedBooksRef, sourceId),
+        from: downloadedBooksProvider,
+        name: r'downloadedBooksProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$downloadedBooksHash,
+        dependencies: DownloadedBooksFamily._dependencies,
+        allTransitiveDependencies:
+            DownloadedBooksFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  DownloadedBooksProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    Stream<List<Book>> Function(DownloadedBooksRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: DownloadedBooksProvider._internal(
+        (ref) => create(ref as DownloadedBooksRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<Book>> createElement() {
+    return _DownloadedBooksProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DownloadedBooksProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef DownloadedBooksRef = AutoDisposeStreamProviderRef<List<Book>>;
+mixin DownloadedBooksRef on AutoDisposeStreamProviderRef<List<Book>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _DownloadedBooksProviderElement
+    extends AutoDisposeStreamProviderElement<List<Book>>
+    with DownloadedBooksRef {
+  _DownloadedBooksProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as DownloadedBooksProvider).sourceId;
+}
+
 String _$seriesDownloadStatusHash() =>
-    r'92f7e5b949e2696e63f58ca32ff648c5148a0f98';
+    r'1779aca15baa50c19b573ef9f2bcc66196e2b4ab';
 
 /// Live (total, downloaded) book counts for a series (the series-detail download
 /// control). Reactive to both the books cache and cached assets.
@@ -428,7 +551,7 @@ const seriesDownloadStatusProvider = SeriesDownloadStatusFamily();
 ///
 /// Copied from [seriesDownloadStatus].
 class SeriesDownloadStatusFamily
-    extends Family<AsyncValue<({int total, int downloaded})>> {
+    extends Family<AsyncValue<({int total, int downloaded, int active})>> {
   /// Live (total, downloaded) book counts for a series (the series-detail download
   /// control). Reactive to both the books cache and cached assets.
   ///
@@ -470,7 +593,8 @@ class SeriesDownloadStatusFamily
 ///
 /// Copied from [seriesDownloadStatus].
 class SeriesDownloadStatusProvider
-    extends AutoDisposeStreamProvider<({int total, int downloaded})> {
+    extends
+        AutoDisposeStreamProvider<({int total, int downloaded, int active})> {
   /// Live (total, downloaded) book counts for a series (the series-detail download
   /// control). Reactive to both the books cache and cached assets.
   ///
@@ -510,7 +634,7 @@ class SeriesDownloadStatusProvider
 
   @override
   Override overrideWith(
-    Stream<({int total, int downloaded})> Function(
+    Stream<({int total, int downloaded, int active})> Function(
       SeriesDownloadStatusRef provider,
     )
     create,
@@ -531,7 +655,7 @@ class SeriesDownloadStatusProvider
   }
 
   @override
-  AutoDisposeStreamProviderElement<({int total, int downloaded})>
+  AutoDisposeStreamProviderElement<({int total, int downloaded, int active})>
   createElement() {
     return _SeriesDownloadStatusProviderElement(this);
   }
@@ -556,7 +680,7 @@ class SeriesDownloadStatusProvider
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 mixin SeriesDownloadStatusRef
-    on AutoDisposeStreamProviderRef<({int total, int downloaded})> {
+    on AutoDisposeStreamProviderRef<({int total, int downloaded, int active})> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 
@@ -565,7 +689,10 @@ mixin SeriesDownloadStatusRef
 }
 
 class _SeriesDownloadStatusProviderElement
-    extends AutoDisposeStreamProviderElement<({int total, int downloaded})>
+    extends
+        AutoDisposeStreamProviderElement<
+          ({int total, int downloaded, int active})
+        >
     with SeriesDownloadStatusRef {
   _SeriesDownloadStatusProviderElement(super.provider);
 

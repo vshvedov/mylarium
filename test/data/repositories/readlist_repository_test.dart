@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/core/network/komga_exception.dart';
+import 'package:mylarium/core/network/content_exception.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/repositories/readlist_repository.dart';
 
@@ -90,7 +90,7 @@ void main() {
       },
     );
 
-    await expectLater(repo.addBook('r1', 'b2'), throwsA(isA<KomgaException>()));
+    await expectLater(repo.addBook('r1', 'b2'), throwsA(isA<ContentException>()));
     expect(await cachedBookIds('r1'), ['b1'], reason: 'cache reverted');
   });
 }

@@ -2,7 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 
 import '../../core/db/database.dart';
-import '../../data/komga/komga_api.dart';
+import '../../data/source/content_api.dart';
 import '../offline/offline_cache.dart';
 import 'reconciler.dart';
 import 'sync_models.dart';
@@ -18,7 +18,7 @@ import 'write_back_queue.dart';
 class SyncEngine {
   SyncEngine(
     this._db,
-    Future<KomgaApi?> Function(String sourceId) apiFor, {
+    Future<ContentApi?> Function(String sourceId) apiFor, {
     required this.deviceId,
     int Function()? now,
   }) : _now = now ?? (() => DateTime.now().millisecondsSinceEpoch),
@@ -80,7 +80,7 @@ class SyncEngine {
       ),
     );
 
-    if (await _isKomga(sourceId)) {
+    if (await _writesProgressBack(sourceId)) {
       await _db.enqueueSync(
         SyncQueueCompanion.insert(
           sourceId: sourceId,
@@ -152,7 +152,7 @@ class SyncEngine {
       ),
     );
     await _db.setBookReadCache(sourceId, bookId, readPage: 0, completed: false);
-    if (await _isKomga(sourceId)) {
+    if (await _writesProgressBack(sourceId)) {
       await _db.enqueueSync(
         SyncQueueCompanion.insert(
           sourceId: sourceId,
@@ -184,7 +184,7 @@ class SyncEngine {
     // Optimistic per-book BookState rows: flips the grid badges now and seeds
     // rows the reconciler later confirms (it only visits existing state rows).
     await _db.setSeriesBooksReadStates(sourceId, seriesId, read: read, now: now);
-    if (await _isKomga(sourceId)) {
+    if (await _writesProgressBack(sourceId)) {
       // Drop any stale per-book write-backs so they cannot flush after the
       // series op and re-diverge.
       await _db.deletePendingSyncForSeries(sourceId, seriesId);
@@ -234,8 +234,11 @@ class SyncEngine {
   /// Reconciles local state with Komga on launch.
   Future<void> reconcile() => _reconciler.reconcile();
 
-  Future<bool> _isKomga(String sourceId) async {
+  /// Whether a source does two-way progress sync (enqueues + flushes a
+  /// write-back). True for the remote server sources (Komga and Kavita); local
+  /// sources keep progress on-device only.
+  Future<bool> _writesProgressBack(String sourceId) async {
     final source = await _db.getSource(sourceId);
-    return source?.kind == 'komga';
+    return source?.kind == 'komga' || source?.kind == 'kavita';
   }
 }

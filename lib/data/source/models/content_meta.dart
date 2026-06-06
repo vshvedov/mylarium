@@ -4,45 +4,45 @@ library;
 
 /// A Komga creator: `metadata.authors[] = {name, role}` (role e.g. "writer",
 /// "penciller", "cover").
-class KomgaAuthor {
-  const KomgaAuthor({required this.name, required this.role});
+class ContentAuthor {
+  const ContentAuthor({required this.name, required this.role});
 
   final String name;
   final String role;
 
-  factory KomgaAuthor.fromJson(Map<String, Object?> json) => KomgaAuthor(
+  factory ContentAuthor.fromJson(Map<String, Object?> json) => ContentAuthor(
         name: json['name'] as String? ?? '',
         role: json['role'] as String? ?? '',
       );
 }
 
 /// A Komga external link: `metadata.links[] = {label, url}`.
-class KomgaLink {
-  const KomgaLink({required this.label, required this.url});
+class ContentLink {
+  const ContentLink({required this.label, required this.url});
 
   final String label;
   final String url;
 
-  factory KomgaLink.fromJson(Map<String, Object?> json) => KomgaLink(
+  factory ContentLink.fromJson(Map<String, Object?> json) => ContentLink(
         label: json['label'] as String? ?? '',
         url: json['url'] as String? ?? '',
       );
 }
 
-/// Parses a Komga `metadata.authors` array into [KomgaAuthor]s (empty when
+/// Parses a Komga `metadata.authors` array into [ContentAuthor]s (empty when
 /// absent).
-List<KomgaAuthor> parseAuthors(Object? raw) => raw is List
+List<ContentAuthor> parseAuthors(Object? raw) => raw is List
     ? [
         for (final e in raw)
-          if (e is Map<String, Object?>) KomgaAuthor.fromJson(e),
+          if (e is Map<String, Object?>) ContentAuthor.fromJson(e),
       ]
     : const [];
 
-/// Parses a Komga `metadata.links` array into [KomgaLink]s (empty when absent).
-List<KomgaLink> parseLinks(Object? raw) => raw is List
+/// Parses a Komga `metadata.links` array into [ContentLink]s (empty when absent).
+List<ContentLink> parseLinks(Object? raw) => raw is List
     ? [
         for (final e in raw)
-          if (e is Map<String, Object?>) KomgaLink.fromJson(e),
+          if (e is Map<String, Object?>) ContentLink.fromJson(e),
       ]
     : const [];
 

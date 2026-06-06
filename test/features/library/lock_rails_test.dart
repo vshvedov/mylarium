@@ -72,7 +72,7 @@ void main() {
     await complete('manga', 200);
     await lockLibrary('manga');
 
-    final items = await container().read(recentlyReadProvider.future);
+    final items = await container().read(recentlyReadProvider('s1').future);
     expect(items.map((b) => b.id), ['comic'],
         reason: 'the locked manga library is hidden');
   });
@@ -85,7 +85,7 @@ void main() {
     await cache('manga', 200);
     await lockLibrary('manga');
 
-    final items = await container().read(downloadedBooksProvider.future);
+    final items = await container().read(downloadedBooksProvider('s1').future);
     expect(items.map((b) => b.id), ['comic']);
   });
 }

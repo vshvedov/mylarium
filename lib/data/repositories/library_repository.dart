@@ -1,13 +1,13 @@
 import '../../core/db/database.dart';
-import '../komga/komga_api.dart';
-import '../komga/models/mappers.dart';
+import '../source/content_api.dart';
+import '../source/models/mappers.dart';
 
 /// Fetches libraries for a source and upserts them with [sourceId] attached.
 class LibraryRepository {
   const LibraryRepository(this._db, this._api);
 
   final AppDatabase _db;
-  final KomgaApi _api;
+  final ContentApi _api;
 
   /// Refreshes all libraries for [sourceId]; returns the count fetched.
   Future<int> refresh(String sourceId) async {

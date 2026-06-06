@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mylarium/data/komga/models/series_search.dart';
+import 'package:mylarium/data/source/models/series_search.dart';
 
 void main() {
   test('full text goes into the body as fullTextSearch', () {

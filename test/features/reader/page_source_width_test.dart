@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
-import 'package:mylarium/data/komga/models/page_dto.dart';
-import 'package:mylarium/features/reader/komga_page_source.dart';
+import 'package:mylarium/data/source/models/page_dto.dart';
+import 'package:mylarium/features/reader/online_page_source.dart';
 
 void main() {
-  KomgaPageSource source() => KomgaPageSource(
+  OnlinePageSource source() => OnlinePageSource(
         api: KomgaApi(Dio()),
         sourceId: 's',
         bookId: 'b',
@@ -14,17 +14,17 @@ void main() {
       );
 
   test('imageProviderAt overrides the decode width', () {
-    final p = source().imageProviderAt(0, 4096) as KomgaPageImageProvider;
+    final p = source().imageProviderAt(0, 4096) as OnlineImageProvider;
     expect(p.cacheWidth, 4096);
   });
 
   test('imageProvider uses the source default width', () {
-    final p = source().imageProvider(0) as KomgaPageImageProvider;
+    final p = source().imageProvider(0) as OnlineImageProvider;
     expect(p.cacheWidth, 1000);
   });
 
   test('imageProviderAt with null decodes at native (no width)', () {
-    final p = source().imageProviderAt(0, null) as KomgaPageImageProvider;
+    final p = source().imageProviderAt(0, null) as OnlineImageProvider;
     expect(p.cacheWidth, isNull);
   });
 

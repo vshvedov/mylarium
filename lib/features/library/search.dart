@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/security/app_lock.dart';
-import '../../data/komga/models/series_dto.dart';
-import '../../data/komga/models/series_search.dart';
+import '../../data/source/models/series_dto.dart';
+import '../../data/source/models/series_search.dart';
 import '../../data/source/source_providers.dart';
 import 'library_browse_controllers.dart';
 import 'widgets/library_tiles.dart';

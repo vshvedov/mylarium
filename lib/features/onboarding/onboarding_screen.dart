@@ -19,6 +19,19 @@ class OnboardingScreen extends StatelessWidget {
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
+      // First run is the root (nothing to pop); when reached as "Add a source"
+      // from the running app it is pushed, so offer a way back.
+      appBar: context.canPop()
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              leading: IconButton(
+                icon: const Icon(AppIcons.back),
+                onPressed: () => context.pop(),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -62,11 +75,11 @@ class OnboardingScreen extends StatelessWidget {
                   onTap: () => context.push('/onboarding/komga'),
                 ),
                 const SizedBox(height: 12),
-                const SourceOptionCard(
+                SourceOptionCard(
                   icon: AppIcons.sourceKavita,
                   title: 'Kavita',
                   subtitle: 'Another self-hosted library server',
-                  comingSoon: true,
+                  onTap: () => context.push('/onboarding/kavita'),
                 ),
                 const SizedBox(height: 12),
                 const SourceOptionCard(

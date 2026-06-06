@@ -4,10 +4,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/archive/archive_extractor.dart';
-import '../../core/network/komga_exception.dart';
-import '../../data/komga/komga_api.dart';
-import '../../data/komga/models/mappers.dart';
-import '../../data/komga/models/page_dto.dart';
+import '../../core/network/content_exception.dart';
+import '../../data/source/models/mappers.dart';
+import '../../data/source/models/page_dto.dart';
+import '../../data/source/content_api.dart';
 import '../../data/source/source_providers.dart';
 import '../offline/offline_providers.dart';
 import 'color/color_settings.dart';
@@ -24,7 +24,7 @@ sealed class ReaderPages {
 
 class OnlinePages extends ReaderPages {
   const OnlinePages(this.api, this.pages);
-  final KomgaApi api;
+  final ContentApi api;
   final List<PageDto> pages;
 }
 
@@ -125,7 +125,7 @@ class ReaderController extends _$ReaderController {
     }
 
     // Online path.
-    final api = await ref.watch(komgaApiForProvider(sourceId).future);
+    final api = await ref.watch(contentApiForProvider(sourceId).future);
     if (api == null) {
       throw StateError('No connected source for this book.');
     }
@@ -149,7 +149,7 @@ class ReaderController extends _$ReaderController {
     if (!await settingsRepo.has(sourceId, seriesId)) {
       try {
         direction = (await api.getSeries(seriesId)).readingDirection;
-      } on KomgaException {
+      } on ContentException {
         // Fall back to LTR defaults.
       }
     }

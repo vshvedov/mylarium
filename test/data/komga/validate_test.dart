@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
-import 'package:mylarium/core/network/komga_exception.dart';
+import 'package:mylarium/core/network/content_exception.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/features/onboarding/connection_result.dart';
 
@@ -53,14 +53,14 @@ void main() {
     expect(requiredKomgaRoles.difference(info.roles), {'FILE_DOWNLOAD'});
   });
 
-  test('401 surfaces as an unauthorized KomgaException', () async {
+  test('401 surfaces as an unauthorized ContentException', () async {
     mockVersion('1.21.0');
     adapter.onGet('/api/v2/users/me', (s) => s.reply(401, {'error': 'no'}));
 
     await expectLater(
       api.validate(),
-      throwsA(isA<KomgaException>()
-          .having((e) => e.kind, 'kind', KomgaErrorKind.unauthorized)),
+      throwsA(isA<ContentException>()
+          .having((e) => e.kind, 'kind', ContentErrorKind.unauthorized)),
     );
   });
 
