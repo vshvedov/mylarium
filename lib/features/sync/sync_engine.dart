@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/db/database.dart';
 import '../../data/komga/komga_api.dart';
+import '../offline/offline_cache.dart';
 import 'reconciler.dart';
 import 'sync_models.dart';
 import 'write_back_queue.dart';
@@ -93,6 +94,25 @@ class SyncEngine {
     }
   }
 
+  /// When "delete on read" is enabled, removes a just-finished chapter's
+  /// auto-cached copy to reclaim space. Manual (permanent) downloads are kept:
+  /// they are an explicit "keep offline" choice. Best-effort; a failure here must
+  /// never block marking a chapter read.
+  ///
+  /// Call this only once the chapter is no longer being viewed (reader teardown,
+  /// or a book-detail "Mark read"): deleting the archive while the reader still
+  /// holds it open would fail in-flight page decodes.
+  Future<void> maybeDeleteOnRead(String sourceId, String bookId) async {
+    try {
+      if ((await _db.getOrCreateSettings()).deleteOnRead != true) return;
+      final asset = await _db.getCachedAsset(sourceId, bookId);
+      if (asset == null || asset.permanent) return;
+      await OfflineCacheManager(_db).delete(sourceId, bookId);
+    } catch (_) {
+      // Reclaiming space must never break completion.
+    }
+  }
+
   /// Marks a book read from the UI (T3): records completion at the last page
   /// through the monotonic [recordProgress] path (so it enqueues a `progress`
   /// write-back and flushes), and updates the Books cache for any direct reader.
@@ -104,6 +124,9 @@ class SyncEngine {
       readPage: lastPageIndex + 1, // 0-based -> Komga 1-based for the cache
       completed: true,
     );
+    // Marked read from a detail screen (no reader holds the archive), so it is
+    // safe to reclaim the cached copy now if the setting is on.
+    await maybeDeleteOnRead(sourceId, bookId);
   }
 
   /// Marks a book unread from the UI (T3). This is the one intentional

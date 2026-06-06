@@ -66,7 +66,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +187,10 @@ class AppDatabase extends _$AppDatabase {
           if (from < 13 && to >= 13) {
             await m.addColumn(appSettings, appSettings.homeLayout);
           }
+          // v13 -> v14: "delete downloaded chapter on read" toggle. Additive.
+          if (from < 14 && to >= 14) {
+            await m.addColumn(appSettings, appSettings.deleteOnRead);
+          }
         },
       );
 
@@ -246,6 +250,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateHomeLayout(String json) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(homeLayout: Value(json)));
+
+  Future<void> updateDeleteOnRead(bool v) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(deleteOnRead: Value(v)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();

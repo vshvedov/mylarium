@@ -27,7 +27,7 @@ final visibleHomeRailsProvider =
 // ignore: unused_element
 typedef VisibleHomeRailsRef = AutoDisposeProviderRef<List<HomeRailKind>>;
 String _$homeLayoutControllerHash() =>
-    r'05d9995a5b4e35fac8e777ff7d6872c750f20eed';
+    r'0a1d90962d39be1091819ed07490e8f94378ee90';
 
 /// The persisted home-screen row layout (order + per-row visibility). Seeded from
 /// the boot settings row and written through to the DB on every edit, so changes

@@ -130,6 +130,10 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   bool _chrome = true;
   int? _cacheWidth;
 
+  /// Whether the last page was reached during this session. Drives delete-on-read
+  /// at teardown (deleting earlier would break in-flight page decodes).
+  bool _reachedEnd = false;
+
   /// Live page color correction. [_adj] is the resolved effective adjustment,
   /// seeded from [ReaderData] (correct first paint) and kept current by the
   /// color-settings listener (which updates it live while sliders move). The
@@ -213,6 +217,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _recorder.onPage(page, _nowMs());
     _progressDebounce?.cancel();
     if (_isLastPage(page)) {
+      _reachedEnd = true;
       _pushProgress(page, completed: true);
     } else {
       _progressDebounce = Timer(
@@ -442,6 +447,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // screen's teardown).
     _pushProgress(_page, completed: _isLastPage(_page));
     _finalizeSession();
+    // If the chapter was finished this session, reclaim its cached copy now that
+    // the reader (and its archive reads) are tearing down - never mid-session,
+    // which would fail in-flight decodes. No-op unless "delete on read" is on.
+    if (!widget.preview && _reachedEnd) {
+      final sourceId = widget.sourceId;
+      final bookId = widget.bookId;
+      _syncEngine
+          .then((e) => e.maybeDeleteOnRead(sourceId, bookId))
+          .catchError((Object _) {});
+    }
     _zoomed.dispose();
     _scrollController.dispose();
     _pageController?.dispose();

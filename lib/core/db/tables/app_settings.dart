@@ -39,6 +39,12 @@ class AppSettings extends Table {
   /// the user customizes it, in which case the default order/visibility applies.
   TextColumn get homeLayout => text().nullable()();
 
+  /// When true, a chapter's auto-cached copy is deleted as soon as it is read
+  /// (reclaims space). Manual (permanent) downloads are exempt. Nullable so the
+  /// current row mapper can read an older settings row that predates this column
+  /// (intermediate-version reads); a null value means off (the default).
+  BoolColumn get deleteOnRead => boolean().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

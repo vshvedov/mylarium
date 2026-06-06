@@ -63,6 +63,14 @@ class StorageScreen extends ConsumerWidget {
                       value: settings.downloadWifiOnly,
                       onChanged: (v) => db.updateDownloadWifiOnly(v),
                     ),
+                    SwitchListTile(
+                      title: const Text('Delete on read'),
+                      subtitle: const Text(
+                          'Remove a downloaded chapter once you finish it '
+                          '(manual downloads are kept)'),
+                      value: settings.deleteOnRead ?? false,
+                      onChanged: (v) => db.updateDeleteOnRead(v),
+                    ),
                     _CapControl(
                       capBytes: cap,
                       onChanged: (gib) =>
