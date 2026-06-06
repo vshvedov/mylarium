@@ -34,6 +34,9 @@ class _FakeSource implements PageSource {
   ImageProvider imageProvider(int i) => _IdProvider(i);
 
   @override
+  ImageProvider imageProviderAt(int i, int? cacheWidth) => _IdProvider(i);
+
+  @override
   ImageProvider thumbnail(int i) => _IdProvider(i);
 
   @override

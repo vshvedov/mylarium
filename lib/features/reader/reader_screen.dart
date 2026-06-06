@@ -10,6 +10,7 @@ import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../core/network/komga_exception.dart';
+import '../../core/platform/device_tier.dart';
 import '../../core/platform/system_ui.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
@@ -169,10 +170,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   bool _atEnd = false;
   bool _seamDismissed = false;
 
-  /// Per-page decode-width ceiling from the global image-quality preference.
-  /// Seeded in [initState] and kept current via [build]'s listener so changing
-  /// the setting re-decodes pages live.
-  int _decodeCeiling = kSmartDecodeCeiling;
+  /// Display-resolution decode width for off-focus pages (the page source's
+  /// default `cacheWidth`). Bounds memory so only the focused page holds a
+  /// full-resolution texture.
+  int _neighborWidth = 1;
+
+  /// High-resolution decode width for the focused page/spread: the device-tier
+  /// (or manual) ceiling, clamped to the safe texture size. The page sources
+  /// never upscale past a page's native width, so a normal page costs at most its
+  /// native resolution while a large scan zooms sharply. Recomputed live when the
+  /// image-quality preference changes.
+  int _focusWidth = 1;
+
+  /// GPU sampling quality for page rendering, from the device tier.
+  FilterQuality _sampling = FilterQuality.high;
 
   ReadingMode get _mode => widget.data.settings.mode;
 
@@ -183,7 +194,6 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
-    _decodeCeiling = ref.read(imageQualityControllerProvider).ceiling;
     // Resume at the saved page (clamped to the book's range), and start a
     // reading session at the opening page.
     final count = _readerPageCount(widget.data);
@@ -323,28 +333,38 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _rebuildSource({bool force = false}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
-    // Decode with zoom headroom over the viewport so pinch-zoom stays sharp
-    // (decoding only to the viewport width left a zoomed page as a stretched
-    // thumbnail). The target is bounded by the image-quality ceiling (so memory
-    // stays in budget on large hi-DPI tablets) and clamped to each page's
-    // intrinsic width inside the page sources (never upscaled), so a normal page
-    // costs at most its native resolution. Raise Image Quality to Native to
-    // unlock full-resolution zoom on sources wider than the ceiling.
-    final cacheWidth =
-        (width * dpr * kReaderZoomHeadroom).round().clamp(1, _decodeCeiling);
-    // Only rebuild when the decode sizing actually changes (e.g. rotation), so
-    // a metrics/theme dependency change does not reset the prefetch window.
-    // [force] is used when a color change must rebuild the source even though
-    // the decode width is unchanged.
-    if (!force && _source != null && _cacheWidth == cacheWidth) return;
-    _cacheWidth = cacheWidth;
+    final tier = ref.read(deviceTierProvider);
+    _sampling = tier.sampling;
+    // Off-focus pages decode at display resolution (modest headroom) so only the
+    // focused page holds a full-resolution texture; this is what keeps memory in
+    // budget while the focused page can be sharp.
+    final neighborWidth =
+        (width * dpr * 1.5).round().clamp(1, kMaxSafeTextureDim);
+    // The focused page decodes with zoom headroom over the viewport, up to the
+    // image-quality ceiling (the device-tier cap in Smart mode), clamped to the
+    // safe single-texture size. The page sources clamp to each page's intrinsic
+    // width (never upscaled), so a normal page costs at most its native
+    // resolution and zoom reveals real detail instead of a stretched thumbnail.
+    final focusCeiling =
+        ref.read(imageQualityControllerProvider).focusCeiling(tier.focusCap);
+    final cap =
+        focusCeiling < kMaxSafeTextureDim ? focusCeiling : kMaxSafeTextureDim;
+    _focusWidth = (width * dpr * kReaderZoomHeadroom).round().clamp(1, cap);
+    _neighborWidth = neighborWidth;
+    // Only rebuild the source (resetting the prefetch window) when the source's
+    // default decode width actually changes (e.g. rotation); a metrics/theme
+    // dependency change must not reset the window. A live quality change updates
+    // [_focusWidth] above and only the focused page re-decodes (via [_pageImage]).
+    // [force] rebuilds even when the width is unchanged (a color change).
+    if (!force && _source != null && _cacheWidth == neighborWidth) return;
+    _cacheWidth = neighborWidth;
     final base = switch (widget.data.source) {
       OnlinePages(:final api, :final pages) => KomgaPageSource(
           api: api,
           sourceId: widget.sourceId,
           bookId: widget.bookId,
           pages: pages,
-          cacheWidth: cacheWidth,
+          cacheWidth: neighborWidth,
         ),
       OfflinePages(:final archivePath, :final entries) => OfflinePageSource(
           extractor: ref.read(archiveExtractorProvider),
@@ -352,7 +372,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           bookId: widget.bookId,
           archivePath: archivePath,
           entries: entries,
-          cacheWidth: cacheWidth,
+          cacheWidth: neighborWidth,
         ),
     };
     // Split the live correction: the non-linear residual (gamma/auto-levels) is
@@ -417,6 +437,24 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     if (_mode != ReadingMode.doublePage) return index;
     if (index < 0 || index >= _pairs.length) return 0;
     return _pairs[index].first;
+  }
+
+  /// Indices currently in focus (decoded at full resolution): the current page in
+  /// paged and webtoon modes, both pages of the current spread in double-page.
+  Set<int> _focusIndices() {
+    if (_mode == ReadingMode.doublePage && _pairs.isNotEmpty) {
+      final i = _controllerIndexFor(_page).clamp(0, _pairs.length - 1);
+      return _pairs[i].toSet();
+    }
+    return {_page};
+  }
+
+  /// Provider for page [i]: the focused page/spread decodes at [_focusWidth] (high
+  /// resolution for sharp zoom), all other pages at [_neighborWidth] (display
+  /// resolution, to bound memory).
+  ImageProvider _pageImage(int i) {
+    final w = _focusIndices().contains(i) ? _focusWidth : _neighborWidth;
+    return _source!.imageProviderAt(i, w);
   }
 
   /// Whether [controllerIndex] is the last position in the current paged mode
@@ -553,14 +591,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
 
   @override
   Widget build(BuildContext context) {
-    // React to a live image-quality change: re-derive the decode ceiling and
-    // rebuild the page source so pages re-decode at the new quality.
-    ref.listen(imageQualityControllerProvider, (_, next) {
-      if (next.ceiling != _decodeCeiling) {
-        _decodeCeiling = next.ceiling;
-        _rebuildSource();
-        setState(() {});
-      }
+    // React to a live image-quality change: recompute the focus/neighbor decode
+    // widths so the focused page re-decodes at the new quality (via [_pageImage]).
+    ref.listen(imageQualityControllerProvider, (_, _) {
+      _rebuildSource();
+      setState(() {});
     });
     // React to a live color-correction change: re-split into the baked residual
     // and the GPU affine layer, rebuild the source, and re-prefetch.
@@ -600,12 +635,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       ReadingMode.pagedLtr || ReadingMode.pagedRtl => PagedView(
           pageController: _pageController!,
           pageCount: source.pageCount,
-          imageBuilder: source.imageProvider,
+          imageBuilder: _pageImage,
           aspectRatioOf: source.aspectRatio,
           fit: s.fit,
           viewportAspect: viewportAspect,
           rtl: effectiveRtl(s),
           doubleTapZoom: s.doubleTapZoom,
+          filterQuality: _sampling,
           zoomed: _zoomed,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
@@ -615,18 +651,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       ReadingMode.doublePage => DoublePageView(
           pageController: _pageController!,
           pairs: _pairs,
-          imageBuilder: source.imageProvider,
+          imageBuilder: _pageImage,
           fit: s.fit,
           rtl: effectiveRtl(s),
+          filterQuality: _sampling,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
         ),
       ReadingMode.webtoon || ReadingMode.webtoonGaps => WebtoonView(
           scrollController: _scrollController,
           pageCount: source.pageCount,
-          imageBuilder: source.imageProvider,
+          imageBuilder: _pageImage,
           aspectRatio: source.aspectRatio,
           gaps: s.mode == ReadingMode.webtoonGaps,
+          filterQuality: _sampling,
           onTapToggle: _toggleChrome,
         ),
     };

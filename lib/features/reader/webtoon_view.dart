@@ -15,6 +15,7 @@ class WebtoonView extends StatelessWidget {
     required this.imageBuilder,
     required this.aspectRatio,
     required this.gaps,
+    required this.filterQuality,
     required this.onTapToggle,
   });
 
@@ -23,6 +24,9 @@ class WebtoonView extends StatelessWidget {
   final ImageProvider Function(int index) imageBuilder;
   final double? Function(int index) aspectRatio;
   final bool gaps;
+
+  /// GPU sampling quality for the page textures (device-tier driven).
+  final FilterQuality filterQuality;
   final VoidCallback onTapToggle;
 
   @override
@@ -43,6 +47,7 @@ class WebtoonView extends StatelessWidget {
               child: Image(
                 image: imageBuilder(i),
                 fit: BoxFit.fitWidth,
+                filterQuality: filterQuality,
                 gaplessPlayback: true,
                 errorBuilder: (_, _, _) => const PageError(),
               ),

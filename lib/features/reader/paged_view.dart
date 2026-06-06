@@ -23,6 +23,7 @@ class PagedView extends StatelessWidget {
     required this.viewportAspect,
     required this.rtl,
     required this.doubleTapZoom,
+    required this.filterQuality,
     required this.zoomed,
     required this.onPageChanged,
     required this.onTap,
@@ -36,6 +37,9 @@ class PagedView extends StatelessWidget {
   final double viewportAspect;
   final bool rtl;
   final bool doubleTapZoom;
+
+  /// GPU sampling quality for the page texture (device-tier driven).
+  final FilterQuality filterQuality;
 
   /// True while any page is zoomed in; gates page swipe.
   final ValueNotifier<bool> zoomed;
@@ -51,6 +55,9 @@ class PagedView extends StatelessWidget {
         pageController: pageController,
         reverse: rtl,
         onPageChanged: onPageChanged,
+        // Keep the previous frame until the focused page's higher-resolution
+        // provider finishes decoding, so swapping resolution does not flash.
+        gaplessPlayback: true,
         scrollPhysics: isZoomed
             ? const NeverScrollableScrollPhysics()
             : const PageScrollPhysics(),
@@ -64,6 +71,9 @@ class PagedView extends StatelessWidget {
           maxScale: PhotoViewComputedScale.covered * 4,
           initialScale:
               fitInitialScale(fit, aspectRatioOf(index), viewportAspect),
+          // Bicubic (or mipmap on low-end) sampling of the full-resolution
+          // focused texture: zoom reveals real detail, not a stretched thumbnail.
+          filterQuality: filterQuality,
           errorBuilder: (context, _, _) => const PageError(),
           // Identity cycle = double-tap does not change scale (zoom disabled).
           scaleStateCycle: doubleTapZoom ? defaultScaleStateCycle : (s) => s,

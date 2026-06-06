@@ -27,7 +27,8 @@ class ImageQualitySheet extends ConsumerWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Smart'),
-            subtitle: const Text('Mylarium picks the best quality for your device'),
+            subtitle: const Text(
+                'Mylarium picks the sharpest quality your device can handle'),
             value: quality.smart,
             onChanged: controller.setSmart,
           ),

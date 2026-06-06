@@ -59,6 +59,10 @@ class _FakePageSource implements PageSource {
   ImageProvider imageProvider(int i) => _SolidImageProvider('p$i', 2, 100);
 
   @override
+  ImageProvider imageProviderAt(int i, int? cacheWidth) =>
+      _SolidImageProvider('p$i', 2, 100);
+
+  @override
   ImageProvider thumbnail(int i) => _SolidImageProvider('t$i', 2, 100);
 
   @override

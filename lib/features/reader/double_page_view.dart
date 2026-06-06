@@ -16,6 +16,7 @@ class DoublePageView extends StatelessWidget {
     required this.imageBuilder,
     required this.fit,
     required this.rtl,
+    required this.filterQuality,
     required this.onPageChanged,
     required this.onTap,
   });
@@ -25,6 +26,9 @@ class DoublePageView extends StatelessWidget {
   final ImageProvider Function(int index) imageBuilder;
   final FitMode fit;
   final bool rtl;
+
+  /// GPU sampling quality for the page textures (device-tier driven).
+  final FilterQuality filterQuality;
   final void Function(int spreadIndex) onPageChanged;
   final void Function(Offset normalized) onTap;
 
@@ -59,6 +63,7 @@ class DoublePageView extends StatelessWidget {
                       child: Image(
                         image: imageBuilder(p),
                         fit: boxFitFor(fit),
+                        filterQuality: filterQuality,
                         gaplessPlayback: true,
                         errorBuilder: (_, _, _) => const PageError(),
                       ),
