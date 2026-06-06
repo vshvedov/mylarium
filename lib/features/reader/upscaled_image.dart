@@ -19,12 +19,16 @@ class UpscaledImage extends StatefulWidget {
   const UpscaledImage({
     super.key,
     required this.image,
+    this.fit = BoxFit.contain,
     this.onSize,
     this.loadingBuilder,
     this.errorBuilder,
   });
 
   final ImageProvider image;
+
+  /// How the page is sized within its box (matches [Image.fit]).
+  final BoxFit fit;
 
   /// Called with the decoded pixel size once known (for `childSize`).
   final ValueChanged<Size>? onSize;
@@ -119,13 +123,24 @@ class _UpscaledImageState extends State<UpscaledImage> {
       // Shader failed to load: fall back to a plain image so the page still
       // shows (the engine's default sampler). Still waiting? show loading.
       if (_shaderFailed) {
-        return RawImage(image: image, fit: BoxFit.contain);
+        return RawImage(image: image, fit: widget.fit);
       }
       return widget.loadingBuilder?.call(context) ?? const SizedBox.shrink();
     }
-    return CustomPaint(
-      painter: _UpscalePainter(image, program),
-      child: const SizedBox.expand(),
+    // Paint the page 1:1 at its native pixel size, then let [FittedBox] scale it
+    // to the box with [widget.fit]. FittedBox scales via a Transform, under
+    // which the shader is still evaluated at device resolution (so it stays
+    // sharp), and the intrinsic SizedBox makes this lay out like an [Image].
+    final size = Size(image.width.toDouble(), image.height.toDouble());
+    return FittedBox(
+      fit: widget.fit,
+      child: SizedBox.fromSize(
+        size: size,
+        child: CustomPaint(
+          size: size,
+          painter: _UpscalePainter(image, program),
+        ),
+      ),
     );
   }
 }
@@ -138,14 +153,7 @@ class _UpscalePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final fitted = applyBoxFit(
-      BoxFit.contain,
-      Size(image.width.toDouble(), image.height.toDouble()),
-      size,
-    );
-    final dst =
-        Alignment.center.inscribe(fitted.destination, Offset.zero & size);
-    ReaderUpscaleShader.paintImage(canvas, image, dst, program);
+    ReaderUpscaleShader.paintImage(canvas, image, Offset.zero & size, program);
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'page_source.dart';
+import 'upscaled_image.dart';
 import 'widgets/page_error.dart';
 
 /// Gapless (or gapped) vertical-scroll webtoon reader. Each page reserves its
@@ -15,7 +16,6 @@ class WebtoonView extends StatelessWidget {
     required this.imageBuilder,
     required this.aspectRatio,
     required this.gaps,
-    required this.filterQuality,
     required this.onTapToggle,
   });
 
@@ -24,9 +24,6 @@ class WebtoonView extends StatelessWidget {
   final ImageProvider Function(int index) imageBuilder;
   final double? Function(int index) aspectRatio;
   final bool gaps;
-
-  /// GPU sampling quality for the page textures (device-tier driven).
-  final FilterQuality filterQuality;
   final VoidCallback onTapToggle;
 
   @override
@@ -44,12 +41,10 @@ class WebtoonView extends StatelessWidget {
                 : EdgeInsets.zero,
             child: AspectRatio(
               aspectRatio: aspectRatio(i) ?? kDefaultPageAspect,
-              child: Image(
+              child: UpscaledImage(
                 image: imageBuilder(i),
                 fit: BoxFit.fitWidth,
-                filterQuality: filterQuality,
-                gaplessPlayback: true,
-                errorBuilder: (_, _, _) => const PageError(),
+                errorBuilder: (_) => const PageError(),
               ),
             ),
           ),
