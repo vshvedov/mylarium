@@ -392,10 +392,11 @@ class _DownloadProgressProviderElement
   String get bookId => (origin as DownloadProgressProvider).bookId;
 }
 
-String _$downloadedBooksHash() => r'617d20d3dc6a4ba25d8567cb96b4fc9e48734795';
+String _$downloadedBooksHash() => r'b1b70977ea7e8009270cbbc528d30089c74dcb87';
 
 /// Books available offline for the active source, most-recent first (the
-/// "Downloaded" home rail). Empty when there is no active source.
+/// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+/// there is no active source.
 ///
 /// Copied from [downloadedBooks].
 @ProviderFor(downloadedBooks)

@@ -31,12 +31,13 @@ void main() {
     String seriesId, {
     String number = '1',
     String sourceId = 's1',
+    String libraryId = 'lib1',
   }) =>
       db.upsertBook(BooksCompanion.insert(
         sourceId: sourceId,
         id: id,
         seriesId: seriesId,
-        libraryId: 'lib1',
+        libraryId: libraryId,
         title: id,
         number: number,
       ));
@@ -65,8 +66,8 @@ void main() {
     expect(rows.map((r) => r.ownerId), ['serC', 'serA', 'serB']);
   });
 
-  test('a pinned series resolves title, booksCount and gating fields', () async {
-    await series('serA', booksCount: 5, ageRating: 12, libraryId: 'libX');
+  test('a pinned series resolves title, booksCount and its library', () async {
+    await series('serA', booksCount: 5, libraryId: 'libX');
     await db.setPinned('s1', 'series', 'serA', pinned: true, now: 100);
 
     final row = (await db.watchPinnedItems('s1').first).single;
@@ -74,14 +75,13 @@ void main() {
     expect(row.title, 'serA');
     expect(row.booksCount, 5);
     expect(row.number, isNull);
-    expect(row.ageRating, 12);
     expect(row.libraryId, 'libX');
-    expect(row.gatingResolved, isTrue);
+    expect(row.resolved, isTrue);
   });
 
-  test('a pinned book resolves its number and is gated by its series', () async {
-    await series('serA', ageRating: 21, libraryId: 'libR');
-    await book('b1', 'serA', number: '7');
+  test('a pinned book resolves from its own row (no series needed)', () async {
+    // No series row at all: the book row alone resolves it, with its own library.
+    await book('b1', 'serGone', number: '7', libraryId: 'libB');
     await db.setPinned('s1', 'book', 'b1', pinned: true, now: 100);
 
     final row = (await db.watchPinnedItems('s1').first).single;
@@ -89,27 +89,15 @@ void main() {
     expect(row.title, 'b1');
     expect(row.number, '7');
     expect(row.booksCount, 0);
-    // ageRating + libraryId come from the book's SERIES (the gating row).
-    expect(row.ageRating, 21);
-    expect(row.libraryId, 'libR');
-    expect(row.gatingResolved, isTrue);
+    expect(row.libraryId, 'libB', reason: "the book's own library");
+    expect(row.resolved, isTrue);
   });
 
-  test('a pinned book whose series is not cached is gating-unresolved',
-      () async {
-    await book('b1', 'serGone'); // no series row for serGone
-    await db.setPinned('s1', 'book', 'b1', pinned: true, now: 100);
-
-    final row = (await db.watchPinnedItems('s1').first).single;
-    expect(row.gatingResolved, isFalse,
-        reason: 'no series row -> the provider must hide it');
-  });
-
-  test('a pinned series whose row is evicted is gating-unresolved', () async {
+  test('a pinned item whose owner row is evicted is unresolved', () async {
     await db.setPinned('s1', 'series', 'serGone', pinned: true, now: 100);
     final row = (await db.watchPinnedItems('s1').first).single;
     expect(row.title, isNull);
-    expect(row.gatingResolved, isFalse);
+    expect(row.resolved, isFalse);
   });
 
   test('watchPinnedItems is scoped to the source', () async {

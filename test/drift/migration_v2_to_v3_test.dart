@@ -69,7 +69,6 @@ void main() {
     final page = await db.seriesPage(
       sourceId: 's1',
       limit: 10,
-      includeRestricted: false,
     );
     expect(page.single.id, 'ser1');
 

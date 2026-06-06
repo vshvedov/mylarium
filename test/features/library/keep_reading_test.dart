@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
+import 'package:mylarium/app/theme/theme_controller.dart';
+import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
@@ -56,7 +59,10 @@ void main() {
       queryParameters: {'page': 0, 'size': 20},
     );
 
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     final c = ProviderContainer(overrides: [
+      appDatabaseProvider.overrideWithValue(db),
       activeKomgaApiProvider.overrideWith((ref) async => api),
     ]);
     addTearDown(c.dispose);
@@ -89,7 +95,10 @@ void main() {
       queryParameters: {'page': 0, 'size': 20, 'sort': 'readDate,desc'},
     );
 
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
     final c = ProviderContainer(overrides: [
+      appDatabaseProvider.overrideWithValue(db),
       activeKomgaApiProvider.overrideWith((ref) async => api),
     ]);
     addTearDown(c.dispose);

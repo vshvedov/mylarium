@@ -46,7 +46,6 @@ void main() {
         afterTitleSort: cursor.titleSort,
         afterId: cursor.id,
         limit: pageSize,
-        includeRestricted: false,
       );
       if (rows.isEmpty) break;
       seen += rows.length;

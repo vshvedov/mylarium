@@ -41,19 +41,19 @@ void main() {
     db.close();
   });
 
-  test('isLocked reflects LibraryPrefs; unlock requires auth and clears lock',
-      () async {
+  test('lock hides without auth; unlock requires auth and persists', () async {
     final notifier = container.read(appLockProvider.notifier);
 
     // No prefs yet: nothing locked.
     var state = await container.read(appLockProvider.future);
     expect(state.isLocked('lib1'), isFalse);
 
-    // Lock lib1.
-    await notifier.setLocked('lib1', true);
+    // Locking needs no auth.
+    await notifier.lock('lib1');
+    expect(auth.calls, 0);
     state = await container.read(appLockProvider.future);
     expect(state.isLocked('lib1'), isTrue);
-    expect(state.restrictedVisible('lib1'), isFalse);
+    expect(state.hiddenLibraryIds, {'lib1'});
 
     // Failed auth keeps it locked.
     auth.result = false;
@@ -61,27 +61,22 @@ void main() {
     state = await container.read(appLockProvider.future);
     expect(state.isLocked('lib1'), isTrue);
 
-    // Successful auth unlocks for the session.
+    // Successful auth unlocks it persistently (the lock flag is cleared).
     auth.result = true;
     expect(await notifier.unlock('lib1'), isTrue);
     expect(auth.calls, 2);
-    state = container.read(appLockProvider).requireValue;
+    state = await container.read(appLockProvider.future);
     expect(state.isLocked('lib1'), isFalse);
     expect(state.isUnlocked('lib1'), isTrue);
+
+    // Persisted: a fresh state (re-read prefs) still sees it unlocked.
+    final pref = await db.getLibraryPref('s1', 'lib1');
+    expect(pref!.locked, isFalse);
   });
 
-  test('restrictedVisible requires unlocked AND showRestricted', () async {
-    final notifier = container.read(appLockProvider.notifier);
-    await notifier.setLocked('lib1', true);
-    await notifier.setShowRestricted('lib1', true);
-
-    // Locked -> restricted not visible even though showRestricted is on.
-    var state = await container.read(appLockProvider.future);
-    expect(state.restrictedVisible('lib1'), isFalse);
-
-    // Unlock -> now visible.
-    await notifier.unlock('lib1');
-    state = container.read(appLockProvider).requireValue;
-    expect(state.restrictedVisible('lib1'), isTrue);
+  test('a null/unknown library id is never locked', () async {
+    final state = await container.read(appLockProvider.future);
+    expect(state.isLocked(null), isFalse);
+    expect(state.isLocked('nope'), isFalse);
   });
 }

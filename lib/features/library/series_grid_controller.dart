@@ -42,7 +42,7 @@ class SeriesGridController {
     required this.repo,
     required this.sourceId,
     this.libraryId,
-    required this.includeRestricted,
+    this.hiddenLibraryIds = const {},
     this.pageSize = 60,
   });
 
@@ -50,7 +50,9 @@ class SeriesGridController {
   final SeriesRepository repo;
   final String sourceId;
   final String? libraryId;
-  final bool includeRestricted;
+
+  /// Libraries whose series are excluded (locked).
+  final Set<String> hiddenLibraryIds;
   final int pageSize;
 
   int _syncedPages = 0;
@@ -75,7 +77,7 @@ class SeriesGridController {
         afterTitleSort: after.titleSort,
         afterId: after.id,
         limit: pageSize,
-        includeRestricted: includeRestricted,
+        hiddenLibraryIds: hiddenLibraryIds,
       );
 
   Future<void> _syncNextPage() async {

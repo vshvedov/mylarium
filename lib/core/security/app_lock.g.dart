@@ -23,10 +23,11 @@ final authenticatorProvider = Provider<Authenticator>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthenticatorRef = ProviderRef<Authenticator>;
-String _$appLockHash() => r'21deae13c51376aa8bb4317e9af79f4fd63abfc2';
+String _$appLockHash() => r'a360f5bb0196aedd81c33504f8611d5361d64b25';
 
-/// Tracks per-library lock/show-restricted config (persisted) plus the set of
-/// libraries unlocked this session (in-memory). Operates on the active source.
+/// Tracks the per-library lock flag (persisted) for the active source. Locking
+/// hides a library's content everywhere; unlocking requires biometric/PIN and
+/// reveals it until it is locked again.
 ///
 /// Copied from [AppLock].
 @ProviderFor(AppLock)

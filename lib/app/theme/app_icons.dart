@@ -49,6 +49,8 @@ abstract final class AppIcons {
   // Locks
   static const lock =
       IconData(0xe2fa, fontFamily: _family, fontPackage: _package); // lock
+  static const lockFill =
+      IconData(0xe2fa, fontFamily: _fillFamily, fontPackage: _package); // lock
   static const lockOpen =
       IconData(0xe306, fontFamily: _family, fontPackage: _package); // lockOpen
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
+import '../../app/widgets/app_list_row.dart';
 import '../home/home_layout.dart';
 import '../home/home_layout_controller.dart';
 
@@ -32,6 +34,21 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                child:
+                    Text('Library access', style: theme.textTheme.titleMedium),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: AppListRow(
+                  icon: AppIcons.lock,
+                  title: 'Library locks',
+                  subtitle: 'Hide libraries behind Face ID / passcode',
+                  onTap: () => context.push('/settings/library-lock'),
+                ),
+              ),
+              const Divider(height: 24, indent: 20, endIndent: 20),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
                 child: Text('Home screen rows', style: theme.textTheme.titleMedium),
               ),
               Padding(

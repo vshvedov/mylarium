@@ -6,18 +6,15 @@ part of 'pin_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pinnedItemsHash() => r'e460ba0a831b1175004ebf5c472d341ba613b9dc';
+String _$pinnedItemsHash() => r'06bad39e6e1631e391bbf39746c6b142821c0040';
 
-/// The active source's pinned items, newest first, AGE-GATED exactly like the
-/// other home rails: a restricted series (or a book whose series is restricted)
-/// is hidden unless its library is currently restricted-visible, and an item
-/// whose gating series is not cached is hidden outright (never leaks an
-/// unclassified restricted entry). Reads only the local cache, so the rail and
-/// its gating work offline.
+/// The active source's pinned items, newest first. An item whose owner row is
+/// not cached is dropped; an item whose library is locked is hidden. Reads only
+/// the local cache, so the rail and its gating work offline.
 ///
 /// [lock] is captured before the `.map` and `appLockProvider` is watched, so
-/// unlocking a library re-runs this provider and re-subscribes the stream with
-/// the new lock, revealing previously-hidden pins live. That ordering is
+/// locking/unlocking a library re-runs this provider and re-subscribes the
+/// stream with the new lock, hiding/revealing pins live. That ordering is
 /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
 ///
 /// Copied from [pinnedItems].

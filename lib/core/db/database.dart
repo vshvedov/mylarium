@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../age_rating.dart';
 import 'tables/app_settings.dart';
 import 'tables/book_state.dart';
 import 'tables/books.dart';
@@ -28,19 +27,17 @@ import 'tables/thumbnails.dart';
 part 'database.g.dart';
 
 /// A pinned item joined to its display + gating fields, straight from the cache.
-/// [title] is null when the owner row is not cached; [gatingResolved] is false
-/// when the gating series (a series itself, or a book's series) is not cached,
-/// in which case the [pinnedItems] provider hides the item rather than risk
-/// leaking an unclassified restricted entry onto Home.
+/// [title] is null (and so [resolved] is false) when the owner row is not cached,
+/// in which case the [pinnedItems] provider drops it. [libraryId] is the owner's
+/// own library, used to hide the item when that library is locked.
 typedef PinnedRaw = ({
   String ownerType,
   String ownerId,
   String? title,
   String? number,
   int booksCount,
-  int? ageRating,
   String? libraryId,
-  bool gatingResolved,
+  bool resolved,
 });
 
 @DriftDatabase(tables: [
@@ -302,26 +299,24 @@ class AppDatabase extends _$AppDatabase {
       (select(libraries)..where((t) => t.sourceId.equals(sourceId))).watch();
 
   /// One keyset page of series for [sourceId], ordered by `(titleSort, id)`.
-  /// [afterTitleSort]/[afterId] is the cursor (both null = first page). When
-  /// [includeRestricted] is false, age-restricted series are excluded in SQL.
-  /// Index-backed by `series_keyset` (unscoped) / `series_keyset_lib` (scoped).
+  /// [afterTitleSort]/[afterId] is the cursor (both null = first page).
+  /// [hiddenLibraryIds] (locked, not-unlocked libraries) are excluded in SQL so
+  /// their content never appears in browse. Index-backed by `series_keyset`
+  /// (unscoped) / `series_keyset_lib` (scoped).
   Future<List<SeriesRow>> seriesPage({
     required String sourceId,
     String? libraryId,
     String? afterTitleSort,
     String? afterId,
     required int limit,
-    required bool includeRestricted,
+    Set<String> hiddenLibraryIds = const {},
   }) {
     final q = select(series)..where((t) => t.sourceId.equals(sourceId));
     if (libraryId != null) {
       q.where((t) => t.libraryId.equals(libraryId));
     }
-    if (!includeRestricted) {
-      // NULL ageRating is allowed; only hide >= kRestrictedAgeRating.
-      q.where((t) =>
-          t.ageRating.isNull() |
-          t.ageRating.isSmallerThanValue(kRestrictedAgeRating));
+    if (hiddenLibraryIds.isNotEmpty) {
+      q.where((t) => t.libraryId.isNotIn(hiddenLibraryIds.toList()));
     }
     if (afterTitleSort != null && afterId != null) {
       q.where((t) =>
@@ -851,26 +846,21 @@ class AppDatabase extends _$AppDatabase {
   // --- Pins (home curation) ------------------------------------------------
 
   /// Pins for a source as [PinnedRaw] rows (newest first), each left-joined to
-  /// its owner for display, and to the gating series (the series itself, or a
-  /// book's series) for age/library gating done in the [pinnedItems] provider.
-  /// Cache-only: an item whose gating series is not cached is reported with
-  /// `gatingResolved == false` and hidden upstream (leak-safe; the pin row
-  /// persists and the item returns once the cache repopulates). Reactive to
+  /// its owner (a series or a book) for display + the owner's library id (used to
+  /// hide the item when that library is locked). Cache-only: an item whose owner
+  /// row is not cached is reported with `resolved == false` and dropped upstream
+  /// (the pin row persists and returns once the cache repopulates). Reactive to
   /// pins, series and books. Tie-break on `(ownerType, ownerId)` keeps the order
   /// deterministic when two items share a `pinnedAt`.
   Stream<List<PinnedRaw>> watchPinnedItems(String sourceId) => customSelect(
         'SELECT p.owner_type AS owner_type, p.owner_id AS owner_id, '
-        's.title AS s_title, s.books_count AS s_count, '
-        's.age_rating AS s_age, s.library_id AS s_lib, '
-        'b.title AS b_title, b.number AS b_number, '
-        'gs.age_rating AS gs_age, gs.library_id AS gs_lib, gs.id AS gs_id '
+        's.title AS s_title, s.books_count AS s_count, s.library_id AS s_lib, '
+        'b.title AS b_title, b.number AS b_number, b.library_id AS b_lib '
         'FROM pins p '
         "LEFT JOIN series s ON p.owner_type = 'series' "
         'AND s.source_id = p.source_id AND s.id = p.owner_id '
         "LEFT JOIN books b ON p.owner_type = 'book' "
         'AND b.source_id = p.source_id AND b.id = p.owner_id '
-        "LEFT JOIN series gs ON p.owner_type = 'book' "
-        'AND gs.source_id = p.source_id AND gs.id = b.series_id '
         'WHERE p.source_id = ?1 '
         'ORDER BY p.pinned_at DESC, p.owner_type, p.owner_id',
         variables: [Variable.withString(sourceId)],
@@ -885,9 +875,8 @@ class AppDatabase extends _$AppDatabase {
                     title: row.read<String?>('s_title'),
                     number: null,
                     booksCount: row.read<int?>('s_count') ?? 0,
-                    ageRating: row.read<int?>('s_age'),
                     libraryId: row.read<String?>('s_lib'),
-                    gatingResolved: row.read<String?>('s_title') != null,
+                    resolved: row.read<String?>('s_title') != null,
                   )
                 else
                   (
@@ -896,9 +885,8 @@ class AppDatabase extends _$AppDatabase {
                     title: row.read<String?>('b_title'),
                     number: row.read<String?>('b_number'),
                     booksCount: 0,
-                    ageRating: row.read<int?>('gs_age'),
-                    libraryId: row.read<String?>('gs_lib'),
-                    gatingResolved: row.read<String?>('gs_id') != null,
+                    libraryId: row.read<String?>('b_lib'),
+                    resolved: row.read<String?>('b_title') != null,
                   ),
             ],
           );

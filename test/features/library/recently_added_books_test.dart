@@ -10,13 +10,13 @@ import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 
-/// A `books/latest` page carrying one book in [seriesId].
-Map<String, Object?> _booksPage(String bookId, String seriesId) => {
+/// A `books/latest` page carrying one book in [libraryId].
+Map<String, Object?> _booksPage(String bookId, String libraryId) => {
       'content': [
         {
           'id': bookId,
-          'seriesId': seriesId,
-          'libraryId': 'lib1',
+          'seriesId': 'ser1',
+          'libraryId': libraryId,
           'name': bookId,
           'metadata': {'title': bookId, 'number': '1'},
           'media': {'pagesCount': 20},
@@ -25,19 +25,6 @@ Map<String, Object?> _booksPage(String bookId, String seriesId) => {
       'totalElements': 1,
       'number': 0,
       'last': true,
-    };
-
-/// A single-series response for `getSeries`, with an optional ageRating.
-Map<String, Object?> _series(String id, {int? ageRating}) => {
-      'id': id,
-      'libraryId': 'lib1',
-      'name': id,
-      'metadata': {
-        'title': id,
-        'titleSort': id,
-        'ageRating': ?ageRating,
-      },
-      'booksCount': 1,
     };
 
 void main() {
@@ -52,19 +39,16 @@ void main() {
         label: Value('T'),
       ));
 
-  Future<void> seedSeries(String id, {int? ageRating}) =>
-      db.upsertSeries(SeriesCompanion(
+  Future<void> lockLibrary(String libraryId) =>
+      db.upsertLibraryPref(LibraryPrefsCompanion(
         sourceId: const Value('s1'),
-        id: Value(id),
-        libraryId: const Value('lib1'),
-        title: Value(id),
-        titleSort: Value(id),
-        ageRating: Value(ageRating),
+        libraryId: Value(libraryId),
+        locked: const Value(true),
       ));
 
-  void stubLatest(String bookId, String seriesId) => adapter.onGet(
+  void stubLatest(String bookId, {String libraryId = 'lib1'}) => adapter.onGet(
         '/api/v1/books/latest',
-        (s) => s.reply(200, _booksPage(bookId, seriesId)),
+        (s) => s.reply(200, _booksPage(bookId, libraryId)),
         queryParameters: {'page': 0, 'size': 20},
       );
 
@@ -85,56 +69,18 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('a cached restricted series hides its chapter by default', () async {
+  test('a chapter in an unlocked library shows', () async {
     await seedSource();
-    await seedSeries('serR', ageRating: 21);
-    stubLatest('b1', 'serR');
-
-    final result = await container().read(recentlyAddedBooksProvider.future);
-    expect(result, isEmpty);
-  });
-
-  test('a cached restricted series shows its chapter when restricted-visible',
-      () async {
-    await seedSource();
-    await seedSeries('serR', ageRating: 21);
-    await db.upsertLibraryPref(const LibraryPrefsCompanion(
-      sourceId: Value('s1'),
-      libraryId: Value('lib1'),
-      locked: Value(false),
-      showRestricted: Value(true),
-    ));
-    stubLatest('b1', 'serR');
+    stubLatest('b1');
 
     final result = await container().read(recentlyAddedBooksProvider.future);
     expect(result.map((b) => b.id), ['b1']);
   });
 
-  test('an uncached series is resolved online; a safe rating shows the chapter',
-      () async {
+  test('a chapter in a locked library is hidden', () async {
     await seedSource();
-    stubLatest('b1', 'serX');
-    adapter.onGet('/api/v1/series/serX',
-        (s) => s.reply(200, _series('serX'))); // no ageRating -> not restricted
-
-    final result = await container().read(recentlyAddedBooksProvider.future);
-    expect(result.map((b) => b.id), ['b1']);
-  });
-
-  test('an uncached series resolved as restricted hides the chapter', () async {
-    await seedSource();
-    stubLatest('b1', 'serX');
-    adapter.onGet('/api/v1/series/serX',
-        (s) => s.reply(200, _series('serX', ageRating: 21)));
-
-    final result = await container().read(recentlyAddedBooksProvider.future);
-    expect(result, isEmpty);
-  });
-
-  test('an uncached series that fails to resolve hides the chapter', () async {
-    await seedSource();
-    stubLatest('b1', 'serX');
-    adapter.onGet('/api/v1/series/serX', (s) => s.reply(500, {'error': 'boom'}));
+    await lockLibrary('lib1');
+    stubLatest('b1');
 
     final result = await container().read(recentlyAddedBooksProvider.future);
     expect(result, isEmpty);

@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/security/app_lock.dart';
 import '../library/library_browse_controllers.dart';
 
-/// Per-library lock and show-restricted toggles. Locking a library gates its
-/// contents behind a biometric/PIN unlock; show-restricted reveals age-gated
-/// series, but only while the library is unlocked.
+/// Per-library lock. Locking a library hides ALL of its content everywhere
+/// (home, browse, search, downloads, pins); unlocking requires biometric/PIN and
+/// stays unlocked until the library is locked again.
 class LibraryLockScreen extends ConsumerWidget {
   const LibraryLockScreen({super.key});
 
@@ -27,33 +27,27 @@ class LibraryLockScreen extends ConsumerWidget {
             : ListView(
                 children: [
                   for (final lib in libs)
-                    ExpansionTile(
-                      leading: Icon(
-                        (lock.locked[lib.id] ?? false)
+                    SwitchListTile(
+                      secondary: Icon(
+                        lock.isLocked(lib.id)
                             ? AppIcons.lock
                             : AppIcons.lockOpen,
                       ),
                       title: Text(lib.name),
-                      children: [
-                        SwitchListTile(
-                          title: const Text('Require unlock'),
-                          subtitle: const Text(
-                              'Biometric or device passcode to view'),
-                          value: lock.locked[lib.id] ?? false,
-                          onChanged: (v) => ref
-                              .read(appLockProvider.notifier)
-                              .setLocked(lib.id, v),
-                        ),
-                        SwitchListTile(
-                          title: const Text('Show age-restricted series'),
-                          subtitle: const Text(
-                              'Visible only while the library is unlocked'),
-                          value: lock.showRestricted[lib.id] ?? false,
-                          onChanged: (v) => ref
-                              .read(appLockProvider.notifier)
-                              .setShowRestricted(lib.id, v),
-                        ),
-                      ],
+                      subtitle: const Text(
+                          'Hide this library until unlocked with biometric/PIN'),
+                      value: lock.isLocked(lib.id),
+                      // Locking is immediate; unlocking prompts for auth and only
+                      // takes effect on success (otherwise the watched state keeps
+                      // the switch on).
+                      onChanged: (v) {
+                        final notifier = ref.read(appLockProvider.notifier);
+                        if (v) {
+                          notifier.lock(lib.id);
+                        } else {
+                          notifier.unlock(lib.id, libraryName: lib.name);
+                        }
+                      },
                     ),
                 ],
               ),

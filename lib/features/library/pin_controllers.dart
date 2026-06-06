@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
-import '../../core/age_rating.dart';
 import '../../core/security/app_lock.dart';
 import '../../data/source/source_providers.dart';
 
@@ -19,16 +18,13 @@ typedef PinnedEntry = ({
   bool stacked,
 });
 
-/// The active source's pinned items, newest first, AGE-GATED exactly like the
-/// other home rails: a restricted series (or a book whose series is restricted)
-/// is hidden unless its library is currently restricted-visible, and an item
-/// whose gating series is not cached is hidden outright (never leaks an
-/// unclassified restricted entry). Reads only the local cache, so the rail and
-/// its gating work offline.
+/// The active source's pinned items, newest first. An item whose owner row is
+/// not cached is dropped; an item whose library is locked is hidden. Reads only
+/// the local cache, so the rail and its gating work offline.
 ///
 /// [lock] is captured before the `.map` and `appLockProvider` is watched, so
-/// unlocking a library re-runs this provider and re-subscribes the stream with
-/// the new lock, revealing previously-hidden pins live. That ordering is
+/// locking/unlocking a library re-runs this provider and re-subscribes the
+/// stream with the new lock, hiding/revealing pins live. That ordering is
 /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
 @riverpod
 Stream<List<PinnedEntry>> pinnedItems(Ref ref) async* {
@@ -42,24 +38,17 @@ Stream<List<PinnedEntry>> pinnedItems(Ref ref) async* {
   yield* db.watchPinnedItems(sourceId).map(
         (rows) => [
           for (final r in rows)
-            if (r.gatingResolved && r.title != null)
-              // gatingResolved guarantees the gating series row exists, so its
-              // (non-null in the table) libraryId is present; the null check is
-              // a leak-safe belt-and-braces (a restricted item with no library
-              // resolves to hidden).
-              if (!isRestrictedAgeRating(r.ageRating) ||
-                  (r.libraryId != null &&
-                      lock.restrictedVisible(r.libraryId!)))
-                (
-                  ownerType: r.ownerType,
-                  ownerId: r.ownerId,
-                  title: r.title!,
-                  subtitle: r.ownerType == 'book' &&
-                          (r.number?.isNotEmpty ?? false)
-                      ? 'No. ${r.number}'
-                      : null,
-                  stacked: r.ownerType == 'series' && r.booksCount > 1,
-                ),
+            if (r.resolved && r.title != null && !lock.isLocked(r.libraryId))
+              (
+                ownerType: r.ownerType,
+                ownerId: r.ownerId,
+                title: r.title!,
+                subtitle:
+                    r.ownerType == 'book' && (r.number?.isNotEmpty ?? false)
+                        ? 'No. ${r.number}'
+                        : null,
+                stacked: r.ownerType == 'series' && r.booksCount > 1,
+              ),
         ],
       );
 }

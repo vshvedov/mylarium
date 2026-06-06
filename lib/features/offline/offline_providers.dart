@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/archive/archive_extractor.dart';
 import '../../core/db/database.dart';
+import '../../core/security/app_lock.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/source_providers.dart';
 import 'download_manager.dart';
@@ -54,7 +55,8 @@ Stream<DownloadProgress> downloadProgress(
     ref.watch(downloadManagerProvider).watch(sourceId, bookId);
 
 /// Books available offline for the active source, most-recent first (the
-/// "Downloaded" home rail). Empty when there is no active source.
+/// "Downloaded" home rail). Books in a locked library are hidden. Empty when
+/// there is no active source.
 @riverpod
 Stream<List<Book>> downloadedBooks(Ref ref) async* {
   final sourceId = await ref.watch(activeSourceIdProvider.future);
@@ -62,7 +64,10 @@ Stream<List<Book>> downloadedBooks(Ref ref) async* {
     yield const [];
     return;
   }
-  yield* ref.watch(appDatabaseProvider).watchDownloadedBooks(sourceId);
+  final lock = await ref.watch(appLockProvider.future);
+  yield* ref.watch(appDatabaseProvider).watchDownloadedBooks(sourceId).map(
+        (books) => [for (final b in books) if (!lock.isLocked(b.libraryId)) b],
+      );
 }
 
 /// Live (total, downloaded) book counts for a series (the series-detail download

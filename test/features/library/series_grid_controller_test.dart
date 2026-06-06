@@ -55,7 +55,6 @@ void main() {
       db: db,
       repo: repo,
       sourceId: 's1',
-      includeRestricted: false,
       pageSize: 50,
     );
 
@@ -75,21 +74,20 @@ void main() {
     expect(seen, sorted, reason: 'returned in keyset order');
   });
 
-  test('excludes restricted series unless includeRestricted', () async {
+  test('excludes series in hidden (locked) libraries', () async {
     await db.upsertSeries(const SeriesCompanion(
       sourceId: Value('s1'),
-      id: Value('clean'),
-      libraryId: Value('lib1'),
-      title: Value('Clean'),
-      titleSort: Value('clean'),
+      id: Value('comic'),
+      libraryId: Value('comics'),
+      title: Value('Comic'),
+      titleSort: Value('comic'),
     ));
     await db.upsertSeries(const SeriesCompanion(
       sourceId: Value('s1'),
-      id: Value('adult'),
-      libraryId: Value('lib1'),
-      title: Value('Adult'),
+      id: Value('manga'),
+      libraryId: Value('manga'),
+      title: Value('Manga'),
       titleSort: Value('zzz'),
-      ageRating: Value(18),
     ));
     adapter.onGet(
       '/api/v1/series',
@@ -105,10 +103,11 @@ void main() {
       db: db,
       repo: repo,
       sourceId: 's1',
-      includeRestricted: false,
+      hiddenLibraryIds: const {'manga'},
       pageSize: 50,
     );
     final page = await controller.page(const SeriesCursor.start());
-    expect(page.content.map((r) => r.id), ['clean']);
+    expect(page.content.map((r) => r.id), ['comic'],
+        reason: 'the locked manga library is excluded');
   });
 }

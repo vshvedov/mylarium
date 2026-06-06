@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
-import '../../core/age_rating.dart';
 import '../../core/db/database.dart';
 import '../../core/network/komga_exception.dart';
 import '../../core/security/app_lock.dart';
@@ -18,13 +17,14 @@ part 'library_browse_controllers.g.dart';
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a
-/// completed book) appended and de-duplicated. NOT age-gated (the user's own
-/// reading). Komga's `/books/ondeck` alone only surfaces next-after-completed,
-/// so a reader mid-book would see an empty rail; the in-progress query fixes it.
+/// completed book) appended and de-duplicated. Books in a locked library are
+/// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+/// reader mid-book would see an empty rail; the in-progress query fixes it.
 @riverpod
 Future<List<BookDto>> keepReading(Ref ref) async {
   final api = await ref.watch(activeKomgaApiProvider.future);
   if (api == null) return const [];
+  final lock = await ref.watch(appLockProvider.future);
   try {
     final inProgress = (await api.listBooks(
       page: 0,
@@ -39,7 +39,7 @@ Future<List<BookDto>> keepReading(Ref ref) async {
       ...inProgress,
       for (final b in deck)
         if (seen.add(b.id)) b,
-    ].take(20).toList();
+    ].where((b) => !lock.isLocked(b.libraryId)).take(20).toList();
     await _cacheBooks(ref, result);
     return result;
   } on KomgaException {
@@ -78,12 +78,9 @@ Future<List<SeriesDto>> recentlyUpdatedSeries(Ref ref) async {
   }
 }
 
-List<SeriesDto> _gate(List<SeriesDto> series, AppLockState lock) => [
-      for (final s in series)
-        if (!isRestrictedAgeRating(s.ageRating) ||
-            lock.restrictedVisible(s.libraryId))
-          s,
-    ];
+/// Hides series whose library is locked.
+List<SeriesDto> _gate(List<SeriesDto> series, AppLockState lock) =>
+    [for (final s in series) if (!lock.isLocked(s.libraryId)) s];
 
 /// Persists series fetched for a home rail into the local cache (title +
 /// ageRating + libraryId + booksCount), so anything shown on Home can be pinned
@@ -121,59 +118,18 @@ Future<void> _cacheBooks(Ref ref, List<BookDto> books) async {
   }
 }
 
-/// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
-/// each is gated by its series' rating: resolve every distinct series once from
-/// the cache, then one `getSeries` per still-uncached series (deduped, in
-/// parallel). A book is shown unless its series is restricted and not currently
-/// restricted-visible; a series whose rating cannot be resolved (offline
-/// mid-fetch) leaves its book hidden, so an unclassified 18+ chapter never
-/// leaks onto Home. Degrades to empty on a Komga error.
+/// Recently added chapters (Komga `books/latest`). Books in a locked library are
+/// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 @riverpod
 Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
   final api = await ref.watch(activeKomgaApiProvider.future);
   if (api == null) return const [];
-  final sourceId = await ref.watch(activeSourceIdProvider.future);
-  if (sourceId == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
-  final db = ref.watch(appDatabaseProvider);
   try {
     final books = (await api.listBooksLatest(size: 20)).content;
-    // seriesId -> (ageRating, libraryId); a null value means "unresolved".
-    final gate = <String, ({int? ageRating, String libraryId})?>{};
-    for (final id in {for (final b in books) b.seriesId}) {
-      final row = await db.getSeries(sourceId, id);
-      if (row != null) {
-        gate[id] = (ageRating: row.ageRating, libraryId: row.libraryId);
-      }
-    }
-    final missing = {
-      for (final b in books)
-        if (!gate.containsKey(b.seriesId)) b.seriesId,
-    };
-    final fetched = await Future.wait(missing.map((id) async {
-      try {
-        final s = await api.getSeries(id);
-        // Cache the resolved series so a pinned chapter of it can be gated and
-        // rendered by the Pinned rail offline.
-        await db.upsertSeries(seriesToRow(sourceId, s));
-        await db.upsertSeriesMeta(seriesMetaToRow(sourceId, s));
-        return MapEntry<String, ({int? ageRating, String libraryId})?>(
-            id, (ageRating: s.ageRating, libraryId: s.libraryId));
-      } catch (_) {
-        // KomgaException, a malformed body, anything: treat as unresolved.
-        return MapEntry<String, ({int? ageRating, String libraryId})?>(id, null);
-      }
-    }));
-    gate.addEntries(fetched);
-    // Cache the chapters themselves (title/number) so pinning one resolves.
+    // Cache the chapters (title/number) so pinning one resolves on the rail.
     await _cacheBooks(ref, books);
-    return [
-      for (final b in books)
-        if (gate[b.seriesId] case final g?)
-          if (!isRestrictedAgeRating(g.ageRating) ||
-              lock.restrictedVisible(g.libraryId))
-            b,
-    ];
+    return [for (final b in books) if (!lock.isLocked(b.libraryId)) b];
   } on KomgaException {
     return const [];
   }
@@ -181,7 +137,7 @@ Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
 
 /// Recently finished chapters for the active source, newest first. Cache-backed
 /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
-/// offline.
+/// offline. Books in a locked library are hidden.
 @riverpod
 Stream<List<Book>> recentlyRead(Ref ref) async* {
   final sourceId = await ref.watch(activeSourceIdProvider.future);
@@ -189,7 +145,10 @@ Stream<List<Book>> recentlyRead(Ref ref) async* {
     yield const [];
     return;
   }
-  yield* ref.watch(appDatabaseProvider).watchRecentlyReadBooks(sourceId);
+  final lock = await ref.watch(appLockProvider.future);
+  yield* ref.watch(appDatabaseProvider).watchRecentlyReadBooks(sourceId).map(
+        (books) => [for (final b in books) if (!lock.isLocked(b.libraryId)) b],
+      );
 }
 
 @riverpod

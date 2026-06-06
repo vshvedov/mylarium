@@ -6,6 +6,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../core/security/app_lock.dart';
 import '../../app/widgets/adaptive_layout.dart';
 import '../../core/db/database.dart';
 import '../../data/source/source_providers.dart';
@@ -28,7 +29,6 @@ class SeriesGridScreen extends ConsumerStatefulWidget {
     required this.sourceId,
     this.libraryId,
     this.title = 'Library',
-    this.includeRestricted = false,
     this.onSelectSeries,
     this.embedded = false,
   });
@@ -36,7 +36,6 @@ class SeriesGridScreen extends ConsumerStatefulWidget {
   final String sourceId;
   final String? libraryId;
   final String title;
-  final bool includeRestricted;
   final void Function(String seriesId)? onSelectSeries;
   final bool embedded;
 
@@ -80,12 +79,13 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
   Future<SeriesGridController?> _buildController() async {
     final repo = await ref.read(seriesRepositoryProvider.future);
     if (repo == null) return null;
+    final lock = await ref.read(appLockProvider.future);
     return SeriesGridController(
       db: ref.read(appDatabaseProvider),
       repo: repo,
       sourceId: widget.sourceId,
       libraryId: widget.libraryId,
-      includeRestricted: widget.includeRestricted,
+      hiddenLibraryIds: lock.hiddenLibraryIds,
     );
   }
 

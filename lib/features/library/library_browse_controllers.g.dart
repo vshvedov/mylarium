@@ -6,13 +6,13 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keepReadingHash() => r'b845c153d180032f67cf420d8cf0af5840b2b9d8';
+String _$keepReadingHash() => r'1c969fa75d12a48bfa4d658ef9ae4031d44f2b9e';
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a
-/// completed book) appended and de-duplicated. NOT age-gated (the user's own
-/// reading). Komga's `/books/ondeck` alone only surfaces next-after-completed,
-/// so a reader mid-book would see an empty rail; the in-progress query fixes it.
+/// completed book) appended and de-duplicated. Books in a locked library are
+/// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
+/// reader mid-book would see an empty rail; the in-progress query fixes it.
 ///
 /// Copied from [keepReading].
 @ProviderFor(keepReading)
@@ -74,15 +74,10 @@ final recentlyUpdatedSeriesProvider =
 typedef RecentlyUpdatedSeriesRef =
     AutoDisposeFutureProviderRef<List<SeriesDto>>;
 String _$recentlyAddedBooksHash() =>
-    r'd35af5cbe1a664b5a33d8589d33e617f77bc530e';
+    r'630d44f77b0f8bc59caa873bb1f3eae7c78b25ae';
 
-/// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
-/// each is gated by its series' rating: resolve every distinct series once from
-/// the cache, then one `getSeries` per still-uncached series (deduped, in
-/// parallel). A book is shown unless its series is restricted and not currently
-/// restricted-visible; a series whose rating cannot be resolved (offline
-/// mid-fetch) leaves its book hidden, so an unclassified 18+ chapter never
-/// leaks onto Home. Degrades to empty on a Komga error.
+/// Recently added chapters (Komga `books/latest`). Books in a locked library are
+/// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
 /// Copied from [recentlyAddedBooks].
 @ProviderFor(recentlyAddedBooks)
@@ -100,11 +95,11 @@ final recentlyAddedBooksProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef RecentlyAddedBooksRef = AutoDisposeFutureProviderRef<List<BookDto>>;
-String _$recentlyReadHash() => r'853706e990bf83552dd9ee20c89e2c5e5c805f57';
+String _$recentlyReadHash() => r'a7aebcb69f46363be48831d94987c6152d5cf26c';
 
 /// Recently finished chapters for the active source, newest first. Cache-backed
 /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
-/// offline.
+/// offline. Books in a locked library are hidden.
 ///
 /// Copied from [recentlyRead].
 @ProviderFor(recentlyRead)

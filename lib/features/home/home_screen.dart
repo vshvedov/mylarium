@@ -263,14 +263,6 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
             AppListRow(
-              icon: AppIcons.lock,
-              title: 'Library locks',
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                context.push('/settings/library-lock');
-              },
-            ),
-            AppListRow(
               icon: AppIcons.sources,
               title: 'Comic Vine',
               onTap: () {

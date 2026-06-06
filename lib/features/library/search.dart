@@ -5,7 +5,7 @@ import '../../app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/age_rating.dart';
+import '../../core/security/app_lock.dart';
 import '../../data/komga/models/series_dto.dart';
 import '../../data/komga/models/series_search.dart';
 import '../../data/source/source_providers.dart';
@@ -74,6 +74,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       setState(() => _results = const AsyncData([]));
       return;
     }
+    final lock = await ref.read(appLockProvider.future);
     setState(() => _results = const AsyncLoading());
     try {
       final search = SeriesSearch(
@@ -91,11 +92,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         size: 60,
         sort: _sort.value,
       );
-      // Restricted series are never surfaced in search: revealing them requires
-      // unlocking their library and browsing it (the lock is the only gate).
+      // Series in a locked library are never surfaced in search; revealing them
+      // requires unlocking the library.
       final results = [
         for (final s in page.content)
-          if (!isRestrictedAgeRating(s.ageRating)) s,
+          if (!lock.isLocked(s.libraryId)) s,
       ];
       if (mounted) setState(() => _results = AsyncData(results));
     } catch (e, st) {

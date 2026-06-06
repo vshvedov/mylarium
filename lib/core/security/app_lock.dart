@@ -42,101 +42,69 @@ class LocalAuthenticator implements Authenticator {
 @Riverpod(keepAlive: true)
 Authenticator authenticator(Ref ref) => const LocalAuthenticator();
 
-/// Immutable lock state for the active source's libraries. [unlocked] is the set
-/// of libraries unlocked this session (in-memory; cleared on restart).
+/// Immutable lock state for the active source's libraries. A locked library's
+/// entire content is hidden everywhere until it is unlocked (PIN/biometric).
+/// Unlocking persists (it clears the lock flag) until the library is locked
+/// again, so the state is simply the per-library [locked] map.
 class AppLockState {
-  const AppLockState({
-    required this.locked,
-    required this.showRestricted,
-    required this.unlocked,
-  });
+  const AppLockState({required this.locked});
 
   /// libraryId -> locked.
   final Map<String, bool> locked;
 
-  /// libraryId -> show-restricted.
-  final Map<String, bool> showRestricted;
+  static const empty = AppLockState(locked: {});
 
-  /// libraryIds unlocked this session.
-  final Set<String> unlocked;
+  /// Whether the library's content must be hidden. A null/unknown libraryId is
+  /// treated as not locked.
+  bool isLocked(String? libraryId) =>
+      libraryId != null && (locked[libraryId] ?? false);
 
-  static const empty =
-      AppLockState(locked: {}, showRestricted: {}, unlocked: {});
+  bool isUnlocked(String? libraryId) => !isLocked(libraryId);
 
-  bool isLocked(String libraryId) =>
-      (locked[libraryId] ?? false) && !unlocked.contains(libraryId);
-
-  bool isUnlocked(String libraryId) =>
-      !(locked[libraryId] ?? false) || unlocked.contains(libraryId);
-
-  /// Restricted series are visible only while the library is unlocked AND
-  /// show-restricted is enabled for it.
-  bool restrictedVisible(String libraryId) =>
-      isUnlocked(libraryId) && (showRestricted[libraryId] ?? false);
-
-  AppLockState copyWith({Set<String>? unlocked}) => AppLockState(
-        locked: locked,
-        showRestricted: showRestricted,
-        unlocked: unlocked ?? this.unlocked,
-      );
+  /// The set of currently-hidden (locked) library ids, for SQL exclusion.
+  Set<String> get hiddenLibraryIds =>
+      {for (final e in locked.entries) if (e.value) e.key};
 }
 
-/// Tracks per-library lock/show-restricted config (persisted) plus the set of
-/// libraries unlocked this session (in-memory). Operates on the active source.
+/// Tracks the per-library lock flag (persisted) for the active source. Locking
+/// hides a library's content everywhere; unlocking requires biometric/PIN and
+/// reveals it until it is locked again.
 @Riverpod(keepAlive: true)
 class AppLock extends _$AppLock {
-  final Set<String> _unlocked = {};
-
   @override
   Future<AppLockState> build() async {
     final sourceId = await ref.watch(activeSourceIdProvider.future);
     if (sourceId == null) return AppLockState.empty;
     final prefs = await ref.watch(appDatabaseProvider).allLibraryPrefs(sourceId);
-    return AppLockState(
-      locked: {for (final p in prefs) p.libraryId: p.locked},
-      showRestricted: {for (final p in prefs) p.libraryId: p.showRestricted},
-      unlocked: _unlocked.toSet(),
-    );
+    return AppLockState(locked: {for (final p in prefs) p.libraryId: p.locked});
   }
 
-  /// Prompts for biometric/PIN; on success marks [libraryId] unlocked for this
-  /// session and returns true. Any failure/cancel returns false.
-  Future<bool> unlock(String libraryId) async {
-    final ok = await ref
-        .read(authenticatorProvider)
-        .authenticate('Unlock this library');
+  /// Locks [libraryId] (hides its content everywhere). No auth required: hiding
+  /// your own content is unprivileged.
+  Future<void> lock(String libraryId) => _setLocked(libraryId, true);
+
+  /// Prompts for biometric/PIN; on success unlocks [libraryId] (persistently,
+  /// until it is locked again) and returns true. Any failure/cancel returns
+  /// false and leaves it locked. [libraryName] is shown in the prompt reason.
+  Future<bool> unlock(String libraryId, {String? libraryName}) async {
+    final reason = libraryName != null && libraryName.isNotEmpty
+        ? 'Unlock "$libraryName"'
+        : 'Unlock this library';
+    final ok = await ref.read(authenticatorProvider).authenticate(reason);
     if (!ok) return false;
-    _unlocked.add(libraryId);
-    final current = state.valueOrNull ?? AppLockState.empty;
-    state = AsyncData(current.copyWith(unlocked: _unlocked.toSet()));
+    await _setLocked(libraryId, false);
     return true;
   }
 
-  Future<void> setLocked(String libraryId, bool locked) async {
+  Future<void> _setLocked(String libraryId, bool locked) async {
     final sourceId = await ref.read(activeSourceIdProvider.future);
     if (sourceId == null) return;
-    final existing =
-        await ref.read(appDatabaseProvider).getLibraryPref(sourceId, libraryId);
+    // Only the lock flag is written; the legacy show-restricted column is left
+    // untouched (omitted from the companion, so a conflict-update preserves it).
     await ref.read(appDatabaseProvider).upsertLibraryPref(LibraryPrefsCompanion(
           sourceId: Value(sourceId),
           libraryId: Value(libraryId),
           locked: Value(locked),
-          showRestricted: Value(existing?.showRestricted ?? false),
-        ));
-    if (!locked) _unlocked.remove(libraryId);
-    ref.invalidateSelf();
-  }
-
-  Future<void> setShowRestricted(String libraryId, bool show) async {
-    final sourceId = await ref.read(activeSourceIdProvider.future);
-    if (sourceId == null) return;
-    final existing =
-        await ref.read(appDatabaseProvider).getLibraryPref(sourceId, libraryId);
-    await ref.read(appDatabaseProvider).upsertLibraryPref(LibraryPrefsCompanion(
-          sourceId: Value(sourceId),
-          libraryId: Value(libraryId),
-          locked: Value(existing?.locked ?? false),
-          showRestricted: Value(show),
         ));
     ref.invalidateSelf();
   }
