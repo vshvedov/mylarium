@@ -45,7 +45,6 @@ void main() {
         viewportAspect: 0.7,
         rtl: false,
         doubleTapZoom: true,
-        filterQuality: FilterQuality.high,
         zoomed: zoomed,
         onPageChanged: (_) {},
         onTap: (_) {},
