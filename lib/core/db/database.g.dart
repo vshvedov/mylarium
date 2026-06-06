@@ -8712,6 +8712,332 @@ class ColorSettingsCompanion extends UpdateCompanion<ColorSettingsRow> {
   }
 }
 
+class $PinsTable extends Pins with TableInfo<$PinsTable, PinRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PinsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerTypeMeta = const VerificationMeta(
+    'ownerType',
+  );
+  @override
+  late final GeneratedColumn<String> ownerType = GeneratedColumn<String>(
+    'owner_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pinnedAtMeta = const VerificationMeta(
+    'pinnedAt',
+  );
+  @override
+  late final GeneratedColumn<int> pinnedAt = GeneratedColumn<int>(
+    'pinned_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    ownerType,
+    ownerId,
+    pinnedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PinRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('owner_type')) {
+      context.handle(
+        _ownerTypeMeta,
+        ownerType.isAcceptableOrUnknown(data['owner_type']!, _ownerTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerTypeMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('pinned_at')) {
+      context.handle(
+        _pinnedAtMeta,
+        pinnedAt.isAcceptableOrUnknown(data['pinned_at']!, _pinnedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pinnedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, ownerType, ownerId};
+  @override
+  PinRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PinRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      ownerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_type'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      pinnedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pinned_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PinsTable createAlias(String alias) {
+    return $PinsTable(attachedDatabase, alias);
+  }
+}
+
+class PinRow extends DataClass implements Insertable<PinRow> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// `series` or `book`.
+  final String ownerType;
+
+  /// The series id or book id, per [ownerType].
+  final String ownerId;
+
+  /// When the pin was created (epoch ms); the rail orders newest first.
+  final int pinnedAt;
+  const PinRow({
+    required this.sourceId,
+    required this.ownerType,
+    required this.ownerId,
+    required this.pinnedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['owner_type'] = Variable<String>(ownerType);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['pinned_at'] = Variable<int>(pinnedAt);
+    return map;
+  }
+
+  PinsCompanion toCompanion(bool nullToAbsent) {
+    return PinsCompanion(
+      sourceId: Value(sourceId),
+      ownerType: Value(ownerType),
+      ownerId: Value(ownerId),
+      pinnedAt: Value(pinnedAt),
+    );
+  }
+
+  factory PinRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PinRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      ownerType: serializer.fromJson<String>(json['ownerType']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      pinnedAt: serializer.fromJson<int>(json['pinnedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'ownerType': serializer.toJson<String>(ownerType),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'pinnedAt': serializer.toJson<int>(pinnedAt),
+    };
+  }
+
+  PinRow copyWith({
+    String? sourceId,
+    String? ownerType,
+    String? ownerId,
+    int? pinnedAt,
+  }) => PinRow(
+    sourceId: sourceId ?? this.sourceId,
+    ownerType: ownerType ?? this.ownerType,
+    ownerId: ownerId ?? this.ownerId,
+    pinnedAt: pinnedAt ?? this.pinnedAt,
+  );
+  PinRow copyWithCompanion(PinsCompanion data) {
+    return PinRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      ownerType: data.ownerType.present ? data.ownerType.value : this.ownerType,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      pinnedAt: data.pinnedAt.present ? data.pinnedAt.value : this.pinnedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PinRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('pinnedAt: $pinnedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sourceId, ownerType, ownerId, pinnedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PinRow &&
+          other.sourceId == this.sourceId &&
+          other.ownerType == this.ownerType &&
+          other.ownerId == this.ownerId &&
+          other.pinnedAt == this.pinnedAt);
+}
+
+class PinsCompanion extends UpdateCompanion<PinRow> {
+  final Value<String> sourceId;
+  final Value<String> ownerType;
+  final Value<String> ownerId;
+  final Value<int> pinnedAt;
+  final Value<int> rowid;
+  const PinsCompanion({
+    this.sourceId = const Value.absent(),
+    this.ownerType = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.pinnedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PinsCompanion.insert({
+    required String sourceId,
+    required String ownerType,
+    required String ownerId,
+    required int pinnedAt,
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       ownerType = Value(ownerType),
+       ownerId = Value(ownerId),
+       pinnedAt = Value(pinnedAt);
+  static Insertable<PinRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? ownerType,
+    Expression<String>? ownerId,
+    Expression<int>? pinnedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (ownerType != null) 'owner_type': ownerType,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (pinnedAt != null) 'pinned_at': pinnedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PinsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? ownerType,
+    Value<String>? ownerId,
+    Value<int>? pinnedAt,
+    Value<int>? rowid,
+  }) {
+    return PinsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      ownerType: ownerType ?? this.ownerType,
+      ownerId: ownerId ?? this.ownerId,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (ownerType.present) {
+      map['owner_type'] = Variable<String>(ownerType.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (pinnedAt.present) {
+      map['pinned_at'] = Variable<int>(pinnedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PinsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('pinnedAt: $pinnedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8733,6 +9059,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
   late final $SeriesMetaTable seriesMeta = $SeriesMetaTable(this);
   late final $ColorSettingsTable colorSettings = $ColorSettingsTable(this);
+  late final $PinsTable pins = $PinsTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -8770,6 +9097,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncQueue,
     seriesMeta,
     colorSettings,
+    pins,
     seriesKeyset,
     seriesKeysetLib,
     cachedAssetsLru,
@@ -13072,6 +13400,179 @@ typedef $$ColorSettingsTableProcessedTableManager =
       ColorSettingsRow,
       PrefetchHooks Function()
     >;
+typedef $$PinsTableCreateCompanionBuilder =
+    PinsCompanion Function({
+      required String sourceId,
+      required String ownerType,
+      required String ownerId,
+      required int pinnedAt,
+      Value<int> rowid,
+    });
+typedef $$PinsTableUpdateCompanionBuilder =
+    PinsCompanion Function({
+      Value<String> sourceId,
+      Value<String> ownerType,
+      Value<String> ownerId,
+      Value<int> pinnedAt,
+      Value<int> rowid,
+    });
+
+class $$PinsTableFilterComposer extends Composer<_$AppDatabase, $PinsTable> {
+  $$PinsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PinsTableOrderingComposer extends Composer<_$AppDatabase, $PinsTable> {
+  $$PinsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pinnedAt => $composableBuilder(
+    column: $table.pinnedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PinsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PinsTable> {
+  $$PinsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerType =>
+      $composableBuilder(column: $table.ownerType, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get pinnedAt =>
+      $composableBuilder(column: $table.pinnedAt, builder: (column) => column);
+}
+
+class $$PinsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PinsTable,
+          PinRow,
+          $$PinsTableFilterComposer,
+          $$PinsTableOrderingComposer,
+          $$PinsTableAnnotationComposer,
+          $$PinsTableCreateCompanionBuilder,
+          $$PinsTableUpdateCompanionBuilder,
+          (PinRow, BaseReferences<_$AppDatabase, $PinsTable, PinRow>),
+          PinRow,
+          PrefetchHooks Function()
+        > {
+  $$PinsTableTableManager(_$AppDatabase db, $PinsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PinsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PinsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PinsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> ownerType = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> pinnedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PinsCompanion(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                pinnedAt: pinnedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String ownerType,
+                required String ownerId,
+                required int pinnedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PinsCompanion.insert(
+                sourceId: sourceId,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                pinnedAt: pinnedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PinsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PinsTable,
+      PinRow,
+      $$PinsTableFilterComposer,
+      $$PinsTableOrderingComposer,
+      $$PinsTableAnnotationComposer,
+      $$PinsTableCreateCompanionBuilder,
+      $$PinsTableUpdateCompanionBuilder,
+      (PinRow, BaseReferences<_$AppDatabase, $PinsTable, PinRow>),
+      PinRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13108,4 +13609,5 @@ class $AppDatabaseManager {
       $$SeriesMetaTableTableManager(_db, _db.seriesMeta);
   $$ColorSettingsTableTableManager get colorSettings =>
       $$ColorSettingsTableTableManager(_db, _db.colorSettings);
+  $$PinsTableTableManager get pins => $$PinsTableTableManager(_db, _db.pins);
 }

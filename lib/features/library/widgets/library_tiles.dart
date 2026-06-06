@@ -36,6 +36,7 @@ class CoverTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onTap,
+    this.onLongPress,
     this.badge,
     this.leadingBadge,
     this.stacked = false,
@@ -47,6 +48,10 @@ class CoverTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onTap;
+
+  /// Opens the item context menu (Pin / Unpin). Fires a selection haptic at
+  /// long-press recognition, like [onTap].
+  final VoidCallback? onLongPress;
 
   /// Top-right overlay (e.g. the completed check).
   final Widget? badge;
@@ -92,6 +97,12 @@ class CoverTile extends StatelessWidget {
           : () {
               AppHaptics.selection();
               onTap!();
+            },
+      onLongPress: onLongPress == null
+          ? null
+          : () {
+              AppHaptics.selection();
+              onLongPress!();
             },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

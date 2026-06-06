@@ -6,6 +6,7 @@ import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
+import 'package:mylarium/features/library/pin_controllers.dart';
 import 'package:mylarium/features/library/series_detail.dart';
 import 'package:mylarium/features/offline/offline_providers.dart';
 
@@ -67,6 +68,10 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
         seriesDownloadStatusProvider('s1', 'se1').overrideWith(
           (ref) => Stream.value((total: 0, downloaded: 0)),
         ),
+        // The hero pin toggle opens a live db stream; stub it so the golden is
+        // stable and no timer outlives the test.
+        isPinnedProvider('s1', 'series', 'se1')
+            .overrideWith((ref) => Stream.value(false)),
         for (var i = 0; i < 4; i++)
           cachedAssetProvider('s1', 'bk$i')
               .overrideWith((ref) => Stream.value(null)),

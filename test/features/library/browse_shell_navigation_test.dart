@@ -12,6 +12,7 @@ import 'package:mylarium/data/repositories/series_repository.dart';
 import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
+import 'package:mylarium/features/library/pin_controllers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
 import 'package:mylarium/features/offline/offline_providers.dart';
 
@@ -145,6 +146,10 @@ void main() {
           seriesDownloadStatusProvider('s1', 'ida').overrideWith(
             (ref) => Stream.value((total: 0, downloaded: 0)),
           ),
+          // The embedded detail now hosts a pin toggle; stub its db stream so it
+          // does not outlive the test (like the other detail providers above).
+          isPinnedProvider('s1', 'series', 'ida')
+              .overrideWith((ref) => Stream.value(false)),
         ],
       );
 

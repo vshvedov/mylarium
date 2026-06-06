@@ -9,6 +9,8 @@ import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/source_providers.dart';
 import '../library/library_browse_controllers.dart';
+import '../library/pin_controllers.dart';
+import '../library/widgets/item_context_menu.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
 import '../offline/offline_providers.dart';
@@ -21,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull;
+    final pinned = ref.watch(pinnedItemsProvider);
     final keepReading = ref.watch(keepReadingProvider);
     final downloaded = ref.watch(downloadedBooksProvider);
     final addedBooks = ref.watch(recentlyAddedBooksProvider);
@@ -39,6 +42,13 @@ class HomeScreen extends ConsumerWidget {
               stacked: (s.booksCount as int) > 1,
               onTap: () =>
                   context.push('/series/$sourceId/${s.id}'),
+              onLongPress: () => showItemContextMenu(
+                context,
+                sourceId: sourceId ?? '',
+                ownerType: 'series',
+                ownerId: s.id as String,
+                title: s.title as String,
+              ),
             ),
         ];
 
@@ -83,6 +93,38 @@ class HomeScreen extends ConsumerWidget {
                   child: ListView(
                 children: [
                   Rail(
+                    title: 'Pinned',
+                    children: [
+                      for (final e in pinned.valueOrNull ?? const [])
+                        CoverTile(
+                          sourceId: sourceId,
+                          ownerType: e.ownerType,
+                          ownerId: e.ownerId,
+                          title: e.title,
+                          subtitle: e.subtitle,
+                          stacked: e.stacked,
+                          leadingBadge: e.ownerType == 'book'
+                              ? OfflineBadge(
+                                  sourceId: sourceId,
+                                  bookId: e.ownerId,
+                                )
+                              : null,
+                          onTap: () => context.push(
+                            e.ownerType == 'series'
+                                ? '/series/$sourceId/${e.ownerId}'
+                                : '/book/$sourceId/${e.ownerId}',
+                          ),
+                          onLongPress: () => showItemContextMenu(
+                            context,
+                            sourceId: sourceId,
+                            ownerType: e.ownerType,
+                            ownerId: e.ownerId,
+                            title: e.title,
+                          ),
+                        ),
+                    ],
+                  ),
+                  Rail(
                     title: 'Keep reading',
                     children: [
                       for (final b in keepReading.valueOrNull ?? const [])
@@ -98,6 +140,13 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           onTap: () =>
                               context.push('/reader/$sourceId/${b.id}'),
+                          onLongPress: () => showItemContextMenu(
+                            context,
+                            sourceId: sourceId,
+                            ownerType: 'book',
+                            ownerId: b.id,
+                            title: b.title,
+                          ),
                         ),
                     ],
                   ),
@@ -117,6 +166,13 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           onTap: () =>
                               context.push('/reader/$sourceId/${b.id}'),
+                          onLongPress: () => showItemContextMenu(
+                            context,
+                            sourceId: sourceId,
+                            ownerType: 'book',
+                            ownerId: b.id,
+                            title: b.title,
+                          ),
                         ),
                     ],
                   ),
@@ -140,10 +196,18 @@ class HomeScreen extends ConsumerWidget {
                           subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
                           onTap: () =>
                               context.push('/reader/$sourceId/${b.id}'),
+                          onLongPress: () => showItemContextMenu(
+                            context,
+                            sourceId: sourceId,
+                            ownerType: 'book',
+                            ownerId: b.id,
+                            title: b.title,
+                          ),
                         ),
                     ],
                   ),
-                  if ((keepReading.valueOrNull ?? const []).isEmpty &&
+                  if ((pinned.valueOrNull ?? const []).isEmpty &&
+                      (keepReading.valueOrNull ?? const []).isEmpty &&
                       (downloaded.valueOrNull ?? const []).isEmpty &&
                       (addedBooks.valueOrNull ?? const []).isEmpty &&
                       (added.valueOrNull ?? const []).isEmpty &&

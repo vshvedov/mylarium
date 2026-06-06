@@ -79,6 +79,15 @@ abstract final class AppIcons {
   static const markUnread = IconData(0xe18a,
       fontFamily: _family, fontPackage: _package); // circle
 
+  // Home pins (curation): an outline pin, its filled counterpart (same glyph,
+  // fill weight), and the slashed glyph used for the "Unpin" action.
+  static const pin =
+      IconData(0xe3e2, fontFamily: _family, fontPackage: _package); // pushPin
+  static const pinFill = IconData(0xe3e2,
+      fontFamily: _fillFamily, fontPackage: _package); // pushPin
+  static const unpin = IconData(0xe3e4,
+      fontFamily: _family, fontPackage: _package); // pushPinSlash
+
   // Reader
   static const read =
       IconData(0xe0e6, fontFamily: _family, fontPackage: _package); // bookOpen

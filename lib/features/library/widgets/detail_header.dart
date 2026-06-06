@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/cover_palette.dart';
 import '../../../app/theme/design_tokens.dart';
+import '../../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../../app/widgets/pressable_scale.dart';
+import '../pin_controllers.dart';
 import 'cover_image.dart';
 
 /// A floating back affordance for cover-forward detail screens: a light Phosphor
@@ -32,6 +35,55 @@ class HeroBackButton extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// A floating icon-only pin toggle for a detail hero, mirroring [HeroBackButton]
+/// (light Phosphor glyph on a subtle dark scrim) but on the opposite edge. Shows
+/// the filled pin when pinned, the outline pin otherwise; tapping toggles it.
+class HeroPinButton extends ConsumerWidget {
+  const HeroPinButton({
+    super.key,
+    required this.sourceId,
+    required this.ownerType,
+    required this.ownerId,
+  });
+
+  final String sourceId;
+  final String ownerType;
+  final String ownerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pinned = ref
+            .watch(isPinnedProvider(sourceId, ownerType, ownerId))
+            .valueOrNull ??
+        false;
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Color(0x66000000),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            iconSize: 20,
+            color: Colors.white,
+            icon: Icon(pinned ? AppIcons.pinFill : AppIcons.pin),
+            tooltip: pinned ? 'Unpin' : 'Pin',
+            onPressed: () => ref.read(appDatabaseProvider).setPinned(
+                  sourceId,
+                  ownerType,
+                  ownerId,
+                  pinned: !pinned,
+                  now: DateTime.now().millisecondsSinceEpoch,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// The cover-derived hero: the blurred cover + palette glow ([CoverBackground])

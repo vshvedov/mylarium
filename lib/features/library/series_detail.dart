@@ -180,6 +180,15 @@ class SeriesDetailScreen extends ConsumerWidget {
             ),
           ),
           if (!embedded) const Positioned(top: 0, left: 4, child: HeroBackButton()),
+          Positioned(
+            top: 0,
+            right: 4,
+            child: HeroPinButton(
+              sourceId: sourceId,
+              ownerType: 'series',
+              ownerId: seriesId,
+            ),
+          ),
         ],
       ),
     );

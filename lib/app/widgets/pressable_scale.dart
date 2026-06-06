@@ -12,11 +12,13 @@ class PressableScale extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.pressedScale = 0.97,
   });
 
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double pressedScale;
 
   @override
@@ -43,6 +45,13 @@ class _PressableScaleState extends State<PressableScale> {
       onTapDown: widget.onTap == null ? null : (_) => _set(true),
       onTapUp: widget.onTap == null ? null : (_) => _set(false),
       onTapCancel: widget.onTap == null ? null : () => _set(false),
+      onLongPress: widget.onLongPress,
+      // Hold the press-scale through the long-press, then release. (When a long
+      // press wins the gesture arena the tap recognizer is cancelled, which
+      // releases the scale first; these re-press and release it cleanly.)
+      onLongPressStart:
+          widget.onLongPress == null ? null : (_) => _set(true),
+      onLongPressEnd: widget.onLongPress == null ? null : (_) => _set(false),
       child: AnimatedScale(
         scale: _pressed ? widget.pressedScale : 1.0,
         duration: duration,

@@ -16,6 +16,7 @@ import 'tables/color_settings.dart';
 import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
+import 'tables/pins.dart';
 import 'tables/reader_settings.dart';
 import 'tables/reading_sessions.dart';
 import 'tables/series.dart';
@@ -25,6 +26,22 @@ import 'tables/sync_queue.dart';
 import 'tables/thumbnails.dart';
 
 part 'database.g.dart';
+
+/// A pinned item joined to its display + gating fields, straight from the cache.
+/// [title] is null when the owner row is not cached; [gatingResolved] is false
+/// when the gating series (a series itself, or a book's series) is not cached,
+/// in which case the [pinnedItems] provider hides the item rather than risk
+/// leaking an unclassified restricted entry onto Home.
+typedef PinnedRaw = ({
+  String ownerType,
+  String ownerId,
+  String? title,
+  String? number,
+  int booksCount,
+  int? ageRating,
+  String? libraryId,
+  bool gatingResolved,
+});
 
 @DriftDatabase(tables: [
   AppSettings,
@@ -43,12 +60,13 @@ part 'database.g.dart';
   SyncQueue,
   SeriesMeta,
   ColorSettings,
+  Pins,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -156,6 +174,13 @@ class AppDatabase extends _$AppDatabase {
               "UPDATE reader_settings SET direction = 'rtl' "
               "WHERE mode = 'pagedRtl'",
             );
+          }
+          // v11 -> v12: user-curated home pins (series/chapter). A brand-new
+          // table, so a plain additive createTable (no idempotency guard: unlike
+          // an addColumn, a half-applied createTable cannot leave a partial
+          // column, and the from<12 path never created it earlier).
+          if (from < 12 && to >= 12) {
+            await m.createTable(pins);
           }
         },
       );
@@ -785,6 +810,102 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updateSyncRow(int id, SyncQueueCompanion row) =>
       (update(syncQueue)..where((t) => t.id.equals(id))).write(row);
+
+  // --- Pins (home curation) ------------------------------------------------
+
+  /// Pins for a source as [PinnedRaw] rows (newest first), each left-joined to
+  /// its owner for display, and to the gating series (the series itself, or a
+  /// book's series) for age/library gating done in the [pinnedItems] provider.
+  /// Cache-only: an item whose gating series is not cached is reported with
+  /// `gatingResolved == false` and hidden upstream (leak-safe; the pin row
+  /// persists and the item returns once the cache repopulates). Reactive to
+  /// pins, series and books. Tie-break on `(ownerType, ownerId)` keeps the order
+  /// deterministic when two items share a `pinnedAt`.
+  Stream<List<PinnedRaw>> watchPinnedItems(String sourceId) => customSelect(
+        'SELECT p.owner_type AS owner_type, p.owner_id AS owner_id, '
+        's.title AS s_title, s.books_count AS s_count, '
+        's.age_rating AS s_age, s.library_id AS s_lib, '
+        'b.title AS b_title, b.number AS b_number, '
+        'gs.age_rating AS gs_age, gs.library_id AS gs_lib, gs.id AS gs_id '
+        'FROM pins p '
+        "LEFT JOIN series s ON p.owner_type = 'series' "
+        'AND s.source_id = p.source_id AND s.id = p.owner_id '
+        "LEFT JOIN books b ON p.owner_type = 'book' "
+        'AND b.source_id = p.source_id AND b.id = p.owner_id '
+        "LEFT JOIN series gs ON p.owner_type = 'book' "
+        'AND gs.source_id = p.source_id AND gs.id = b.series_id '
+        'WHERE p.source_id = ?1 '
+        'ORDER BY p.pinned_at DESC, p.owner_type, p.owner_id',
+        variables: [Variable.withString(sourceId)],
+        readsFrom: {pins, series, books},
+      ).watch().map(
+            (rows) => [
+              for (final row in rows)
+                if (row.read<String>('owner_type') == 'series')
+                  (
+                    ownerType: 'series',
+                    ownerId: row.read<String>('owner_id'),
+                    title: row.read<String?>('s_title'),
+                    number: null,
+                    booksCount: row.read<int?>('s_count') ?? 0,
+                    ageRating: row.read<int?>('s_age'),
+                    libraryId: row.read<String?>('s_lib'),
+                    gatingResolved: row.read<String?>('s_title') != null,
+                  )
+                else
+                  (
+                    ownerType: 'book',
+                    ownerId: row.read<String>('owner_id'),
+                    title: row.read<String?>('b_title'),
+                    number: row.read<String?>('b_number'),
+                    booksCount: 0,
+                    ageRating: row.read<int?>('gs_age'),
+                    libraryId: row.read<String?>('gs_lib'),
+                    gatingResolved: row.read<String?>('gs_id') != null,
+                  ),
+            ],
+          );
+
+  /// Whether [ownerId] of [ownerType] is currently pinned on [sourceId].
+  Stream<bool> watchIsPinned(
+    String sourceId,
+    String ownerType,
+    String ownerId,
+  ) =>
+      (select(pins)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.ownerType.equals(ownerType) &
+                t.ownerId.equals(ownerId)))
+          .watchSingleOrNull()
+          .map((row) => row != null);
+
+  /// Pins or unpins an item. Pinning is idempotent (the PK makes a re-pin just
+  /// refresh [PinRow.pinnedAt], floating it back to the front of the rail).
+  Future<void> setPinned(
+    String sourceId,
+    String ownerType,
+    String ownerId, {
+    required bool pinned,
+    required int now,
+  }) {
+    if (pinned) {
+      return into(pins).insertOnConflictUpdate(
+        PinsCompanion.insert(
+          sourceId: sourceId,
+          ownerType: ownerType,
+          ownerId: ownerId,
+          pinnedAt: now,
+        ),
+      );
+    }
+    return (delete(pins)
+          ..where((t) =>
+              t.sourceId.equals(sourceId) &
+              t.ownerType.equals(ownerType) &
+              t.ownerId.equals(ownerId)))
+        .go();
+  }
 }
 
 LazyDatabase _open() => LazyDatabase(() async {

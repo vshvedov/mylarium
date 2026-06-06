@@ -8,6 +8,7 @@ import '../../core/network/komga_exception.dart';
 import '../../core/security/app_lock.dart';
 import '../../data/komga/models/book_dto.dart';
 import '../../data/komga/models/collection_dto.dart';
+import '../../data/komga/models/mappers.dart';
 import '../../data/komga/models/readlist_dto.dart';
 import '../../data/komga/models/series_dto.dart';
 import '../../data/komga/models/series_search.dart';
@@ -34,11 +35,13 @@ Future<List<BookDto>> keepReading(Ref ref) async {
         .content;
     final deck = (await api.onDeck(size: 20)).content;
     final seen = {for (final b in inProgress) b.id};
-    return [
+    final result = [
       ...inProgress,
       for (final b in deck)
         if (seen.add(b.id)) b,
     ].take(20).toList();
+    await _cacheBooks(ref, result);
+    return result;
   } on KomgaException {
     return const [];
   }
@@ -53,6 +56,7 @@ Future<List<SeriesDto>> recentlyAddedSeries(Ref ref) async {
   final lock = await ref.watch(appLockProvider.future);
   try {
     final page = await api.listSeriesNew(size: 20);
+    await _cacheSeries(ref, page.content);
     return _gate(page.content, lock);
   } on KomgaException {
     return const [];
@@ -67,6 +71,7 @@ Future<List<SeriesDto>> recentlyUpdatedSeries(Ref ref) async {
   final lock = await ref.watch(appLockProvider.future);
   try {
     final page = await api.listSeriesUpdated(size: 20);
+    await _cacheSeries(ref, page.content);
     return _gate(page.content, lock);
   } on KomgaException {
     return const [];
@@ -79,6 +84,42 @@ List<SeriesDto> _gate(List<SeriesDto> series, AppLockState lock) => [
             lock.restrictedVisible(s.libraryId))
           s,
     ];
+
+/// Persists series fetched for a home rail into the local cache (title +
+/// ageRating + libraryId + booksCount), so anything shown on Home can be pinned
+/// and rendered/gated offline by the Pinned rail. Caches the full (ungated) set:
+/// the cache is the source of truth, and the rail's own gate still hides
+/// restricted entries at display time. Best-effort; a write failure is ignored.
+Future<void> _cacheSeries(Ref ref, List<SeriesDto> series) async {
+  if (series.isEmpty) return;
+  try {
+    final sourceId = await ref.read(activeSourceIdProvider.future);
+    if (sourceId == null) return;
+    final db = ref.read(appDatabaseProvider);
+    for (final s in series) {
+      await db.upsertSeries(seriesToRow(sourceId, s));
+      await db.upsertSeriesMeta(seriesMetaToRow(sourceId, s));
+    }
+  } catch (_) {
+    // Best-effort: a cache write must never break the rail it backs.
+  }
+}
+
+/// Persists books fetched for a home rail into the local cache, so a pinned
+/// chapter resolves its title/number on the Pinned rail. Best-effort.
+Future<void> _cacheBooks(Ref ref, List<BookDto> books) async {
+  if (books.isEmpty) return;
+  try {
+    final sourceId = await ref.read(activeSourceIdProvider.future);
+    if (sourceId == null) return;
+    final db = ref.read(appDatabaseProvider);
+    for (final b in books) {
+      await db.upsertBook(bookToRow(sourceId, b));
+    }
+  } catch (_) {
+    // Best-effort: a cache write must never break the rail it backs.
+  }
+}
 
 /// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
 /// each is gated by its series' rating: resolve every distinct series once from
@@ -112,6 +153,10 @@ Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
     final fetched = await Future.wait(missing.map((id) async {
       try {
         final s = await api.getSeries(id);
+        // Cache the resolved series so a pinned chapter of it can be gated and
+        // rendered by the Pinned rail offline.
+        await db.upsertSeries(seriesToRow(sourceId, s));
+        await db.upsertSeriesMeta(seriesMetaToRow(sourceId, s));
         return MapEntry<String, ({int? ageRating, String libraryId})?>(
             id, (ageRating: s.ageRating, libraryId: s.libraryId));
       } catch (_) {
@@ -120,6 +165,8 @@ Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
       }
     }));
     gate.addEntries(fetched);
+    // Cache the chapters themselves (title/number) so pinning one resolves.
+    await _cacheBooks(ref, books);
     return [
       for (final b in books)
         if (gate[b.seriesId] case final g?)
