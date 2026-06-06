@@ -128,7 +128,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   List<List<int>> _pairs = const [];
   PagePrefetcher? _prefetcher;
 
-  bool _chrome = true;
+  // Enter distraction-free: the top bar and bottom scrubber start hidden and a
+  // tap on the page reveals them.
+  bool _chrome = false;
   int? _cacheWidth;
 
   /// Whether the last page was reached during this session. Drives delete-on-read

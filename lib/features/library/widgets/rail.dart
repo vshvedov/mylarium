@@ -50,6 +50,7 @@ class Rail extends StatelessWidget {
                 SizedBox(width: tileWidth, child: children[i]),
           ),
         ),
+        const SizedBox(height: 24),
       ],
     );
   }
