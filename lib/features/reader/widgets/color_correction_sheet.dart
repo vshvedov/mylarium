@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/widgets/app_loading.dart';
 import '../color/color_settings.dart';
 import '../color/color_settings_controller.dart';
 
@@ -51,7 +52,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
       child: async.when(
         loading: () => const Padding(
           padding: EdgeInsets.all(24),
-          child: Center(child: CircularProgressIndicator()),
+          child: AppLoadingIndicator(),
         ),
         error: (_, _) => Padding(
           padding: const EdgeInsets.all(24),

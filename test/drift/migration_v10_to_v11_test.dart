@@ -44,4 +44,28 @@ void main() {
     await verifier.migrateAndValidate(db, 11);
     await db.close();
   });
+
+  test('v10 -> v11 is idempotent when direction was already half-applied',
+      () async {
+    // Simulate a process killed mid-migration: the column was added but the
+    // version bump never committed (user_version still 10). Re-running the
+    // upgrade must NOT throw "duplicate column".
+    final schema = await verifier.schemaAt(10);
+    final oldDb = v10.DatabaseAtV10(schema.newConnection());
+    await oldDb.customStatement(
+      "ALTER TABLE reader_settings ADD COLUMN direction TEXT NOT NULL "
+      "DEFAULT 'ltr'",
+    );
+    await oldDb.customStatement(
+      'INSERT INTO reader_settings (source_id, series_id, mode, fit, taps) '
+      "VALUES ('s', 'ser1', 'pagedRtl', 'width', 'lrEdges')",
+    );
+    await oldDb.close();
+
+    final db = AppDatabase(schema.newConnection());
+    // Reaches head without re-adding the column; the backfill still runs.
+    await verifier.migrateAndValidate(db, 11);
+    expect((await db.getReaderSettings('s', 'ser1'))!.direction, 'rtl');
+    await db.close();
+  });
 }

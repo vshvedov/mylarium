@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_list_row.dart';
+import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -24,7 +25,7 @@ class LibrariesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Libraries')),
       body: libraries.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingIndicator(),
         error: (e, _) => Center(child: Text('Could not load libraries: $e')),
         data: (libs) => ListView(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

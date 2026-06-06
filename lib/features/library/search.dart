@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/app_loading.dart';
 import '../../app/widgets/app_text_field.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -175,7 +176,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Expanded(
             child: _results.when(
               loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+                  const AppLoadingIndicator(),
               error: (e, _) => Center(child: Text('Search failed: $e')),
               data: (series) => series.isEmpty
                   ? const Center(child: Text('No results.'))

@@ -16,8 +16,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Run edge to edge with the top status bar hidden (cover-forward fullscreen).
   unawaited(setAppFullscreen());
-  late final AppDatabase db;
-  late final AppSetting settings;
+  // Not `late final`: the in-memory fallback reassigns these, so `final` would
+  // make the fallback itself throw a LateInitializationError (crashing on the
+  // splash) on any DB-open failure.
+  late AppDatabase db;
+  late AppSetting settings;
   try {
     db = AppDatabase();
     settings = await db.getOrCreateSettings();

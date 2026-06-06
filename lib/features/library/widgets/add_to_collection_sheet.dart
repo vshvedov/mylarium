@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/widgets/app_loading.dart';
 import '../../../app/widgets/app_text_field.dart';
 import '../../../core/network/komga_exception.dart';
 import '../../../data/source/source_providers.dart';
@@ -112,7 +113,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
             if (entries == null)
               const Padding(
                 padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
+                child: AppLoadingIndicator(),
               )
             else if (entries.isEmpty)
               Padding(

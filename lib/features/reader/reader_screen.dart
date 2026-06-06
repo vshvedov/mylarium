@@ -8,6 +8,7 @@ import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
+import '../../app/widgets/app_loading.dart';
 import '../../core/network/komga_exception.dart';
 import '../../core/platform/system_ui.dart';
 import '../offline/offline_providers.dart';
@@ -52,7 +53,7 @@ class ReaderScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: tokens.readerBackground,
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingIndicator(),
         error: (e, _) => _ErrorState(
           title: 'Could not open this book',
           detail: friendlyError(e),

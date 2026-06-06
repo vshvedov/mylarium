@@ -140,22 +140,34 @@ class AppDatabase extends _$AppDatabase {
             }
           }
           // v10 -> v11: per-series reading direction (T4), the source of truth for
-          // double-page RTL. reader_settings is created in the from<7 (actually
-          // from<4) block, where createTable already emits the v11 shape including
-          // `direction`; only a real v4..v10 install has the table WITHOUT it, so
-          // the addColumn is guarded on from >= 4. The backfill keeps a series that
-          // read pagedRtl in RTL when it later switches to double-page.
+          // double-page RTL. Idempotent: a half-applied upgrade (the column added
+          // but the version bump not committed, e.g. the process was killed
+          // mid-migration) must not re-add `direction` (which would throw
+          // "duplicate column"), and the from<4 createTable path already emits it.
+          // So guard the addColumn on the column actually being absent rather than
+          // on `from`. The backfill is naturally idempotent (a no-op on a fresh,
+          // empty table) and keeps a series that read pagedRtl in RTL when it later
+          // switches to double-page.
           if (from < 11 && to >= 11) {
-            if (from >= 4) {
+            if (!await _hasColumn('reader_settings', 'direction')) {
               await m.addColumn(readerSettings, readerSettings.direction);
-              await customStatement(
-                "UPDATE reader_settings SET direction = 'rtl' "
-                "WHERE mode = 'pagedRtl'",
-              );
             }
+            await customStatement(
+              "UPDATE reader_settings SET direction = 'rtl' "
+              "WHERE mode = 'pagedRtl'",
+            );
           }
         },
       );
+
+  /// Whether [table] currently has a column named [column]. Used to keep
+  /// additive migrations idempotent so a half-applied upgrade (e.g. the process
+  /// was killed mid-migration, leaving the column present but the version not
+  /// bumped) can re-run without an "duplicate column" error.
+  Future<bool> _hasColumn(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table)').get();
+    return rows.any((r) => r.data['name'] == column);
+  }
 
   /// Reads the canonical settings row (id = 1), inserting defaults exactly once
   /// and generating a stable [AppSetting.deviceId] on first read. Never

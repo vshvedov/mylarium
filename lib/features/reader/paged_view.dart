@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
+import '../../app/widgets/app_loading.dart';
 import 'gestures/fit_scale.dart';
 import 'reader_models.dart';
 import 'widgets/page_error.dart';
@@ -56,8 +57,7 @@ class PagedView extends StatelessWidget {
         scaleStateChangedCallback: (state) =>
             zoomed.value = state != PhotoViewScaleState.initial,
         backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-        loadingBuilder: (context, _) =>
-            const Center(child: CircularProgressIndicator()),
+        loadingBuilder: (context, _) => const AppLoadingIndicator(),
         builder: (context, index) => PhotoViewGalleryPageOptions(
           imageProvider: imageBuilder(index),
           minScale: PhotoViewComputedScale.contained,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_card.dart';
+import '../../app/widgets/app_loading.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
 import 'badges.dart';
 import 'stats_controller.dart';
@@ -40,7 +41,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ],
       ),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingIndicator(),
         error: (_, _) =>
             const Center(child: Text('Could not load your stats.')),
         data: (s) => ListView(

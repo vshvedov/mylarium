@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
+import '../../app/widgets/app_loading.dart';
 import '../../core/db/database.dart';
 import '../../features/sync/sync_providers.dart';
 import '../integrations/comic_vine/comic_vine_panel.dart';
@@ -168,7 +169,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.all(32),
-                        child: Center(child: CircularProgressIndicator()),
+                        child: AppLoadingIndicator(),
                       ),
                     ),
                   const SliverToBoxAdapter(

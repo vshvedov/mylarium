@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/security/app_lock.dart';
@@ -19,7 +20,7 @@ class LibraryLockScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Library locks')),
       body: libraries.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingIndicator(),
         error: (e, _) => Center(child: Text('Could not load libraries: $e')),
         data: (libs) => libs.isEmpty
             ? const Center(child: Text('No libraries.'))
