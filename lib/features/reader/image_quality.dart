@@ -46,6 +46,15 @@ class ImageQuality {
     return kManualDecodeCeilings[i];
   }
 
+  /// The focused-page decode ceiling. In Smart mode this is the device tier's cap
+  /// ([deviceCap], so normal/high devices decode sharper while low devices stay
+  /// conservative); in manual mode it is the chosen stop, independent of device.
+  int focusCeiling(int deviceCap) {
+    if (smart) return deviceCap;
+    final i = manualLevel.clamp(0, kManualDecodeCeilings.length - 1);
+    return kManualDecodeCeilings[i];
+  }
+
   ImageQuality copyWith({bool? smart, int? manualLevel}) => ImageQuality(
         smart: smart ?? this.smart,
         manualLevel: manualLevel ?? this.manualLevel,

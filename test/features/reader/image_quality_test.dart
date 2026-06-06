@@ -36,4 +36,21 @@ void main() {
       }
     });
   });
+
+  group('ImageQuality.focusCeiling', () {
+    test('smart uses the device cap and ignores the manual level', () {
+      expect(const ImageQuality(smart: true, manualLevel: 0).focusCeiling(4096),
+          4096);
+      expect(const ImageQuality(smart: true, manualLevel: 4).focusCeiling(2048),
+          2048);
+    });
+    test('manual ignores the device cap and uses the manual stop', () {
+      expect(
+          const ImageQuality(smart: false, manualLevel: 0).focusCeiling(4096),
+          kManualDecodeCeilings.first);
+      expect(
+          const ImageQuality(smart: false, manualLevel: 4).focusCeiling(2048),
+          kNativeDecodeCeiling);
+    });
+  });
 }
