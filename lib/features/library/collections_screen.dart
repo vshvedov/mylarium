@@ -136,6 +136,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                       ownerType: 'series',
                       ownerId: s.id,
                       title: s.title,
+                      stacked: s.booksCount > 1,
                       onTap: () => context.push('/series/$sourceId/${s.id}'),
                     ),
                   );

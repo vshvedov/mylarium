@@ -80,6 +80,58 @@ List<SeriesDto> _gate(List<SeriesDto> series, AppLockState lock) => [
           s,
     ];
 
+/// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
+/// each is gated by its series' rating: resolve every distinct series once from
+/// the cache, then one `getSeries` per still-uncached series (deduped, in
+/// parallel). A book is shown unless its series is restricted and not currently
+/// restricted-visible; a series whose rating cannot be resolved (offline
+/// mid-fetch) leaves its book hidden, so an unclassified 18+ chapter never
+/// leaks onto Home. Degrades to empty on a Komga error.
+@riverpod
+Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
+  final api = await ref.watch(activeKomgaApiProvider.future);
+  if (api == null) return const [];
+  final sourceId = await ref.watch(activeSourceIdProvider.future);
+  if (sourceId == null) return const [];
+  final lock = await ref.watch(appLockProvider.future);
+  final db = ref.watch(appDatabaseProvider);
+  try {
+    final books = (await api.listBooksLatest(size: 20)).content;
+    // seriesId -> (ageRating, libraryId); a null value means "unresolved".
+    final gate = <String, ({int? ageRating, String libraryId})?>{};
+    for (final id in {for (final b in books) b.seriesId}) {
+      final row = await db.getSeries(sourceId, id);
+      if (row != null) {
+        gate[id] = (ageRating: row.ageRating, libraryId: row.libraryId);
+      }
+    }
+    final missing = {
+      for (final b in books)
+        if (!gate.containsKey(b.seriesId)) b.seriesId,
+    };
+    final fetched = await Future.wait(missing.map((id) async {
+      try {
+        final s = await api.getSeries(id);
+        return MapEntry<String, ({int? ageRating, String libraryId})?>(
+            id, (ageRating: s.ageRating, libraryId: s.libraryId));
+      } catch (_) {
+        // KomgaException, a malformed body, anything: treat as unresolved.
+        return MapEntry<String, ({int? ageRating, String libraryId})?>(id, null);
+      }
+    }));
+    gate.addEntries(fetched);
+    return [
+      for (final b in books)
+        if (gate[b.seriesId] case final g?)
+          if (!isRestrictedAgeRating(g.ageRating) ||
+              lock.restrictedVisible(g.libraryId))
+            b,
+    ];
+  } on KomgaException {
+    return const [];
+  }
+}
+
 @riverpod
 Future<List<CollectionDto>> collections(Ref ref) async {
   final repo = await ref.watch(collectionRepositoryProvider.future);

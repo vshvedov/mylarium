@@ -59,4 +59,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(tapped, isTrue);
   });
+
+  testWidgets('a flat tile has no deck; a stacked tile shows two deck cards', (
+    tester,
+  ) async {
+    final scope = await TestScope.create();
+    addTearDown(scope.db.close);
+
+    Widget tile({required bool stacked}) => ProviderScope(
+          overrides: [
+            ...scope.overrides,
+            coverImageProvider('s', 'series', 'x')
+                .overrideWith((ref) async => null),
+          ],
+          child: MaterialApp(
+            theme: darkTheme,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 200,
+                  child: CoverTile(
+                    sourceId: 's',
+                    ownerType: 'series',
+                    ownerId: 'x',
+                    title: 'Title',
+                    stacked: stacked,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    await tester.pumpWidget(tile(stacked: false));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('coverDeck')), findsNothing);
+    expect(find.byKey(const ValueKey('deckCard')), findsNothing);
+
+    await tester.pumpWidget(tile(stacked: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('coverDeck')), findsOneWidget);
+    expect(find.byKey(const ValueKey('deckCard')), findsNWidgets(2));
+    // The front cover keeps its shadow Container in both modes.
+    expect(find.byKey(const ValueKey('coverShadow')), findsOneWidget);
+  });
 }

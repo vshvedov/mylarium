@@ -73,6 +73,33 @@ final recentlyUpdatedSeriesProvider =
 // ignore: unused_element
 typedef RecentlyUpdatedSeriesRef =
     AutoDisposeFutureProviderRef<List<SeriesDto>>;
+String _$recentlyAddedBooksHash() =>
+    r'437c32a8983d9b34e9059ebf4d744e32c0ecf0a8';
+
+/// Recently added chapters (Komga `books/latest`). Books carry no ageRating, so
+/// each is gated by its series' rating: resolve every distinct series once from
+/// the cache, then one `getSeries` per still-uncached series (deduped, in
+/// parallel). A book is shown unless its series is restricted and not currently
+/// restricted-visible; a series whose rating cannot be resolved (offline
+/// mid-fetch) leaves its book hidden, so an unclassified 18+ chapter never
+/// leaks onto Home. Degrades to empty on a Komga error.
+///
+/// Copied from [recentlyAddedBooks].
+@ProviderFor(recentlyAddedBooks)
+final recentlyAddedBooksProvider =
+    AutoDisposeFutureProvider<List<BookDto>>.internal(
+      recentlyAddedBooks,
+      name: r'recentlyAddedBooksProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$recentlyAddedBooksHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef RecentlyAddedBooksRef = AutoDisposeFutureProviderRef<List<BookDto>>;
 String _$collectionsHash() => r'dbb2113e61fd88c65bc6e0abef96f923f4100e91';
 
 /// See also [collections].

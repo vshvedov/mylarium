@@ -291,6 +291,17 @@ class KomgaApi {
             res.data! as Map<String, Object?>, BookDto.fromJson);
       });
 
+  /// Recently added books (Komga `books/latest`). Same `Page<Book>` envelope as
+  /// the series rails; consumed online by the home "Recently added chapters"
+  /// rail.
+  Future<Page<BookDto>> listBooksLatest({int page = 0, int size = 20}) =>
+      _guard(() async {
+        final res = await _dio.get<Object?>('$_v1/books/latest',
+            queryParameters: {'page': page, 'size': size});
+        return Page.fromJson(
+            res.data! as Map<String, Object?>, BookDto.fromJson);
+      });
+
   // --- T3: deeper Komga integration ----------------------------------------
   // Request shapes confirmed against the Komga OpenAPI spec.
 
