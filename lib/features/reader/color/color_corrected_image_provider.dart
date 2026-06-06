@@ -82,6 +82,10 @@ class ColorCorrectingPageSource implements PageSource {
   ImageProvider imageProvider(int i) =>
       ColorCorrectedImageProvider(_base.imageProvider(i), _adj);
 
+  @override
+  ImageProvider imageProviderAt(int i, int? cacheWidth) =>
+      ColorCorrectedImageProvider(_base.imageProviderAt(i, cacheWidth), _adj);
+
   // Scrubber thumbnails are intentionally uncorrected: a tiny preview does not
   // need the (more expensive) residual bake, so forward to the base.
   @override

@@ -12,6 +12,12 @@ abstract class PageSource {
   /// The reader views use this directly.
   ImageProvider imageProvider(int i);
 
+  /// A provider for page [i] (0-based) decoded to [cacheWidth] physical px,
+  /// overriding the source's default width. The reader uses this to decode the
+  /// focused page at a higher resolution than its neighbors (keeping zoom sharp
+  /// while bounding memory). A null [cacheWidth] decodes at native resolution.
+  ImageProvider imageProviderAt(int i, int? cacheWidth);
+
   /// A small-[kScrubberThumbWidth] provider for the scrubber drag preview. Reuses
   /// the same decode path as [imageProvider] (the byte fetch is unchanged; only
   /// the decode is shrunk), keyed distinctly in the image cache by its cacheWidth.

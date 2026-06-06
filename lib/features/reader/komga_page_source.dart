@@ -32,9 +32,12 @@ class KomgaPageSource implements PageSource {
   Future<ImageProvider> page(int i) async => imageProvider(i);
 
   /// Synchronous provider for the views (the provider itself defers the byte
-  /// load to the image pipeline).
+  /// load to the image pipeline). Decodes at the source's default [cacheWidth].
   @override
-  ImageProvider imageProvider(int i) => KomgaPageImageProvider(
+  ImageProvider imageProvider(int i) => imageProviderAt(i, cacheWidth);
+
+  @override
+  ImageProvider imageProviderAt(int i, int? cacheWidth) => KomgaPageImageProvider(
         api: api,
         sourceId: sourceId,
         bookId: bookId,

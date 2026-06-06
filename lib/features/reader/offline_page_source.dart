@@ -30,7 +30,11 @@ class OfflinePageSource implements PageSource {
   int get pageCount => entries.length;
 
   @override
-  ImageProvider imageProvider(int i) => OfflinePageImageProvider(
+  ImageProvider imageProvider(int i) => imageProviderAt(i, cacheWidth);
+
+  @override
+  ImageProvider imageProviderAt(int i, int? cacheWidth) =>
+      OfflinePageImageProvider(
         extractor: extractor,
         sourceId: sourceId,
         bookId: bookId,
