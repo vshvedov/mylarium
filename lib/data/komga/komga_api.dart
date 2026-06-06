@@ -2,22 +2,23 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
-import '../../core/network/komga_exception.dart';
-import 'models/book_dto.dart';
-import 'models/collection_dto.dart';
-import 'models/library_dto.dart';
-import 'models/page.dart';
-import 'models/page_dto.dart';
-import 'models/readlist_dto.dart';
-import 'models/series_dto.dart';
-import 'models/series_search.dart';
-import 'models/server_info.dart';
+import '../../core/network/content_exception.dart';
+import '../source/content_api.dart';
+import '../source/models/book_dto.dart';
+import '../source/models/collection_dto.dart';
+import '../source/models/library_dto.dart';
+import '../source/models/page.dart';
+import '../source/models/page_dto.dart';
+import '../source/models/readlist_dto.dart';
+import '../source/models/series_dto.dart';
+import '../source/models/series_search.dart';
+import '../source/models/server_info.dart';
 
 /// Typed client for one Komga server. [_dio] is configured by `buildKomgaDio`
 /// with `baseUrl` = the server origin (no `/api/v1`); this client appends the
 /// versioned path per call. Every method maps `DioException` to
-/// [KomgaException] so callers never see raw transport errors.
-class KomgaApi {
+/// [ContentException] so callers never see raw transport errors.
+class KomgaApi implements ContentApi {
   KomgaApi(this._dio);
 
   final Dio _dio;
@@ -29,7 +30,7 @@ class KomgaApi {
     try {
       return await run();
     } on DioException catch (e) {
-      throw KomgaException.fromDio(e);
+      throw ContentException.fromDio(e);
     }
   }
 
@@ -40,6 +41,7 @@ class KomgaApi {
   /// error (the endpoint may be disabled or require admin); never throws, so it
   /// can be used as a pre-auth probe without masking connectivity errors that
   /// the subsequent authed call will surface.
+  @override
   Future<String?> fetchVersion() async {
     try {
       final info = await _dio.get<Object?>('$_v1/actuator/info');
@@ -54,21 +56,35 @@ class KomgaApi {
     return null;
   }
 
-  Future<KomgaServerInfo> validate() => _guard(() async {
+  @override
+  Future<bool> ping() async {
+    try {
+      await _dio.get<Object?>('$_v1/actuator/health');
+      return true;
+    } on DioException catch (e) {
+      // Any HTTP response (even 4xx/5xx) means the server is reachable; only a
+      // transport error (no response) counts as offline.
+      return e.response != null;
+    }
+  }
+
+  @override
+  Future<ServerInfo> validate() => _guard(() async {
         final version = await fetchVersion();
         final me = await _dio.get<Object?>('$_v2/users/me');
         final data = me.data;
         if (data is! Map) {
-          throw const KomgaException(
-              KomgaErrorKind.unauthorized, 'Authentication failed.');
+          throw const ContentException(
+              ContentErrorKind.unauthorized, 'Authentication failed.');
         }
         final roles = ((data['roles'] as List?) ?? const [])
             .map((e) => e as String)
             .toSet();
-        return KomgaServerInfo(version: version, roles: roles);
+        return ServerInfo(version: version, roles: roles);
       });
 
   /// Libraries are returned as a plain (unpaged) array by Komga.
+  @override
   Future<List<LibraryDto>> listLibraries() => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/libraries');
         return ((res.data as List?) ?? const [])
@@ -76,6 +92,7 @@ class KomgaApi {
             .toList(growable: false);
       });
 
+  @override
   Future<Page<CollectionDto>> listCollections({
     int page = 0,
     int size = 50,
@@ -87,6 +104,7 @@ class KomgaApi {
             res.data! as Map<String, Object?>, CollectionDto.fromJson);
       });
 
+  @override
   Future<Page<ReadListDto>> listReadLists({
     int page = 0,
     int size = 50,
@@ -99,6 +117,7 @@ class KomgaApi {
       });
 
   /// Series belonging to a collection (in the collection's order).
+  @override
   Future<Page<SeriesDto>> collectionSeries(
     String collectionId, {
     int page = 0,
@@ -113,6 +132,7 @@ class KomgaApi {
       });
 
   /// Books belonging to a read list (in the read list's order).
+  @override
   Future<Page<BookDto>> readListBooks(
     String readListId, {
     int page = 0,
@@ -126,6 +146,7 @@ class KomgaApi {
             res.data! as Map<String, Object?>, BookDto.fromJson);
       });
 
+  @override
   Future<Page<SeriesDto>> listSeries({
     required int page,
     int size = 50,
@@ -155,6 +176,7 @@ class KomgaApi {
             res.data! as Map<String, Object?>, SeriesDto.fromJson);
       });
 
+  @override
   Future<Page<BookDto>> listBooks({
     required int page,
     int size = 50,
@@ -186,6 +208,7 @@ class KomgaApi {
             res.data! as Map<String, Object?>, BookDto.fromJson);
       });
 
+  @override
   Future<List<PageDto>> bookPages(String bookId) => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/books/$bookId/pages');
         return ((res.data as List?) ?? const [])
@@ -196,6 +219,7 @@ class KomgaApi {
   /// Page image bytes. [n] is 1-based (Komga's addressing). [zeroBased] flips to
   /// 0-based via `?zero_based=true`; [convert] requests a format; [raw] returns
   /// original bytes (no `convert`).
+  @override
   Future<Uint8List> getPage(
     String bookId,
     int n, {
@@ -215,6 +239,7 @@ class KomgaApi {
         return Uint8List.fromList(res.data ?? const []);
       });
 
+  @override
   Future<Stream<List<int>>> downloadBookFile(String bookId) => _guard(() async {
         final res = await _dio.get<ResponseBody>(
           '$_v1/books/$bookId/file',
@@ -223,6 +248,7 @@ class KomgaApi {
         return res.data!.stream;
       });
 
+  @override
   Future<void> patchReadProgress(
     String bookId, {
     required int page,
@@ -235,6 +261,7 @@ class KomgaApi {
 
   /// One book by id (used by the reader to resolve a book's `seriesId` when the
   /// book was opened without a cached row, e.g. from an On-Deck card).
+  @override
   Future<BookDto> getBook(String bookId) => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/books/$bookId');
         return BookDto.fromJson(res.data! as Map<String, Object?>);
@@ -242,6 +269,7 @@ class KomgaApi {
 
   /// One series by id (used by the reader to seed the default reading
   /// direction from `metadata.readingDirection`).
+  @override
   Future<SeriesDto> getSeries(String seriesId) => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/series/$seriesId');
         return SeriesDto.fromJson(res.data! as Map<String, Object?>);
@@ -249,6 +277,7 @@ class KomgaApi {
 
   /// Recently added series (Komga `series/new`). Returns the same `Page<Series>`
   /// envelope as the list endpoints; consumed online by the home rails.
+  @override
   Future<Page<SeriesDto>> listSeriesNew({int page = 0, int size = 20}) =>
       _guard(() async {
         final res = await _dio.get<Object?>('$_v1/series/new',
@@ -258,6 +287,7 @@ class KomgaApi {
       });
 
   /// Recently updated series (Komga `series/updated`).
+  @override
   Future<Page<SeriesDto>> listSeriesUpdated({int page = 0, int size = 20}) =>
       _guard(() async {
         final res = await _dio.get<Object?>('$_v1/series/updated',
@@ -267,10 +297,12 @@ class KomgaApi {
       });
 
   /// Cover thumbnail bytes for a series, plus the response ETag when present.
+  @override
   Future<(Uint8List, String?)> seriesThumbnail(String seriesId) =>
       _thumbnail('$_v1/series/$seriesId/thumbnail');
 
   /// Cover thumbnail bytes for a book, plus the response ETag when present.
+  @override
   Future<(Uint8List, String?)> bookThumbnail(String bookId) =>
       _thumbnail('$_v1/books/$bookId/thumbnail');
 
@@ -283,6 +315,7 @@ class KomgaApi {
         return (Uint8List.fromList(res.data ?? const []), etag);
       });
 
+  @override
   Future<Page<BookDto>> onDeck({int page = 0, int size = 20}) =>
       _guard(() async {
         final res = await _dio.get<Object?>('$_v1/books/ondeck',
@@ -294,6 +327,7 @@ class KomgaApi {
   /// Recently added books (Komga `books/latest`). Same `Page<Book>` envelope as
   /// the series rails; consumed online by the home "Recently added chapters"
   /// rail.
+  @override
   Future<Page<BookDto>> listBooksLatest({int page = 0, int size = 20}) =>
       _guard(() async {
         final res = await _dio.get<Object?>('$_v1/books/latest',
@@ -307,25 +341,30 @@ class KomgaApi {
 
   /// Marks a book unread by deleting its read-progress. Idempotent: a 404 means
   /// it was already absent (the write-back queue treats that as success).
+  @override
   Future<void> deleteReadProgress(String bookId) => _guard(() async {
         await _dio.delete<void>('$_v1/books/$bookId/read-progress');
       });
 
   /// Marks every book in a series read. Komga's endpoint is a POST with no body.
+  @override
   Future<void> markSeriesRead(String seriesId) => _guard(() async {
         await _dio.post<void>('$_v1/series/$seriesId/read-progress');
       });
 
   /// Marks every book in a series unread (deletes the series read-progress).
+  @override
   Future<void> markSeriesUnread(String seriesId) => _guard(() async {
         await _dio.delete<void>('$_v1/series/$seriesId/read-progress');
       });
 
+  @override
   Future<CollectionDto> getCollection(String id) => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/collections/$id');
         return CollectionDto.fromJson(res.data! as Map<String, Object?>);
       });
 
+  @override
   Future<CollectionDto> createCollection({
     required String name,
     required List<String> seriesIds,
@@ -339,6 +378,7 @@ class KomgaApi {
   /// PATCHes a collection. The full object (name + ordered + seriesIds) is sent
   /// from a fresh [getCollection] so no version that requires name/ordered is
   /// rejected and the ordered flag is preserved.
+  @override
   Future<void> updateCollection(
     String id, {
     required String name,
@@ -350,15 +390,18 @@ class KomgaApi {
             data: {'name': name, 'ordered': ordered, 'seriesIds': seriesIds});
       });
 
+  @override
   Future<void> deleteCollection(String id) => _guard(() async {
         await _dio.delete<void>('$_v1/collections/$id');
       });
 
+  @override
   Future<ReadListDto> getReadList(String id) => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/readlists/$id');
         return ReadListDto.fromJson(res.data! as Map<String, Object?>);
       });
 
+  @override
   Future<ReadListDto> createReadList({
     required String name,
     required List<String> bookIds,
@@ -374,6 +417,7 @@ class KomgaApi {
         return ReadListDto.fromJson(res.data! as Map<String, Object?>);
       });
 
+  @override
   Future<void> updateReadList(
     String id, {
     required String name,
@@ -385,6 +429,7 @@ class KomgaApi {
             data: {'name': name, 'ordered': ordered, 'bookIds': bookIds});
       });
 
+  @override
   Future<void> deleteReadList(String id) => _guard(() async {
         await _dio.delete<void>('$_v1/readlists/$id');
       });
@@ -397,12 +442,16 @@ class KomgaApi {
             .toList(growable: false);
       });
 
+  @override
   Future<List<String>> listGenres() => _referential('$_v1/genres');
+  @override
   Future<List<String>> listTags() => _referential('$_v1/tags');
+  @override
   Future<List<String>> listPublishers() => _referential('$_v1/publishers');
 
   /// Age ratings come back as strings (e.g. "0", "12", "18"); parsed to int for
   /// the filter (unparseable values are dropped).
+  @override
   Future<List<int>> listAgeRatings() => _guard(() async {
         final res = await _dio.get<Object?>('$_v1/age-ratings');
         return ((res.data as List?) ?? const [])

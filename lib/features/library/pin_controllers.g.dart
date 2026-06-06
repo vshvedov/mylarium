@@ -6,34 +6,7 @@ part of 'pin_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pinnedItemsHash() => r'06bad39e6e1631e391bbf39746c6b142821c0040';
-
-/// The active source's pinned items, newest first. An item whose owner row is
-/// not cached is dropped; an item whose library is locked is hidden. Reads only
-/// the local cache, so the rail and its gating work offline.
-///
-/// [lock] is captured before the `.map` and `appLockProvider` is watched, so
-/// locking/unlocking a library re-runs this provider and re-subscribes the
-/// stream with the new lock, hiding/revealing pins live. That ordering is
-/// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
-///
-/// Copied from [pinnedItems].
-@ProviderFor(pinnedItems)
-final pinnedItemsProvider =
-    AutoDisposeStreamProvider<List<PinnedEntry>>.internal(
-      pinnedItems,
-      name: r'pinnedItemsProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$pinnedItemsHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef PinnedItemsRef = AutoDisposeStreamProviderRef<List<PinnedEntry>>;
-String _$isPinnedHash() => r'b10ae18fc8b98cdd247b1b640b2d6e12383cdba0';
+String _$pinnedItemsHash() => r'1a94720c55b9eaf313a2e8e5b6ac9fc23ba2c300';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -55,6 +28,179 @@ class _SystemHash {
     return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
   }
 }
+
+/// The active source's pinned items, newest first. An item whose owner row is
+/// not cached is dropped; an item whose library is locked is hidden. Reads only
+/// the local cache, so the rail and its gating work offline.
+///
+/// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+/// locking/unlocking a library re-runs this provider and re-subscribes the
+/// stream with the new lock, hiding/revealing pins live. That ordering is
+/// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+///
+/// Copied from [pinnedItems].
+@ProviderFor(pinnedItems)
+const pinnedItemsProvider = PinnedItemsFamily();
+
+/// The active source's pinned items, newest first. An item whose owner row is
+/// not cached is dropped; an item whose library is locked is hidden. Reads only
+/// the local cache, so the rail and its gating work offline.
+///
+/// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+/// locking/unlocking a library re-runs this provider and re-subscribes the
+/// stream with the new lock, hiding/revealing pins live. That ordering is
+/// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+///
+/// Copied from [pinnedItems].
+class PinnedItemsFamily extends Family<AsyncValue<List<PinnedEntry>>> {
+  /// The active source's pinned items, newest first. An item whose owner row is
+  /// not cached is dropped; an item whose library is locked is hidden. Reads only
+  /// the local cache, so the rail and its gating work offline.
+  ///
+  /// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+  /// locking/unlocking a library re-runs this provider and re-subscribes the
+  /// stream with the new lock, hiding/revealing pins live. That ordering is
+  /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+  ///
+  /// Copied from [pinnedItems].
+  const PinnedItemsFamily();
+
+  /// The active source's pinned items, newest first. An item whose owner row is
+  /// not cached is dropped; an item whose library is locked is hidden. Reads only
+  /// the local cache, so the rail and its gating work offline.
+  ///
+  /// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+  /// locking/unlocking a library re-runs this provider and re-subscribes the
+  /// stream with the new lock, hiding/revealing pins live. That ordering is
+  /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+  ///
+  /// Copied from [pinnedItems].
+  PinnedItemsProvider call(String sourceId) {
+    return PinnedItemsProvider(sourceId);
+  }
+
+  @override
+  PinnedItemsProvider getProviderOverride(
+    covariant PinnedItemsProvider provider,
+  ) {
+    return call(provider.sourceId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'pinnedItemsProvider';
+}
+
+/// The active source's pinned items, newest first. An item whose owner row is
+/// not cached is dropped; an item whose library is locked is hidden. Reads only
+/// the local cache, so the rail and its gating work offline.
+///
+/// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+/// locking/unlocking a library re-runs this provider and re-subscribes the
+/// stream with the new lock, hiding/revealing pins live. That ordering is
+/// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+///
+/// Copied from [pinnedItems].
+class PinnedItemsProvider extends AutoDisposeStreamProvider<List<PinnedEntry>> {
+  /// The active source's pinned items, newest first. An item whose owner row is
+  /// not cached is dropped; an item whose library is locked is hidden. Reads only
+  /// the local cache, so the rail and its gating work offline.
+  ///
+  /// [lock] is captured before the `.map` and `appLockProvider` is watched, so
+  /// locking/unlocking a library re-runs this provider and re-subscribes the
+  /// stream with the new lock, hiding/revealing pins live. That ordering is
+  /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
+  ///
+  /// Copied from [pinnedItems].
+  PinnedItemsProvider(String sourceId)
+    : this._internal(
+        (ref) => pinnedItems(ref as PinnedItemsRef, sourceId),
+        from: pinnedItemsProvider,
+        name: r'pinnedItemsProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$pinnedItemsHash,
+        dependencies: PinnedItemsFamily._dependencies,
+        allTransitiveDependencies: PinnedItemsFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+      );
+
+  PinnedItemsProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+  }) : super.internal();
+
+  final String sourceId;
+
+  @override
+  Override overrideWith(
+    Stream<List<PinnedEntry>> Function(PinnedItemsRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: PinnedItemsProvider._internal(
+        (ref) => create(ref as PinnedItemsRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<PinnedEntry>> createElement() {
+    return _PinnedItemsProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PinnedItemsProvider && other.sourceId == sourceId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin PinnedItemsRef on AutoDisposeStreamProviderRef<List<PinnedEntry>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+}
+
+class _PinnedItemsProviderElement
+    extends AutoDisposeStreamProviderElement<List<PinnedEntry>>
+    with PinnedItemsRef {
+  _PinnedItemsProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as PinnedItemsProvider).sourceId;
+}
+
+String _$isPinnedHash() => r'b10ae18fc8b98cdd247b1b640b2d6e12383cdba0';
 
 /// Whether a given series/book is pinned (drives the context-menu label and the
 /// series-detail pin button).

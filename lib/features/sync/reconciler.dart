@@ -2,8 +2,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:uuid/uuid.dart';
 
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
-import '../../data/komga/komga_api.dart';
+import '../../core/network/content_exception.dart';
+import '../../data/source/content_api.dart';
 import 'sync_models.dart';
 
 /// Max Komga books reconciled per launch (rotation cap). Rows are visited
@@ -11,10 +11,10 @@ import 'sync_models.dart';
 /// successive launches without starving the tail.
 const int kReconcileBatch = 50;
 
-/// Reconciles local [BookState] with Komga read-progress on launch. Pulls each
-/// tracked Komga book's server progress, merges it (furthest-page-wins, never
-/// rewind), and synthesizes a reading session for any off-device advance so the
-/// stats reflect reads that happened elsewhere.
+/// Reconciles local [BookState] with a remote server's read-progress on launch.
+/// Pulls each tracked book's server progress from its source (Komga or Kavita),
+/// merges it (furthest-page-wins, never rewind), and synthesizes a reading
+/// session for any off-device advance so the stats reflect reads elsewhere.
 class Reconciler {
   Reconciler(
     this._db,
@@ -24,29 +24,31 @@ class Reconciler {
   }) : _now = now ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final AppDatabase _db;
-  final Future<KomgaApi?> Function(String sourceId) _apiFor;
+  final Future<ContentApi?> Function(String sourceId) _apiFor;
   final String deviceId;
   final int Function() _now;
   final _uuid = const Uuid();
 
   Future<void> reconcile() async {
-    final komgaIds = (await _db.allSources())
-        .where((s) => s.kind == 'komga')
+    // Server sources that support a two-way pull (Komga and Kavita). Local
+    // sources keep progress on-device only and are not reconciled.
+    final serverIds = (await _db.allSources())
+        .where((s) => s.kind == 'komga' || s.kind == 'kavita')
         .map((s) => s.id)
         .toSet();
-    if (komgaIds.isEmpty) return;
+    if (serverIds.isEmpty) return;
 
     final rows = await _db.bookStatesForReconcile(
-      komgaIds,
+      serverIds,
       limit: kReconcileBatch,
     );
-    final apis = <String, KomgaApi?>{};
+    final apis = <String, ContentApi?>{};
     for (final cur in rows) {
       final api = apis[cur.sourceId] ??= await _apiFor(cur.sourceId);
       if (api == null) continue;
       try {
         await _reconcileOne(cur, api);
-      } on KomgaException catch (e) {
+      } on ContentException catch (e) {
         if (_isConnectivity(e)) return; // server down; try again next launch
         // A per-book error (deleted / forbidden): advance the rotation clock so
         // this row rotates out, then keep going.
@@ -62,7 +64,7 @@ class Reconciler {
     }
   }
 
-  Future<void> _reconcileOne(BookStateRow cur, KomgaApi api) async {
+  Future<void> _reconcileOne(BookStateRow cur, ContentApi api) async {
     final dto = await api.getBook(cur.bookId);
     final runNow = _now();
 
@@ -150,7 +152,7 @@ class Reconciler {
   }
 }
 
-bool _isConnectivity(KomgaException e) =>
-    e.kind == KomgaErrorKind.unreachable ||
-    e.kind == KomgaErrorKind.tls ||
-    e.kind == KomgaErrorKind.unauthorized;
+bool _isConnectivity(ContentException e) =>
+    e.kind == ContentErrorKind.unreachable ||
+    e.kind == ContentErrorKind.tls ||
+    e.kind == ContentErrorKind.unauthorized;

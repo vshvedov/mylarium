@@ -1,14 +1,14 @@
 import '../../core/db/database.dart';
-import '../komga/komga_api.dart';
-import '../komga/models/mappers.dart';
-import '../komga/models/series_search.dart';
+import '../source/content_api.dart';
+import '../source/models/mappers.dart';
+import '../source/models/series_search.dart';
 
 /// Fetches series for a source and upserts them with [sourceId] attached.
 class SeriesRepository {
   const SeriesRepository(this._db, this._api);
 
   final AppDatabase _db;
-  final KomgaApi _api;
+  final ContentApi _api;
 
   /// Refreshes one page of series for [sourceId]; returns the server's total
   /// element count (so callers know how many exist beyond this page).

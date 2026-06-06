@@ -3,14 +3,14 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../core/security/app_lock.dart';
-import '../../data/komga/models/book_dto.dart';
-import '../../data/komga/models/collection_dto.dart';
-import '../../data/komga/models/mappers.dart';
-import '../../data/komga/models/readlist_dto.dart';
-import '../../data/komga/models/series_dto.dart';
-import '../../data/komga/models/series_search.dart';
+import '../../data/source/models/book_dto.dart';
+import '../../data/source/models/collection_dto.dart';
+import '../../data/source/models/mappers.dart';
+import '../../data/source/models/readlist_dto.dart';
+import '../../data/source/models/series_dto.dart';
+import '../../data/source/models/series_search.dart';
 import '../../data/source/source_providers.dart';
 
 part 'library_browse_controllers.g.dart';
@@ -21,8 +21,9 @@ part 'library_browse_controllers.g.dart';
 /// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
 /// reader mid-book would see an empty rail; the in-progress query fixes it.
 @riverpod
-Future<List<BookDto>> keepReading(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+Future<List<BookDto>> keepReading(Ref ref, String sourceId) async {
+  if (sourceId.isEmpty) return const [];
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
   try {
@@ -40,9 +41,9 @@ Future<List<BookDto>> keepReading(Ref ref) async {
       for (final b in deck)
         if (seen.add(b.id)) b,
     ].where((b) => !lock.isLocked(b.libraryId)).take(20).toList();
-    await _cacheBooks(ref, result);
+    await _cacheBooks(ref, sourceId, result);
     return result;
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -50,30 +51,32 @@ Future<List<BookDto>> keepReading(Ref ref) async {
 /// Recently added series. Age-gated by each series' own ageRating + its
 /// library's prefs (no series cache needed, so no leak on a fresh install).
 @riverpod
-Future<List<SeriesDto>> recentlyAddedSeries(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+Future<List<SeriesDto>> recentlyAddedSeries(Ref ref, String sourceId) async {
+  if (sourceId.isEmpty) return const [];
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
   try {
     final page = await api.listSeriesNew(size: 20);
-    await _cacheSeries(ref, page.content);
+    await _cacheSeries(ref, sourceId, page.content);
     return _gate(page.content, lock);
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
 
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 @riverpod
-Future<List<SeriesDto>> recentlyUpdatedSeries(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+Future<List<SeriesDto>> recentlyUpdatedSeries(Ref ref, String sourceId) async {
+  if (sourceId.isEmpty) return const [];
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
   try {
     final page = await api.listSeriesUpdated(size: 20);
-    await _cacheSeries(ref, page.content);
+    await _cacheSeries(ref, sourceId, page.content);
     return _gate(page.content, lock);
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -87,11 +90,9 @@ List<SeriesDto> _gate(List<SeriesDto> series, AppLockState lock) =>
 /// and rendered/gated offline by the Pinned rail. Caches the full (ungated) set:
 /// the cache is the source of truth, and the rail's own gate still hides
 /// restricted entries at display time. Best-effort; a write failure is ignored.
-Future<void> _cacheSeries(Ref ref, List<SeriesDto> series) async {
+Future<void> _cacheSeries(Ref ref, String sourceId, List<SeriesDto> series) async {
   if (series.isEmpty) return;
   try {
-    final sourceId = await ref.read(activeSourceIdProvider.future);
-    if (sourceId == null) return;
     final db = ref.read(appDatabaseProvider);
     for (final s in series) {
       await db.upsertSeries(seriesToRow(sourceId, s));
@@ -104,11 +105,9 @@ Future<void> _cacheSeries(Ref ref, List<SeriesDto> series) async {
 
 /// Persists books fetched for a home rail into the local cache, so a pinned
 /// chapter resolves its title/number on the Pinned rail. Best-effort.
-Future<void> _cacheBooks(Ref ref, List<BookDto> books) async {
+Future<void> _cacheBooks(Ref ref, String sourceId, List<BookDto> books) async {
   if (books.isEmpty) return;
   try {
-    final sourceId = await ref.read(activeSourceIdProvider.future);
-    if (sourceId == null) return;
     final db = ref.read(appDatabaseProvider);
     for (final b in books) {
       await db.upsertBook(bookToRow(sourceId, b));
@@ -121,16 +120,17 @@ Future<void> _cacheBooks(Ref ref, List<BookDto> books) async {
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 @riverpod
-Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+Future<List<BookDto>> recentlyAddedBooks(Ref ref, String sourceId) async {
+  if (sourceId.isEmpty) return const [];
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
   try {
     final books = (await api.listBooksLatest(size: 20)).content;
     // Cache the chapters (title/number) so pinning one resolves on the rail.
-    await _cacheBooks(ref, books);
+    await _cacheBooks(ref, sourceId, books);
     return [for (final b in books) if (!lock.isLocked(b.libraryId)) b];
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -139,9 +139,8 @@ Future<List<BookDto>> recentlyAddedBooks(Ref ref) async {
 /// (local completed state via [AppDatabase.watchRecentlyReadBooks]), so it works
 /// offline. Books in a locked library are hidden.
 @riverpod
-Stream<List<Book>> recentlyRead(Ref ref) async* {
-  final sourceId = await ref.watch(activeSourceIdProvider.future);
-  if (sourceId == null) {
+Stream<List<Book>> recentlyRead(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
     yield const [];
     return;
   }
@@ -169,13 +168,13 @@ Future<List<ReadListDto>> readLists(Ref ref) async {
 /// ageRating + its library prefs).
 @riverpod
 Future<List<SeriesDto>> collectionSeries(Ref ref, String collectionId) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   final lock = await ref.watch(appLockProvider.future);
   try {
     final page = await api.collectionSeries(collectionId);
     return _gate(page.content, lock);
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -183,12 +182,12 @@ Future<List<SeriesDto>> collectionSeries(Ref ref, String collectionId) async {
 /// Books in a read list (not age-gated; a curated reading order).
 @riverpod
 Future<List<BookDto>> readListBooks(Ref ref, String readListId) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   try {
     final page = await api.readListBooks(readListId);
     return page.content;
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -207,7 +206,7 @@ Stream<List<Library>> libraries(Ref ref) async* {
   if (repo != null) {
     try {
       await repo.refresh(sourceId);
-    } on KomgaException {
+    } on ContentException {
       // Fall back to whatever is cached.
     }
   }
@@ -221,7 +220,7 @@ Stream<List<Book>> seriesBooks(Ref ref, String sourceId, String seriesId) async*
   if (repo != null) {
     try {
       await repo.refresh(sourceId, seriesId: seriesId, size: 100);
-    } on KomgaException {
+    } on ContentException {
       // Cached books still stream below.
     }
   }
@@ -250,11 +249,11 @@ Stream<List<BookStateRow>> seriesReadStates(
 /// (the screen falls back to the cached row).
 @riverpod
 Future<BookDto?> bookDetailDto(Ref ref, String sourceId, String bookId) async {
-  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return null;
   try {
     return await api.getBook(bookId);
-  } on KomgaException {
+  } on ContentException {
     return null;
   }
 }
@@ -266,11 +265,11 @@ Future<SeriesDto?> seriesDetailDto(
   String sourceId,
   String seriesId,
 ) async {
-  final api = await ref.watch(komgaApiForProvider(sourceId).future);
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api == null) return null;
   try {
     return await api.getSeries(seriesId);
-  } on KomgaException {
+  } on ContentException {
     return null;
   }
 }
@@ -290,11 +289,11 @@ Future<int?> seriesRating(Ref ref, String sourceId, String seriesId) async =>
 /// All genres on the active source (filter chips). Empty on any error/offline.
 @riverpod
 Future<List<String>> genres(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   try {
     return await api.listGenres();
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -302,11 +301,11 @@ Future<List<String>> genres(Ref ref) async {
 /// All tags on the active source (filter chips). Empty on any error/offline.
 @riverpod
 Future<List<String>> tags(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   try {
     return await api.listTags();
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -314,11 +313,11 @@ Future<List<String>> tags(Ref ref) async {
 /// All publishers on the active source (filter chips). Empty on error/offline.
 @riverpod
 Future<List<String>> publishers(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   try {
     return await api.listPublishers();
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -327,12 +326,12 @@ Future<List<String>> publishers(Ref ref) async {
 /// group (there is no fixed Komga age ladder).
 @riverpod
 Future<List<int>> ageRatings(Ref ref) async {
-  final api = await ref.watch(activeKomgaApiProvider.future);
+  final api = await ref.watch(activeContentApiProvider.future);
   if (api == null) return const [];
   try {
     final list = await api.listAgeRatings();
     return list..sort();
-  } on KomgaException {
+  } on ContentException {
     return const [];
   }
 }
@@ -354,7 +353,7 @@ Future<SeriesRow?> seriesDetail(
   if (repo == null) return null;
   try {
     return await repo.fetchSeries(sourceId, seriesId);
-  } on KomgaException {
+  } on ContentException {
     return null;
   }
 }

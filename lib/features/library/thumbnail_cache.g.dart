@@ -6,7 +6,7 @@ part of 'thumbnail_cache.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$coverImageHash() => r'9f2f720182d8cc0b78b0b28cc6974f8458393219';
+String _$coverImageHash() => r'ebbddfd60418d62f44d54158075945cc8c2ea1a2';
 
 /// Copied from Dart SDK
 class _SystemHash {

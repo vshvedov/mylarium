@@ -9,7 +9,7 @@ import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_loading.dart';
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../core/platform/system_ui.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
@@ -23,8 +23,8 @@ import 'double_page_layout.dart';
 import 'double_page_view.dart';
 import 'gestures/tap_zones.dart';
 import 'image_quality.dart';
-import 'komga_page_source.dart';
 import 'offline_page_source.dart';
+import 'online_page_source.dart';
 import 'page_source.dart';
 import 'paged_view.dart';
 import 'page_prefetcher.dart';
@@ -339,7 +339,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     if (!force && _source != null && _cacheWidth == cacheWidth) return;
     _cacheWidth = cacheWidth;
     final base = switch (widget.data.source) {
-      OnlinePages(:final api, :final pages) => KomgaPageSource(
+      OnlinePages(:final api, :final pages) => OnlinePageSource(
           api: api,
           sourceId: widget.sourceId,
           bookId: widget.bookId,

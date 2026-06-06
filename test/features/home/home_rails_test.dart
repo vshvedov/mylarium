@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/data/komga/models/book_dto.dart';
-import 'package:mylarium/data/komga/models/series_dto.dart';
+import 'package:mylarium/data/source/models/book_dto.dart';
+import 'package:mylarium/data/source/models/series_dto.dart';
 import 'package:mylarium/features/home/home_screen.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
@@ -54,11 +54,13 @@ void main() {
       ProviderScope(
         overrides: [
           ...scope.overrides,
-          keepReadingProvider.overrideWith((ref) async => const <BookDto>[]),
-          recentlyAddedBooksProvider.overrideWith((ref) async => [_book('b1')]),
-          recentlyAddedSeriesProvider
+          keepReadingProvider('s1')
+              .overrideWith((ref) async => const <BookDto>[]),
+          recentlyAddedBooksProvider('s1')
+              .overrideWith((ref) async => [_book('b1')]),
+          recentlyAddedSeriesProvider('s1')
               .overrideWith((ref) async => [multiAdded, singleAdded]),
-          recentlyUpdatedSeriesProvider
+          recentlyUpdatedSeriesProvider('s1')
               .overrideWith((ref) async => [multiUpdated]),
           // Keep tiles on the placeholder path (no real cover fetch).
           coverImageProvider('s1', 'book', 'b1').overrideWith((ref) async => null),

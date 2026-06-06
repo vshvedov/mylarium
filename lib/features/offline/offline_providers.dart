@@ -5,6 +5,7 @@ import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/archive/archive_extractor.dart';
 import '../../core/db/database.dart';
 import '../../core/security/app_lock.dart';
+import '../../data/kavita/kavita_providers.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/source_providers.dart';
 import 'download_manager.dart';
@@ -31,8 +32,9 @@ DownloadManager downloadManager(Ref ref) {
     db: ref.watch(appDatabaseProvider),
     downloader: ref.watch(downloaderProvider),
     credentialStore: ref.watch(komgaCredentialStoreProvider),
+    kavitaCredentialStore: ref.watch(kavitaCredentialStoreProvider),
     apiResolver: (sourceId) =>
-        ref.read(komgaApiForProvider(sourceId).future),
+        ref.read(contentApiForProvider(sourceId).future),
     onAssetAdded: cache.evictToCap,
   );
   ref.onDispose(manager.dispose);
@@ -58,9 +60,8 @@ Stream<DownloadProgress> downloadProgress(
 /// "Downloaded" home rail). Books in a locked library are hidden. Empty when
 /// there is no active source.
 @riverpod
-Stream<List<Book>> downloadedBooks(Ref ref) async* {
-  final sourceId = await ref.watch(activeSourceIdProvider.future);
-  if (sourceId == null) {
+Stream<List<Book>> downloadedBooks(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
     yield const [];
     return;
   }
@@ -73,7 +74,7 @@ Stream<List<Book>> downloadedBooks(Ref ref) async* {
 /// Live (total, downloaded) book counts for a series (the series-detail download
 /// control). Reactive to both the books cache and cached assets.
 @riverpod
-Stream<({int total, int downloaded})> seriesDownloadStatus(
+Stream<({int total, int downloaded, int active})> seriesDownloadStatus(
   Ref ref,
   String sourceId,
   String seriesId,

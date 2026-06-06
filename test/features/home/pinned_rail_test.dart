@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/data/komga/models/book_dto.dart';
-import 'package:mylarium/data/komga/models/series_dto.dart';
+import 'package:mylarium/data/source/models/book_dto.dart';
+import 'package:mylarium/data/source/models/series_dto.dart';
 import 'package:mylarium/features/home/home_screen.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
@@ -41,12 +41,13 @@ void main() {
       ProviderScope(
         overrides: [
           ...scope.overrides,
-          keepReadingProvider.overrideWith((ref) async => const <BookDto>[]),
-          recentlyAddedBooksProvider
+          keepReadingProvider('s1')
               .overrideWith((ref) async => const <BookDto>[]),
-          recentlyAddedSeriesProvider
+          recentlyAddedBooksProvider('s1')
+              .overrideWith((ref) async => const <BookDto>[]),
+          recentlyAddedSeriesProvider('s1')
               .overrideWith((ref) async => const <SeriesDto>[]),
-          recentlyUpdatedSeriesProvider
+          recentlyUpdatedSeriesProvider('s1')
               .overrideWith((ref) async => const <SeriesDto>[]),
           coverImageProvider('s1', 'series', 'serP')
               .overrideWith((ref) async => null),

@@ -3,7 +3,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/security/app_lock.dart';
-import '../../data/source/source_providers.dart';
 
 part 'pin_controllers.g.dart';
 
@@ -27,9 +26,8 @@ typedef PinnedEntry = ({
 /// stream with the new lock, hiding/revealing pins live. That ordering is
 /// load-bearing (a test covers it); do not fold the `lock` read into the `.map`.
 @riverpod
-Stream<List<PinnedEntry>> pinnedItems(Ref ref) async* {
-  final sourceId = await ref.watch(activeSourceIdProvider.future);
-  if (sourceId == null) {
+Stream<List<PinnedEntry>> pinnedItems(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
     yield const [];
     return;
   }

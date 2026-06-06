@@ -612,7 +612,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Live (total books, downloaded books) for a series, for the series-detail
   /// download control. Reactive to both the books cache and cached assets.
-  Stream<({int total, int downloaded})> watchSeriesDownloadCounts(
+  Stream<({int total, int downloaded, int active})> watchSeriesDownloadCounts(
     String sourceId,
     String seriesId,
   ) =>
@@ -622,13 +622,20 @@ class AppDatabase extends _$AppDatabase {
         'AS total, '
         '(SELECT COUNT(*) FROM cached_assets ca JOIN books b '
         'ON b.source_id = ca.source_id AND b.id = ca.book_id '
-        'WHERE b.source_id = ?1 AND b.series_id = ?2) AS downloaded',
+        'WHERE b.source_id = ?1 AND b.series_id = ?2) AS downloaded, '
+        // In-flight tasks (queued/running/paused, not terminal): the difference
+        // between "actively downloading" and "partially downloaded but idle".
+        "(SELECT COUNT(*) FROM download_tasks dt JOIN books b "
+        'ON b.source_id = dt.source_id AND b.id = dt.book_id '
+        "WHERE b.source_id = ?1 AND b.series_id = ?2 "
+        "AND dt.state NOT IN ('complete', 'failed')) AS active",
         variables: [Variable.withString(sourceId), Variable.withString(seriesId)],
-        readsFrom: {books, cachedAssets},
+        readsFrom: {books, cachedAssets, downloadTasks},
       ).watchSingle().map(
             (row) => (
               total: row.read<int>('total'),
               downloaded: row.read<int>('downloaded'),
+              active: row.read<int>('active'),
             ),
           );
 

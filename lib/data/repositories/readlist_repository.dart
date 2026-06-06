@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
-import '../komga/komga_api.dart';
-import '../komga/models/readlist_dto.dart';
+import '../../core/network/content_exception.dart';
+import '../source/content_api.dart';
+import '../source/models/readlist_dto.dart';
 
 /// Read lists (curated ordered sets of books). Fetches online and caches the
 /// list as JSON in `CachedMetadata`; on a network failure returns the cached
@@ -13,7 +13,7 @@ import '../komga/models/readlist_dto.dart';
 class ReadListRepository {
   const ReadListRepository(this._api, this._db, this._sourceId);
 
-  final KomgaApi _api;
+  final ContentApi _api;
   final AppDatabase _db;
   final String _sourceId;
 
@@ -39,7 +39,7 @@ class ReadListRepository {
         fetchedAt: Value(DateTime.now().millisecondsSinceEpoch),
       ));
       return result.content;
-    } on KomgaException {
+    } on ContentException {
       return _cached();
     }
   }
@@ -86,7 +86,7 @@ class ReadListRepository {
         ordered: fresh.ordered,
         bookIds: next,
       );
-    } on KomgaException {
+    } on ContentException {
       await _restore(original);
       rethrow;
     }

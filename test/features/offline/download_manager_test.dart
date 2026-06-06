@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/core/fs/app_paths.dart';
 import 'package:mylarium/core/storage/secure_store.dart';
+import 'package:mylarium/data/kavita/auth/kavita_credential.dart';
 import 'package:mylarium/data/komga/auth/komga_credential.dart';
 import 'package:mylarium/features/offline/download_manager.dart';
 import 'package:mylarium/features/offline/downloader.dart';
@@ -28,6 +29,7 @@ class _FakeDownloader implements Downloader {
   _FakeDownloader(this.bytes);
   final List<int> bytes;
   int calls = 0;
+  String? lastUrl;
   final _controller = StreamController<DownloadUpdate>.broadcast();
 
   @override
@@ -43,6 +45,7 @@ class _FakeDownloader implements Downloader {
     required bool requiresWifi,
   }) async {
     calls++;
+    lastUrl = url;
     final abs = await AppPaths.resolve(p.join(relativeDirectory, filename));
     await Directory(p.dirname(abs)).create(recursive: true);
     await File(abs).writeAsBytes(bytes);
@@ -59,6 +62,7 @@ void main() {
   late AppDatabase db;
   late Directory tmp;
   late KomgaCredentialStore credentials;
+  final kavitaCredentials = KavitaCredentialStore(_InMemorySecureStore());
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
@@ -91,6 +95,7 @@ void main() {
         db: db,
         downloader: d,
         credentialStore: credentials,
+        kavitaCredentialStore: kavitaCredentials,
         apiResolver: (_) async => null,
       );
 
@@ -220,10 +225,32 @@ void main() {
       db: db,
       downloader: dl,
       credentialStore: empty,
+      kavitaCredentialStore: kavitaCredentials,
       apiResolver: (_) async => null,
     ).enqueueBook('s1', 'b1');
     await Future<void>.delayed(const Duration(milliseconds: 60));
     expect(dl.calls, 0);
     expect(await db.getCachedAsset('s1', 'b1'), isNull);
+  });
+
+  test('a Kavita source downloads the chapter with the apiKey in the URL',
+      () async {
+    await db.upsertSource(const SourcesCompanion(
+      id: Value('s2'),
+      kind: Value('kavita'),
+      baseUrl: Value('https://kavita.test'),
+      label: Value('K'),
+    ));
+    await kavitaCredentials.write('s2', const KavitaCredential('SECRETKEY'));
+    final dl = _FakeDownloader([9, 9, 9]);
+    addTearDown(dl.close);
+    await manager(dl).enqueueBook('s2', '163', manual: true);
+    for (var i = 0; i < 50; i++) {
+      if (await db.getCachedAsset('s2', '163') != null) break;
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    expect(dl.lastUrl,
+        'https://kavita.test/api/Download/chapter?chapterId=163&apiKey=SECRETKEY');
+    expect(await db.getCachedAsset('s2', '163'), isNotNull);
   });
 }

@@ -1,5 +1,5 @@
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../data/repositories/series_repository.dart';
 
 /// Keyset cursor over `(titleSort, id)`. A start cursor (both null) is the first
@@ -21,7 +21,7 @@ class SeriesCursor {
 }
 
 /// A keyset page result. Named distinctly from the Komga `Page<T>` envelope
-/// (`lib/data/komga/models/page.dart`) to avoid the collision.
+/// (`lib/data/source/models/page.dart`) to avoid the collision.
 class KeysetPage<T> {
   const KeysetPage(this.content, {required this.last});
   final List<T> content;
@@ -89,7 +89,7 @@ class SeriesGridController {
         libraryId: libraryId,
       );
       _syncedPages++;
-    } on KomgaException {
+    } on ContentException {
       _networkFailed = true;
     }
   }

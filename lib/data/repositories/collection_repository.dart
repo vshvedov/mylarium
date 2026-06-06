@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
-import '../komga/komga_api.dart';
-import '../komga/models/collection_dto.dart';
+import '../../core/network/content_exception.dart';
+import '../source/content_api.dart';
+import '../source/models/collection_dto.dart';
 
 /// Collections (curated ordered sets of series). Fetches online and caches the
 /// list as JSON in `CachedMetadata` so browsing survives a restart; on a
@@ -13,7 +13,7 @@ import '../komga/models/collection_dto.dart';
 class CollectionRepository {
   const CollectionRepository(this._api, this._db, this._sourceId);
 
-  final KomgaApi _api;
+  final ContentApi _api;
   final AppDatabase _db;
   final String _sourceId;
 
@@ -39,7 +39,7 @@ class CollectionRepository {
         fetchedAt: Value(DateTime.now().millisecondsSinceEpoch),
       ));
       return result.content;
-    } on KomgaException {
+    } on ContentException {
       return _cached();
     }
   }
@@ -87,7 +87,7 @@ class CollectionRepository {
         ordered: fresh.ordered,
         seriesIds: next,
       );
-    } on KomgaException {
+    } on ContentException {
       await _restore(original);
       rethrow;
     }

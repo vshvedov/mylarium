@@ -3,15 +3,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../data/komga/komga_api.dart';
-import '../../data/komga/models/page_dto.dart';
+import '../../data/source/content_api.dart';
+import '../../data/source/models/page_dto.dart';
 import 'page_source.dart';
 
-/// Online page source: serves Komga page images through the authenticated Dio
-/// client. Page dimensions (when Komga supplies them) drive webtoon extents and
-/// wide-page detection.
-class KomgaPageSource implements PageSource {
-  KomgaPageSource({
+/// Online page source: serves page images through any authenticated
+/// [ContentApi] (Komga or Kavita) via its Dio client. Page dimensions (when the
+/// source supplies them) drive webtoon extents and wide-page detection.
+class OnlinePageSource implements PageSource {
+  OnlinePageSource({
     required this.api,
     required this.sourceId,
     required this.bookId,
@@ -19,7 +19,7 @@ class KomgaPageSource implements PageSource {
     this.cacheWidth,
   });
 
-  final KomgaApi api;
+  final ContentApi api;
   final String sourceId;
   final String bookId;
   final List<PageDto> pages;
@@ -34,7 +34,7 @@ class KomgaPageSource implements PageSource {
   /// Synchronous provider for the views (the provider itself defers the byte
   /// load to the image pipeline).
   @override
-  ImageProvider imageProvider(int i) => KomgaPageImageProvider(
+  ImageProvider imageProvider(int i) => OnlineImageProvider(
         api: api,
         sourceId: sourceId,
         bookId: bookId,
@@ -43,7 +43,7 @@ class KomgaPageSource implements PageSource {
       );
 
   @override
-  ImageProvider thumbnail(int i) => KomgaPageImageProvider(
+  ImageProvider thumbnail(int i) => OnlineImageProvider(
         api: api,
         sourceId: sourceId,
         bookId: bookId,
@@ -73,13 +73,13 @@ class KomgaPageSource implements PageSource {
   }
 }
 
-/// An [ImageProvider] for a single Komga page, keyed by
+/// An [ImageProvider] for a single online page, keyed by
 /// `(sourceId, bookId, pageNumber, cacheWidth)` so two servers sharing a bookId
 /// never collide in the global [ImageCache]. Bytes load through the authed Dio
 /// client; `cacheWidth` sizes the decode to the viewport.
 @immutable
-class KomgaPageImageProvider extends ImageProvider<KomgaPageImageProvider> {
-  const KomgaPageImageProvider({
+class OnlineImageProvider extends ImageProvider<OnlineImageProvider> {
+  const OnlineImageProvider({
     required this.api,
     required this.sourceId,
     required this.bookId,
@@ -87,27 +87,27 @@ class KomgaPageImageProvider extends ImageProvider<KomgaPageImageProvider> {
     this.cacheWidth,
   });
 
-  final KomgaApi api;
+  final ContentApi api;
   final String sourceId;
   final String bookId;
 
-  /// 1-based (Komga's page addressing).
+  /// 1-based (the shared page addressing).
   final int pageNumber;
   final int? cacheWidth;
 
   @override
-  Future<KomgaPageImageProvider> obtainKey(ImageConfiguration configuration) =>
-      SynchronousFuture<KomgaPageImageProvider>(this);
+  Future<OnlineImageProvider> obtainKey(ImageConfiguration configuration) =>
+      SynchronousFuture<OnlineImageProvider>(this);
 
   @override
   ImageStreamCompleter loadImage(
-    KomgaPageImageProvider key,
+    OnlineImageProvider key,
     ImageDecoderCallback decode,
   ) =>
       MultiFrameImageStreamCompleter(
         codec: _load(decode),
         scale: 1.0,
-        debugLabel: 'komga:$sourceId:$bookId:$pageNumber',
+        debugLabel: 'online:$sourceId:$bookId:$pageNumber',
       );
 
   Future<ui.Codec> _load(ImageDecoderCallback decode) async {
@@ -133,7 +133,7 @@ class KomgaPageImageProvider extends ImageProvider<KomgaPageImageProvider> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is KomgaPageImageProvider &&
+      other is OnlineImageProvider &&
           other.sourceId == sourceId &&
           other.bookId == bookId &&
           other.pageNumber == pageNumber &&

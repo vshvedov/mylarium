@@ -17,8 +17,8 @@ Future<String> deviceId(Ref ref) async {
 }
 
 /// The app-wide sync engine. keepAlive so the write-back queue and reconcile
-/// outlive any reader screen. The Komga client is resolved lazily per call
-/// (through [komgaApiForProvider]), so mid-session re-auth or source deletion
+/// outlive any reader screen. The content client is resolved lazily per call
+/// (through [contentApiForProvider]), so mid-session re-auth or source deletion
 /// is honored at flush/reconcile time.
 @Riverpod(keepAlive: true)
 Future<SyncEngine> syncEngine(Ref ref) async {
@@ -26,7 +26,7 @@ Future<SyncEngine> syncEngine(Ref ref) async {
   final id = await ref.watch(deviceIdProvider.future);
   return SyncEngine(
     db,
-    (sourceId) => ref.read(komgaApiForProvider(sourceId).future),
+    (sourceId) => ref.read(contentApiForProvider(sourceId).future),
     deviceId: id,
   );
 }

@@ -14,6 +14,8 @@ import '../library/widgets/item_context_menu.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
 import '../offline/offline_providers.dart';
+import '../sources/source_status_button.dart';
+import '../sources/sources_sheet.dart';
 import 'home_layout.dart';
 import 'home_layout_controller.dart';
 
@@ -25,13 +27,17 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull;
-    final pinned = ref.watch(pinnedItemsProvider);
-    final keepReading = ref.watch(keepReadingProvider);
-    final downloaded = ref.watch(downloadedBooksProvider);
-    final addedBooks = ref.watch(recentlyAddedBooksProvider);
-    final added = ref.watch(recentlyAddedSeriesProvider);
-    final updated = ref.watch(recentlyUpdatedSeriesProvider);
-    final recentRead = ref.watch(recentlyReadProvider);
+    // Rail providers are keyed by source: switching the active source yields a
+    // fresh provider per source, so a switch never renders the previous
+    // source's items (and never fetches their covers from the new server).
+    final railSource = sourceId ?? '';
+    final pinned = ref.watch(pinnedItemsProvider(railSource));
+    final keepReading = ref.watch(keepReadingProvider(railSource));
+    final downloaded = ref.watch(downloadedBooksProvider(railSource));
+    final addedBooks = ref.watch(recentlyAddedBooksProvider(railSource));
+    final added = ref.watch(recentlyAddedSeriesProvider(railSource));
+    final updated = ref.watch(recentlyUpdatedSeriesProvider(railSource));
+    final recentRead = ref.watch(recentlyReadProvider(railSource));
     final visibleRails = ref.watch(visibleHomeRailsProvider);
 
     List<Widget> seriesTiles(List<dynamic> series) => [
@@ -139,6 +145,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Mylarium'),
         actions: [
+          if (sourceId != null) SourceStatusButton(sourceId: sourceId),
           IconButton(
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
@@ -272,10 +279,11 @@ class HomeScreen extends ConsumerWidget {
             ),
             AppListRow(
               icon: AppIcons.sources,
-              title: 'Sources (debug)',
+              title: 'Sources',
+              subtitle: 'Switch, add, or remove servers',
               onTap: () {
                 Navigator.of(sheetContext).pop();
-                context.push('/debug/sources');
+                showSourcesSheet(context);
               },
             ),
           ],

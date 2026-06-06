@@ -11,7 +11,7 @@ const _redactionMask = '***';
 /// Builds a Dio configured for a Komga server. [baseUrl] is the server origin
 /// (no `/api/v1`); call sites append the versioned path. Interceptors, in order:
 /// auth injection, redacting logger, error -> [DioException] (callers convert to
-/// `KomgaException`).
+/// `ContentException`).
 Dio buildKomgaDio({
   required String baseUrl,
   required KomgaAuth auth,

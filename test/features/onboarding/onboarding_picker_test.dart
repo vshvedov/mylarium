@@ -16,13 +16,17 @@ Widget _harness() {
         path: '/onboarding/komga',
         builder: (_, _) => const Scaffold(body: Text('KOMGA FORM')),
       ),
+      GoRoute(
+        path: '/onboarding/kavita',
+        builder: (_, _) => const Scaffold(body: Text('KAVITA FORM')),
+      ),
     ],
   );
   return MaterialApp.router(theme: lightTheme, routerConfig: router);
 }
 
 void main() {
-  testWidgets('picker lists the three sources with Komga connectable',
+  testWidgets('picker lists the three sources with Komga and Kavita connectable',
       (tester) async {
     await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
@@ -31,8 +35,8 @@ void main() {
     expect(find.text('Kavita'), findsOneWidget);
     expect(find.text('Local files'), findsOneWidget);
 
-    // Kavita and Local files are coming-soon; Komga is not.
-    expect(find.text('Soon'), findsNWidgets(2));
+    // Only Local files is coming-soon now; Komga and Kavita are connectable.
+    expect(find.text('Soon'), findsOneWidget);
   });
 
   testWidgets('tapping Komga opens the connect form', (tester) async {
@@ -45,15 +49,26 @@ void main() {
     expect(find.text('KOMGA FORM'), findsOneWidget);
   });
 
-  testWidgets('coming-soon sources do not navigate', (tester) async {
+  testWidgets('tapping Kavita opens the Kavita connect form', (tester) async {
     await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Kavita'));
     await tester.pumpAndSettle();
 
-    // Still on the picker; the connect form did not open.
+    expect(find.text('KAVITA FORM'), findsOneWidget);
+  });
+
+  testWidgets('coming-soon sources do not navigate', (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Local files'));
+    await tester.pumpAndSettle();
+
+    // Still on the picker; no connect form opened.
     expect(find.text('KOMGA FORM'), findsNothing);
-    expect(find.text('Kavita'), findsOneWidget);
+    expect(find.text('KAVITA FORM'), findsNothing);
+    expect(find.text('Local files'), findsOneWidget);
   });
 }

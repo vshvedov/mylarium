@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/widgets/app_loading.dart';
 import '../../../app/widgets/app_text_field.dart';
-import '../../../core/network/komga_exception.dart';
+import '../../../core/network/content_exception.dart';
 import '../../../data/source/source_providers.dart';
 import '../library_browse_controllers.dart';
 
@@ -160,7 +160,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
         await repo?.create(name, bookIds: [widget.itemId]);
         ref.invalidate(readListsProvider);
       }
-    } on KomgaException {
+    } on ContentException {
       _snack('Could not create $name.');
     }
   }
@@ -171,7 +171,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
       if (_isCollection) {
         final repo = await ref.read(collectionRepositoryProvider.future);
         if (repo == null) {
-          throw const KomgaException(KomgaErrorKind.unreachable, 'No source.');
+          throw const ContentException(ContentErrorKind.unreachable, 'No source.');
         }
         if (add) {
           await repo.addSeries(id, widget.itemId);
@@ -182,7 +182,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
       } else {
         final repo = await ref.read(readListRepositoryProvider.future);
         if (repo == null) {
-          throw const KomgaException(KomgaErrorKind.unreachable, 'No source.');
+          throw const ContentException(ContentErrorKind.unreachable, 'No source.');
         }
         if (add) {
           await repo.addBook(id, widget.itemId);
@@ -191,7 +191,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
         }
         ref.invalidate(readListsProvider);
       }
-    } on KomgaException {
+    } on ContentException {
       if (mounted) setState(() => _override.remove(id));
       _snack(add ? 'Could not add.' : 'Could not remove.');
     }

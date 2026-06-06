@@ -26,11 +26,11 @@ final deviceIdProvider = FutureProvider<String>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DeviceIdRef = FutureProviderRef<String>;
-String _$syncEngineHash() => r'5e75bc15e2d4580e276e7c3c119a33339c84c923';
+String _$syncEngineHash() => r'a271cdac5b4f91b13f9c9ede360b39fab5b799d4';
 
 /// The app-wide sync engine. keepAlive so the write-back queue and reconcile
-/// outlive any reader screen. The Komga client is resolved lazily per call
-/// (through [komgaApiForProvider]), so mid-session re-auth or source deletion
+/// outlive any reader screen. The content client is resolved lazily per call
+/// (through [contentApiForProvider]), so mid-session re-auth or source deletion
 /// is honored at flush/reconcile time.
 ///
 /// Copied from [syncEngine].

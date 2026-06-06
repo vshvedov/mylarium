@@ -23,7 +23,7 @@ final authenticatorProvider = Provider<Authenticator>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthenticatorRef = ProviderRef<Authenticator>;
-String _$appLockHash() => r'a360f5bb0196aedd81c33504f8611d5361d64b25';
+String _$appLockHash() => r'3e17257a8b5ab3fcc5de8fbfb0f469505ca89ef0';
 
 /// Tracks the per-library lock flag (persisted) for the active source. Locking
 /// hides a library's content everywhere; unlocking requires biometric/PIN and

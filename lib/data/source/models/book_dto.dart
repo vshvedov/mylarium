@@ -1,4 +1,4 @@
-import 'komga_meta.dart';
+import 'content_meta.dart';
 
 /// Komga book resource. `metadata` carries title/number; `media` carries page
 /// count and type; `readProgress` (nullable) carries last-known progress.
@@ -42,12 +42,12 @@ class BookDto {
   /// [sizeBytes]; page count is [pagesCount]; read date is [readDate].
   final String? summary;
   final List<String> tags;
-  final List<KomgaAuthor> authors;
+  final List<ContentAuthor> authors;
 
   /// Release date as epoch ms (parsed from `metadata.releaseDate`, a `YYYY-MM-DD`
   /// string), or null when unset.
   final int? releaseDate;
-  final List<KomgaLink> links;
+  final List<ContentLink> links;
 
   /// When the server last recorded a read for this book (epoch ms), parsed from
   /// `readProgress.readDate`. Null when never read. Used to time a synthesized

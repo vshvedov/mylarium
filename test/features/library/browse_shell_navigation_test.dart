@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/core/network/komga_exception.dart';
+import 'package:mylarium/core/network/content_exception.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/repositories/series_repository.dart';
 import 'package:mylarium/data/source/source_providers.dart';
@@ -32,7 +32,7 @@ class _OfflineSeriesRepository extends SeriesRepository {
     String? libraryId,
     Object? search,
   }) async =>
-      throw const KomgaException(KomgaErrorKind.unreachable, 'offline');
+      throw const ContentException(ContentErrorKind.unreachable, 'offline');
 }
 
 Future<TestScope> _seed() async {
@@ -91,7 +91,7 @@ Future<GoRouter> _pumpBrowse(
           (ref) async => _OfflineSeriesRepository(scope.db, KomgaApi(Dio())),
         ),
         // No server: covers resolve to the deterministic placeholder.
-        komgaApiForProvider('s1').overrideWith((ref) async => null),
+        contentApiForProvider('s1').overrideWith((ref) async => null),
         // Comic Vine off (avoids hitting secure storage, which never resolves
         // in a widget test and would leave the panel spinning forever).
         comicVineApiKeyProvider.overrideWith((ref) async => null),
@@ -144,7 +144,7 @@ void main() {
           seriesDetailDtoProvider('s1', 'ida').overrideWith((ref) async => null),
           seriesRatingProvider('s1', 'ida').overrideWith((ref) async => null),
           seriesDownloadStatusProvider('s1', 'ida').overrideWith(
-            (ref) => Stream.value((total: 0, downloaded: 0)),
+            (ref) => Stream.value((total: 0, downloaded: 0, active: 0)),
           ),
           // The embedded detail now hosts a pin toggle; stub its db stream so it
           // does not outlive the test (like the other detail providers above).

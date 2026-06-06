@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart' show Value;
 
 import '../../core/db/database.dart';
-import '../../core/network/komga_exception.dart';
-import '../../data/komga/komga_api.dart';
+import '../../core/network/content_exception.dart';
+import '../../data/source/content_api.dart';
 import 'sync_models.dart';
 
 /// Maximum transient failures before a queued write-back is dead-lettered.
@@ -23,11 +23,11 @@ class WriteBackQueue {
   WriteBackQueue(this._db, this._apiFor);
 
   final AppDatabase _db;
-  final Future<KomgaApi?> Function(String sourceId) _apiFor;
+  final Future<ContentApi?> Function(String sourceId) _apiFor;
 
   Future<void> flush() async {
     final rows = await _db.pendingSync();
-    final apis = <String, KomgaApi?>{};
+    final apis = <String, ContentApi?>{};
     // Sources that hit a transient error this pass: skip their remaining rows so
     // one down/unauthorized server cannot stall write-back for the others.
     final stalled = <String>{};
@@ -52,7 +52,7 @@ class WriteBackQueue {
       try {
         await _dispatch(api, op, row);
         await _db.deleteSyncRow(row.id);
-      } on KomgaException catch (e) {
+      } on ContentException catch (e) {
         if (_isTransient(e)) {
           final attempts = row.attempts + 1;
           await _db.updateSyncRow(
@@ -83,7 +83,7 @@ class WriteBackQueue {
   /// success, so it is swallowed here before the outer catch's permanent policy
   /// would dead-letter it. Every other error propagates to the outer catch with
   /// the existing transient/permanent handling unchanged.
-  Future<void> _dispatch(KomgaApi api, SyncOp op, SyncQueueRow row) async {
+  Future<void> _dispatch(ContentApi api, SyncOp op, SyncQueueRow row) async {
     switch (op) {
       case SyncOp.progress:
         await api.patchReadProgress(
@@ -114,8 +114,8 @@ SyncOp? _parseOp(String op) {
 Future<void> _ignoreNotFound(Future<void> Function() run) async {
   try {
     await run();
-  } on KomgaException catch (e) {
-    if (e.kind == KomgaErrorKind.notFound) return;
+  } on ContentException catch (e) {
+    if (e.kind == ContentErrorKind.notFound) return;
     rethrow;
   }
 }
@@ -123,17 +123,17 @@ Future<void> _ignoreNotFound(Future<void> Function() run) async {
 /// Whether a Komga error is worth retrying. Unreachable/TLS carry a null
 /// statusCode; 401 (session may re-auth), 408, 429, and 5xx are transient.
 /// Everything else (400/403/404/422...) is permanent.
-bool _isTransient(KomgaException e) {
+bool _isTransient(ContentException e) {
   switch (e.kind) {
-    case KomgaErrorKind.unreachable:
-    case KomgaErrorKind.tls:
-    case KomgaErrorKind.unauthorized:
+    case ContentErrorKind.unreachable:
+    case ContentErrorKind.tls:
+    case ContentErrorKind.unauthorized:
       return true;
-    case KomgaErrorKind.forbidden:
-    case KomgaErrorKind.notFound:
+    case ContentErrorKind.forbidden:
+    case ContentErrorKind.notFound:
       return false;
-    case KomgaErrorKind.badResponse:
-    case KomgaErrorKind.unknown:
+    case ContentErrorKind.badResponse:
+    case ContentErrorKind.unknown:
       final s = e.statusCode;
       return s == null || s == 408 || s == 429 || s >= 500;
   }

@@ -41,7 +41,7 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
       overrides: [
         ...scope.overrides,
         // No server: every cover resolves to the placeholder (deterministic).
-        komgaApiForProvider('s1').overrideWith((ref) async => null),
+        contentApiForProvider('s1').overrideWith((ref) async => null),
       ],
       child: MaterialApp(
         theme: theme,

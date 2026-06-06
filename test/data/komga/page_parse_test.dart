@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mylarium/data/komga/models/page.dart';
-import 'package:mylarium/data/komga/models/series_dto.dart';
+import 'package:mylarium/data/source/models/page.dart';
+import 'package:mylarium/data/source/models/series_dto.dart';
 
 void main() {
   test('Page.fromJson parses the Spring envelope', () {

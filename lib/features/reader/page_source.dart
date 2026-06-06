@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-/// The reader consumes a [PageSource], not a specific transport. T4 ships the
-/// online [KomgaPageSource]; archive-backed `OfflinePageSource` (T5) and
-/// `LocalArchivePageSource` (T7) implement the same contract.
+/// The reader consumes a [PageSource], not a specific transport. The online
+/// `OnlinePageSource` serves any `ContentApi` (Komga or Kavita); archive-backed
+/// `OfflinePageSource` and `LocalArchivePageSource` implement the same contract.
 abstract class PageSource {
   /// Number of pages in the book.
   int get pageCount;

@@ -9,10 +9,12 @@ import 'package:path/path.dart' as p;
 import '../../core/db/database.dart';
 import '../../core/fs/app_paths.dart';
 import '../../core/fs/backup_exclusion.dart';
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
+import '../../data/kavita/auth/kavita_credential.dart';
 import '../../data/komga/auth/komga_credential.dart';
-import '../../data/komga/komga_api.dart';
-import '../../data/komga/models/mappers.dart';
+import '../../data/source/models/mappers.dart';
+import '../../data/source/content_api.dart';
+import '../../data/source/content_source.dart';
 import 'downloader.dart';
 
 /// Display-facing download progress for a book.
@@ -30,8 +32,10 @@ class DownloadProgress {
   bool get isComplete => state == 'complete';
 }
 
-/// Resolves a [KomgaApi] for a source (used to persist book metadata at enqueue).
-typedef ApiResolver = Future<KomgaApi?> Function(String sourceId);
+/// Resolves a [ContentApi] for a source (used to persist book metadata at
+/// enqueue). Offline download is Komga-only this phase; Kavita sources are
+/// gated out in [DownloadManager.enqueueBook].
+typedef ApiResolver = Future<ContentApi?> Function(String sourceId);
 
 /// Queues background full-chapter downloads and records a CachedAsset on
 /// completion. Completion/progress are handled via the [Downloader]'s GLOBAL
@@ -44,12 +48,14 @@ class DownloadManager {
     required AppDatabase db,
     required Downloader downloader,
     required KomgaCredentialStore credentialStore,
+    required KavitaCredentialStore kavitaCredentialStore,
     required ApiResolver apiResolver,
     Future<void> Function()? onAssetAdded,
     int Function()? nowMillis,
   })  : _db = db,
         _downloader = downloader,
         _credentials = credentialStore,
+        _kavitaCredentials = kavitaCredentialStore,
         _apiResolver = apiResolver,
         _onAssetAdded = onAssetAdded,
         _now = nowMillis ?? (() => DateTime.now().millisecondsSinceEpoch) {
@@ -59,6 +65,7 @@ class DownloadManager {
   final AppDatabase _db;
   final Downloader _downloader;
   final KomgaCredentialStore _credentials;
+  final KavitaCredentialStore _kavitaCredentials;
   final ApiResolver _apiResolver;
   final Future<void> Function()? _onAssetAdded;
   final int Function() _now;
@@ -106,17 +113,17 @@ class DownloadManager {
       if (!manual && !settings.autoCacheEnabled) return;
 
       final source = await _db.getSource(sourceId);
-      final baseUrl = source?.baseUrl;
-      if (baseUrl == null) return;
-      final credential = await _credentials.read(sourceId);
-      if (credential == null) return;
+      if (source == null) return;
+      final req = await _downloadRequest(source, bookId);
+      // Unsupported source kind or missing credential: nothing to download.
+      if (req == null) return;
 
       if (await _db.getBook(sourceId, bookId) == null) {
         final api = await _apiResolver(sourceId);
         if (api != null) {
           try {
             await _db.upsertBook(bookToRow(sourceId, await api.getBook(bookId)));
-          } on KomgaException {
+          } on ContentException {
             // Non-fatal.
           }
         }
@@ -138,14 +145,46 @@ class DownloadManager {
         sourceId: sourceId,
         bookId: bookId,
         taskId: taskId,
-        baseUrl: baseUrl,
-        headers: credential.toAuth().headers(),
+        url: req.url,
+        headers: req.headers,
         permanent: manual,
         requiresWifi: requiresWifi,
       );
     } catch (_) {
       await _markFailed(sourceId, bookId);
     }
+  }
+
+  /// Builds the background-download request (URL + headers) for [bookId] on
+  /// [source], reading the credential from the store matching the source kind.
+  /// Komga streams the book file with an auth header; Kavita streams the chapter
+  /// with the API key as a query parameter (the background downloader cannot
+  /// perform Kavita's JWT handshake). Returns null for an unsupported kind or a
+  /// missing credential.
+  Future<({String url, Map<String, String> headers})?> _downloadRequest(
+    Source source,
+    String bookId,
+  ) async {
+    final baseUrl = source.baseUrl;
+    if (baseUrl == null) return null;
+    if (source.kind == SourceKind.komga.name) {
+      final credential = await _credentials.read(source.id);
+      if (credential == null) return null;
+      return (
+        url: '$baseUrl/api/v1/books/$bookId/file',
+        headers: credential.toAuth().headers(),
+      );
+    }
+    if (source.kind == SourceKind.kavita.name) {
+      final credential = await _kavitaCredentials.read(source.id);
+      if (credential == null) return null;
+      return (
+        url: '$baseUrl/api/Download/chapter'
+            '?chapterId=$bookId&apiKey=${credential.apiKey}',
+        headers: const <String, String>{},
+      );
+    }
+    return null;
   }
 
   /// Enqueues every cached book of a series for permanent offline download
@@ -160,7 +199,7 @@ class DownloadManager {
     required String sourceId,
     required String bookId,
     required String taskId,
-    required String baseUrl,
+    required String url,
     required Map<String, String> headers,
     required bool permanent,
     required bool requiresWifi,
@@ -168,7 +207,7 @@ class DownloadManager {
     final rel = _relPathFor(sourceId, bookId, permanent);
     await _downloader.enqueue(
       taskId: taskId,
-      url: '$baseUrl/api/v1/books/$bookId/file',
+      url: url,
       headers: headers,
       relativeDirectory: p.dirname(rel),
       filename: p.basename(rel),
@@ -301,9 +340,10 @@ class DownloadManager {
           continue;
         }
         final source = await _db.getSource(task.sourceId);
-        final baseUrl = source?.baseUrl;
-        final credential = await _credentials.read(task.sourceId);
-        if (baseUrl == null || credential == null) {
+        final req = source == null
+            ? null
+            : await _downloadRequest(source, task.bookId);
+        if (req == null) {
           await _markFailed(task.sourceId, task.bookId);
           continue;
         }
@@ -311,8 +351,8 @@ class DownloadManager {
           sourceId: task.sourceId,
           bookId: task.bookId,
           taskId: task.taskId,
-          baseUrl: baseUrl,
-          headers: credential.toAuth().headers(),
+          url: req.url,
+          headers: req.headers,
           permanent: task.permanent,
           requiresWifi: task.requiresWifi,
         );

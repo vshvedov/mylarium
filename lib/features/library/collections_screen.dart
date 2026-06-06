@@ -5,7 +5,7 @@ import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/network/komga_exception.dart';
+import '../../core/network/content_exception.dart';
 import '../../data/source/source_providers.dart';
 import 'library_browse_controllers.dart';
 import 'widgets/add_to_collection_sheet.dart';
@@ -229,7 +229,7 @@ Future<void> _createNew(
       await repo?.create(name);
       ref.invalidate(readListsProvider);
     }
-  } on KomgaException {
+  } on ContentException {
     if (context.mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Could not create $name.')));
@@ -264,7 +264,7 @@ Future<void> _confirmRemove(
   if (ok != true) return;
   try {
     await onRemove();
-  } on KomgaException {
+  } on ContentException {
     if (context.mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Could not remove.')));
