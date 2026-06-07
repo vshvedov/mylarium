@@ -647,6 +647,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           viewportAspect: viewportAspect,
           rtl: effectiveRtl(s),
           doubleTapZoom: s.doubleTapZoom,
+          filterQuality: _sampling,
           zoomed: _zoomed,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
