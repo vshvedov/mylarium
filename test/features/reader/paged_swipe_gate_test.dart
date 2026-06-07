@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/features/reader/paged_view.dart';
 import 'package:mylarium/features/reader/reader_models.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
 class _StubProvider extends ImageProvider<_StubProvider> {
   const _StubProvider(this.index);
@@ -39,7 +40,9 @@ void main() {
         pageController: controller,
         pageCount: 3,
         imageBuilder: (i) => _StubProvider(i),
+        aspectRatioOf: (_) => 0.66,
         fit: FitMode.screen,
+        viewportAspect: 0.7,
         rtl: false,
         doubleTapZoom: true,
         zoomed: zoomed,
@@ -48,14 +51,15 @@ void main() {
       ),
     ));
 
-    PageView pageView() => tester.widget<PageView>(find.byType(PageView));
+    PhotoViewGallery gallery() =>
+        tester.widget<PhotoViewGallery>(find.byType(PhotoViewGallery));
 
     // At scale 1, paging is enabled.
-    expect(pageView().physics, isA<PageScrollPhysics>());
+    expect(gallery().scrollPhysics, isA<PageScrollPhysics>());
 
-    // When a page is zoomed, the pager stops paging.
+    // When a page is zoomed, the gallery stops paging.
     zoomed.value = true;
     await tester.pump();
-    expect(pageView().physics, isA<NeverScrollableScrollPhysics>());
+    expect(gallery().scrollPhysics, isA<NeverScrollableScrollPhysics>());
   });
 }

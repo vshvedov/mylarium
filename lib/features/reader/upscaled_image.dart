@@ -20,7 +20,6 @@ class UpscaledImage extends StatefulWidget {
     super.key,
     required this.image,
     this.fit = BoxFit.contain,
-    this.highQuality = true,
     this.onSize,
     this.loadingBuilder,
     this.errorBuilder,
@@ -30,11 +29,6 @@ class UpscaledImage extends StatefulWidget {
 
   /// How the page is sized within its box (matches [Image.fit]).
   final BoxFit fit;
-
-  /// When true, sample through the Lanczos shader (sharp upscale). When false,
-  /// draw with the engine's default sampler - far cheaper, and correct at or
-  /// below 1:1, so callers pass false at fit/while paging to keep frames smooth.
-  final bool highQuality;
 
   /// Called with the decoded pixel size once known (for `childSize`).
   final ValueChanged<Size>? onSize;
@@ -52,17 +46,21 @@ class _UpscaledImageState extends State<UpscaledImage> {
   Object? _error;
   ui.FragmentProgram? _program;
 
+  /// True if the shader failed to load (e.g. an unsupported backend). We then
+  /// fall back to a plain [RawImage] so pages still render, just without the
+  /// high-quality upscale.
+  bool _shaderFailed = false;
+
   @override
   void initState() {
     super.initState();
-    // If the shader never loads (unsupported backend), [_program] stays null and
-    // the build falls back to a plain [RawImage] - pages still render, just
-    // without the high-quality upscale.
     ReaderUpscaleShader.ensureLoaded().then(
       (p) {
         if (mounted) setState(() => _program = p);
       },
-      onError: (Object _) {},
+      onError: (Object _) {
+        if (mounted) setState(() => _shaderFailed = true);
+      },
     );
   }
 
@@ -121,17 +119,13 @@ class _UpscaledImageState extends State<UpscaledImage> {
       return widget.loadingBuilder?.call(context) ?? const SizedBox.shrink();
     }
     final program = _program;
-    // Cheap path: not zoomed in (or the shader is unavailable / still loading).
-    // The engine's default sampler is fine at or below 1:1 and far faster than
-    // running Lanczos every frame, so this keeps fit/paging smooth. If the shader
-    // is still loading, this shows the page now and upgrades to sharp once it
-    // resolves (which triggers a rebuild).
-    if (!widget.highQuality || program == null) {
-      return RawImage(
-        image: image,
-        fit: widget.fit,
-        filterQuality: FilterQuality.medium,
-      );
+    if (program == null) {
+      // Shader failed to load: fall back to a plain image so the page still
+      // shows (the engine's default sampler). Still waiting? show loading.
+      if (_shaderFailed) {
+        return RawImage(image: image, fit: widget.fit);
+      }
+      return widget.loadingBuilder?.call(context) ?? const SizedBox.shrink();
     }
     // Paint the page 1:1 at its native pixel size, then let [FittedBox] scale it
     // to the box with [widget.fit]. FittedBox scales via a Transform, under
