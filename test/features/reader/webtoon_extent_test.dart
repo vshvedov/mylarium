@@ -42,6 +42,7 @@ void main() {
           imageBuilder: (i) => _StubProvider(i),
           aspectRatio: aspectRatio,
           gaps: false,
+          doubleTapZoom: true,
           onTapToggle: () {},
         ),
       ),

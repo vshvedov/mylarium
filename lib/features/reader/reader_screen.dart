@@ -631,16 +631,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     );
     final source = _source!;
     final s = widget.data.settings;
-    final size = MediaQuery.sizeOf(context);
-    final viewportAspect = size.height == 0 ? 0.7 : size.width / size.height;
     final view = switch (s.mode) {
       ReadingMode.pagedLtr || ReadingMode.pagedRtl => PagedView(
           pageController: _pageController!,
           pageCount: source.pageCount,
           imageBuilder: _pageImage,
-          aspectRatioOf: source.aspectRatio,
           fit: s.fit,
-          viewportAspect: viewportAspect,
           rtl: effectiveRtl(s),
           doubleTapZoom: s.doubleTapZoom,
           zoomed: _zoomed,
@@ -655,6 +651,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           imageBuilder: _pageImage,
           fit: s.fit,
           rtl: effectiveRtl(s),
+          doubleTapZoom: s.doubleTapZoom,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
         ),
@@ -664,6 +661,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           imageBuilder: _pageImage,
           aspectRatio: source.aspectRatio,
           gaps: s.mode == ReadingMode.webtoonGaps,
+          doubleTapZoom: s.doubleTapZoom,
           onTapToggle: _toggleChrome,
         ),
     };
