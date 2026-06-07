@@ -5,17 +5,14 @@ import 'package:flutter/widgets.dart';
 /// zoom), built on [InteractiveViewer] (whose pinch is already focal-correct,
 /// unlike photo_view which zooms toward the centre).
 ///
-/// [builder] is given the current zoom state so callers can render a cheap plain
-/// image at fit (and during page turns) and only switch to the expensive
-/// high-quality upscale shader while actually zoomed in - the shader is pure
-/// waste at or below 1:1 and tanks frame rate if left always-on. Single taps are
-/// reported via [onTap] (normalized 0..1) for the reader's tap zones; double-tap
-/// toggles between fit and [doubleTapScale], centred on the tap. Zoom state
-/// changes are also reported via [onZoomChanged] so the caller can gate paging.
+/// Wraps a single [child] sized to the viewport. Single taps are reported via
+/// [onTap] (normalized 0..1) for the reader's tap zones; double-tap toggles
+/// between fit and [doubleTapScale], centred on the tap. Zoom state changes are
+/// reported via [onZoomChanged] so the caller can gate page swiping.
 class FocalZoomViewer extends StatefulWidget {
   const FocalZoomViewer({
     super.key,
-    required this.builder,
+    required this.child,
     this.minScale = 1.0,
     this.maxScale = 5.0,
     this.doubleTapZoom = true,
@@ -24,8 +21,7 @@ class FocalZoomViewer extends StatefulWidget {
     this.onZoomChanged,
   });
 
-  /// Builds the zoomable content; [zoomed] is true once scaled past ~1:1.
-  final Widget Function(BuildContext context, bool zoomed) builder;
+  final Widget child;
   final double minScale;
   final double maxScale;
 
@@ -69,9 +65,7 @@ class _FocalZoomViewerState extends State<FocalZoomViewer>
   void _onMatrixChanged() {
     final z = _controller.value.getMaxScaleOnAxis() > 1.001;
     if (z != _zoomed) {
-      // Rebuild so the builder can swap the cheap image <-> the shader. This
-      // fires only when crossing the 1:1 threshold, not every frame.
-      setState(() => _zoomed = z);
+      _zoomed = z;
       widget.onZoomChanged?.call(z);
     }
   }
@@ -140,7 +134,7 @@ class _FocalZoomViewerState extends State<FocalZoomViewer>
         transformationController: _controller,
         minScale: widget.minScale,
         maxScale: widget.maxScale,
-        child: widget.builder(context, _zoomed),
+        child: widget.child,
       ),
     );
   }

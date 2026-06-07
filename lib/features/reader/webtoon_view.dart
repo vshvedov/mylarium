@@ -35,7 +35,7 @@ class WebtoonView extends StatelessWidget {
     return FocalZoomViewer(
       doubleTapZoom: doubleTapZoom,
       onTap: (_) => onTapToggle(),
-      builder: (context, zoomed) => ListView.builder(
+      child: ListView.builder(
         controller: scrollController,
         itemCount: pageCount,
         itemBuilder: (context, i) => Padding(
@@ -46,7 +46,6 @@ class WebtoonView extends StatelessWidget {
             child: UpscaledImage(
               image: imageBuilder(i),
               fit: BoxFit.fitWidth,
-              highQuality: zoomed,
               errorBuilder: (_) => const PageError(),
             ),
           ),

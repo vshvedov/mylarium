@@ -47,7 +47,7 @@ class DoublePageView extends StatelessWidget {
         return FocalZoomViewer(
           doubleTapZoom: doubleTapZoom,
           onTap: onTap,
-          builder: (context, zoomed) => Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               for (final p in ordered)
@@ -55,7 +55,6 @@ class DoublePageView extends StatelessWidget {
                   child: UpscaledImage(
                     image: imageBuilder(p),
                     fit: boxFitFor(fit),
-                    highQuality: zoomed,
                     errorBuilder: (_) => const PageError(),
                   ),
                 ),
