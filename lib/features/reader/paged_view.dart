@@ -65,9 +65,10 @@ class _PagedViewState extends State<PagedView> {
           doubleTapZoom: widget.doubleTapZoom,
           onTap: widget.onTap,
           onZoomChanged: (z) => widget.zoomed.value = z,
-          child: UpscaledImage(
+          builder: (context, zoomed) => UpscaledImage(
             image: widget.imageBuilder(index),
             fit: boxFitFor(widget.fit),
+            highQuality: zoomed,
             loadingBuilder: (_) => const AppLoadingIndicator(),
             errorBuilder: (_) => const PageError(),
           ),
