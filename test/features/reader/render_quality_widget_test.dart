@@ -42,7 +42,6 @@ void main() {
         imageBuilder: (i) => _StubProvider(i),
         fit: FitMode.screen,
         rtl: false,
-        doubleTapZoom: true,
         onPageChanged: (_) {},
         onTap: (_) {},
       ),
@@ -61,7 +60,6 @@ void main() {
         imageBuilder: (i) => _StubProvider(i),
         aspectRatio: (_) => 0.66,
         gaps: false,
-        doubleTapZoom: true,
         onTapToggle: () {},
       ),
     ));
