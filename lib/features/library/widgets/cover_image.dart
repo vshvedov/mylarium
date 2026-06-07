@@ -28,22 +28,33 @@ class CoverImage extends ConsumerWidget {
     final async = ref.watch(
       coverImageProvider(sourceId, ownerType, ownerId),
     );
-    return async.maybeWhen(
-      data: (provider) => provider == null
-          ? const _Placeholder()
+    final Widget child;
+    if (async.hasValue) {
+      final provider = async.value;
+      child = provider == null
+          ? const _Placeholder(key: ValueKey('coverEmpty'))
           : Image(
+              key: ValueKey(provider),
               image: provider,
               fit: fit,
               gaplessPlayback: true,
               semanticLabel: title,
-            ),
-      orElse: () => const _Placeholder(shimmer: true),
+            );
+    } else {
+      // Still loading (or errored without a value): bare tint.
+      child = const _Placeholder(shimmer: true, key: ValueKey('coverLoading'));
+    }
+    return AnimatedSwitcher(
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      child: child,
     );
   }
 }
 
 class _Placeholder extends StatelessWidget {
-  const _Placeholder({this.shimmer = false});
+  const _Placeholder({super.key, this.shimmer = false});
 
   /// True while the cover is still loading (bare tint, no icon).
   final bool shimmer;
