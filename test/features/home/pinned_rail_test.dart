@@ -4,10 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/data/source/models/book_dto.dart';
-import 'package:mylarium/data/source/models/series_dto.dart';
 import 'package:mylarium/features/home/home_screen.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
+import 'package:mylarium/features/library/rail_item.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
 
 import '../../support/test_scope.dart';
@@ -42,13 +41,13 @@ void main() {
         overrides: [
           ...scope.overrides,
           keepReadingProvider('s1')
-              .overrideWith((ref) async => const <BookDto>[]),
+              .overrideWith((ref) => Stream.value(const <RailItem>[])),
           recentlyAddedBooksProvider('s1')
-              .overrideWith((ref) async => const <BookDto>[]),
+              .overrideWith((ref) => Stream.value(const <RailItem>[])),
           recentlyAddedSeriesProvider('s1')
-              .overrideWith((ref) async => const <SeriesDto>[]),
+              .overrideWith((ref) => Stream.value(const <RailItem>[])),
           recentlyUpdatedSeriesProvider('s1')
-              .overrideWith((ref) async => const <SeriesDto>[]),
+              .overrideWith((ref) => Stream.value(const <RailItem>[])),
           coverImageProvider('s1', 'series', 'serP')
               .overrideWith((ref) async => null),
         ],

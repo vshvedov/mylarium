@@ -10,9 +10,11 @@ import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/source_providers.dart';
 import '../library/library_browse_controllers.dart';
 import '../library/pin_controllers.dart';
+import '../library/rail_item.dart';
 import '../library/widgets/item_context_menu.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
+import '../library/widgets/rail_skeleton.dart';
 import '../offline/offline_providers.dart';
 import '../sources/source_status_button.dart';
 import '../sources/sources_sheet.dart';
@@ -40,106 +42,97 @@ class HomeScreen extends ConsumerWidget {
     final recentRead = ref.watch(recentlyReadProvider(railSource));
     final visibleRails = ref.watch(visibleHomeRailsProvider);
 
-    List<Widget> seriesTiles(List<dynamic> series) => [
-          for (final s in series)
-            CoverTile(
-              sourceId: sourceId ?? '',
-              ownerType: 'series',
-              ownerId: s.id as String,
-              title: s.title as String,
-              // A multi-book series reads as a "stack of books"; a one-book
-              // series stays flat, like a single chapter.
-              stacked: (s.booksCount as int) > 1,
-              onTap: () =>
-                  context.push('/series/$sourceId/${s.id}'),
-              onLongPress: () => showItemContextMenu(
-                context,
-                sourceId: sourceId ?? '',
-                ownerType: 'series',
-                ownerId: s.id as String,
-                title: s.title as String,
-              ),
-            ),
-        ];
+    // One uniform AsyncValue<List<RailItem>> per rail. The three local rails are
+    // adapted here (their providers still emit their native types); the four
+    // network rails already emit RailItem.
+    final byKind = <HomeRailKind, AsyncValue<List<RailItem>>>{
+      HomeRailKind.pinned:
+          pinned.whenData((l) => [for (final e in l) RailItem.fromPinned(e)]),
+      HomeRailKind.keepReading: keepReading,
+      HomeRailKind.recentlyAddedChapters: addedBooks,
+      HomeRailKind.recentlyAddedSeries: added,
+      HomeRailKind.recentlyUpdatedSeries: updated,
+      HomeRailKind.downloaded:
+          downloaded.whenData((l) => [for (final b in l) RailItem.fromBookRow(b)]),
+      HomeRailKind.recentlyRead:
+          recentRead.whenData((l) => [for (final b in l) RailItem.fromBookRow(b)]),
+    };
 
-    // A chapter tile (used by every book-backed rail). [withBadge] shows the
-    // available-offline indicator; the Downloaded rail omits it (all offline).
-    CoverTile bookTile(dynamic b, {bool withBadge = true}) => CoverTile(
-          sourceId: sourceId ?? '',
-          ownerType: 'book',
-          ownerId: b.id as String,
-          title: b.title as String,
-          subtitle: (b.number as String).isEmpty ? null : 'No. ${b.number}',
-          leadingBadge: withBadge
-              ? OfflineBadge(sourceId: sourceId ?? '', bookId: b.id as String)
-              : null,
-          onTap: () => context.push('/reader/$sourceId/${b.id}'),
-          onLongPress: () => showItemContextMenu(
-            context,
-            sourceId: sourceId ?? '',
-            ownerType: 'book',
-            ownerId: b.id as String,
-            title: b.title as String,
-          ),
-        );
-
-    // Builds the rail for a given row kind, reading the already-watched data.
-    Rail railFor(HomeRailKind kind) {
-      final children = switch (kind) {
-        HomeRailKind.pinned => [
-            for (final e in pinned.valueOrNull ?? const [])
-              CoverTile(
-                sourceId: sourceId ?? '',
-                ownerType: e.ownerType,
-                ownerId: e.ownerId,
-                title: e.title,
-                subtitle: e.subtitle,
-                stacked: e.stacked,
-                leadingBadge: e.ownerType == 'book'
-                    ? OfflineBadge(sourceId: sourceId ?? '', bookId: e.ownerId)
-                    : null,
-                onTap: () => context.push(
-                  e.ownerType == 'series'
-                      ? '/series/$sourceId/${e.ownerId}'
-                      : '/book/$sourceId/${e.ownerId}',
-                ),
-                onLongPress: () => showItemContextMenu(
-                  context,
-                  sourceId: sourceId ?? '',
-                  ownerType: e.ownerType,
-                  ownerId: e.ownerId,
-                  title: e.title,
-                ),
-              ),
-          ],
-        HomeRailKind.keepReading => [
-            for (final b in keepReading.valueOrNull ?? const []) bookTile(b),
-          ],
-        HomeRailKind.recentlyAddedChapters => [
-            for (final b in addedBooks.valueOrNull ?? const []) bookTile(b),
-          ],
-        HomeRailKind.recentlyAddedSeries =>
-          seriesTiles(added.valueOrNull ?? const []),
-        HomeRailKind.recentlyUpdatedSeries =>
-          seriesTiles(updated.valueOrNull ?? const []),
-        HomeRailKind.downloaded => [
-            for (final b in downloaded.valueOrNull ?? const [])
-              bookTile(b, withBadge: false),
-          ],
-        HomeRailKind.recentlyRead => [
-            for (final b in recentRead.valueOrNull ?? const []) bookTile(b),
-          ],
-      };
-      return Rail(title: kind.title, icon: kind.icon, children: children);
+    // The rail's resolved items, or null while it is genuinely still loading
+    // (no value yet) so the home can show a skeleton. An error without a value
+    // is treated as empty (graceful), not a perpetual skeleton.
+    List<RailItem>? itemsFor(HomeRailKind kind) {
+      final async = byKind[kind]!;
+      return async.valueOrNull ??
+          (async.hasError ? const <RailItem>[] : null);
     }
 
-    final everythingEmpty = (pinned.valueOrNull ?? const []).isEmpty &&
-        (keepReading.valueOrNull ?? const []).isEmpty &&
-        (downloaded.valueOrNull ?? const []).isEmpty &&
-        (addedBooks.valueOrNull ?? const []).isEmpty &&
-        (added.valueOrNull ?? const []).isEmpty &&
-        (updated.valueOrNull ?? const []).isEmpty &&
-        (recentRead.valueOrNull ?? const []).isEmpty;
+    // A book tile taps into the reader, except a pinned book which opens its
+    // detail; a series tile (or pinned series) opens the series. The Downloaded
+    // rail omits the offline badge (every item is already offline).
+    CoverTile tileFor(HomeRailKind kind, RailItem it) {
+      final isBook = it.ownerType == 'book';
+      final bookRoute = kind == HomeRailKind.pinned ? 'book' : 'reader';
+      return CoverTile(
+        sourceId: sourceId ?? '',
+        ownerType: it.ownerType,
+        ownerId: it.ownerId,
+        title: it.title,
+        subtitle: it.subtitle,
+        stacked: it.stacked,
+        leadingBadge: (isBook && kind != HomeRailKind.downloaded)
+            ? OfflineBadge(sourceId: sourceId ?? '', bookId: it.ownerId)
+            : null,
+        onTap: () => context.push(
+          it.ownerType == 'series'
+              ? '/series/$sourceId/${it.ownerId}'
+              : '/$bookRoute/$sourceId/${it.ownerId}',
+        ),
+        onLongPress: () => showItemContextMenu(
+          context,
+          sourceId: sourceId ?? '',
+          ownerType: it.ownerType,
+          ownerId: it.ownerId,
+          title: it.title,
+        ),
+      );
+    }
+
+    // Builds the slot for a rail: skeleton while loading (no value yet), the
+    // real rail when populated, or a smoothly-collapsing empty when resolved
+    // empty. The header is identical between skeleton and real rail, so only
+    // the tiles swap.
+    Widget railSlot(HomeRailKind kind) {
+      final items = itemsFor(kind);
+      final Widget child;
+      if (items == null) {
+        child = RailSkeleton(title: kind.title, icon: kind.icon);
+      } else if (items.isEmpty) {
+        child = const SizedBox.shrink();
+      } else {
+        child = Rail(
+          title: kind.title,
+          icon: kind.icon,
+          children: [for (final it in items) tileFor(kind, it)],
+        );
+      }
+      return AnimatedSize(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: child,
+      );
+    }
+
+    // The empty-state message must never flash during loading: show it only
+    // once every visible rail has resolved (no value pending) and all are empty.
+    // Requires at least one visible rail, so hiding every rail in settings does
+    // not vacuously trigger the "nothing to show" message.
+    final allResolved = visibleRails.every((k) => itemsFor(k) != null);
+    final everythingEmpty = visibleRails.isNotEmpty &&
+        visibleRails
+            .every((k) => (itemsFor(k) ?? const <RailItem>[]).isEmpty);
 
     return Scaffold(
       appBar: AppBar(
@@ -181,10 +174,10 @@ class HomeScreen extends ConsumerWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 820),
                   child: ListView(
-                children: [
-                  for (final kind in visibleRails) railFor(kind),
-                  if (everythingEmpty) const _EmptyHome(),
-                ],
+                    children: [
+                      for (final kind in visibleRails) railSlot(kind),
+                      if (allResolved && everythingEmpty) const _EmptyHome(),
+                    ],
                   ),
                 ),
               ),

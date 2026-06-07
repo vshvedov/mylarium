@@ -4,31 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/data/source/models/book_dto.dart';
-import 'package:mylarium/data/source/models/series_dto.dart';
 import 'package:mylarium/features/home/home_screen.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
+import 'package:mylarium/features/library/rail_item.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
 
 import '../../support/test_scope.dart';
-
-SeriesDto _series(String id, {required int booksCount}) => SeriesDto(
-      id: id,
-      libraryId: 'lib1',
-      name: id,
-      title: id,
-      titleSort: id,
-      booksCount: booksCount,
-    );
-
-BookDto _book(String id) => BookDto(
-      id: id,
-      seriesId: 'serA',
-      libraryId: 'lib1',
-      name: id,
-      title: id,
-      number: '1',
-    );
 
 void main() {
   testWidgets('home renames the series rails, adds a chapters rail, and decks '
@@ -46,22 +27,36 @@ void main() {
       label: Value('T'),
     ));
 
-    final multiAdded = _series('smA', booksCount: 3);
-    final singleAdded = _series('sgA', booksCount: 1);
-    final multiUpdated = _series('smU', booksCount: 2);
-
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           ...scope.overrides,
           keepReadingProvider('s1')
-              .overrideWith((ref) async => const <BookDto>[]),
-          recentlyAddedBooksProvider('s1')
-              .overrideWith((ref) async => [_book('b1')]),
-          recentlyAddedSeriesProvider('s1')
-              .overrideWith((ref) async => [multiAdded, singleAdded]),
-          recentlyUpdatedSeriesProvider('s1')
-              .overrideWith((ref) async => [multiUpdated]),
+              .overrideWith((ref) => Stream.value(const <RailItem>[])),
+          recentlyAddedBooksProvider('s1').overrideWith(
+            (ref) => Stream.value(const [
+              RailItem(ownerType: 'book', ownerId: 'b1', title: 'b1'),
+            ]),
+          ),
+          recentlyAddedSeriesProvider('s1').overrideWith(
+            (ref) => Stream.value(const [
+              RailItem(
+                  ownerType: 'series',
+                  ownerId: 'smA',
+                  title: 'smA',
+                  stacked: true),
+              RailItem(ownerType: 'series', ownerId: 'sgA', title: 'sgA'),
+            ]),
+          ),
+          recentlyUpdatedSeriesProvider('s1').overrideWith(
+            (ref) => Stream.value(const [
+              RailItem(
+                  ownerType: 'series',
+                  ownerId: 'smU',
+                  title: 'smU',
+                  stacked: true),
+            ]),
+          ),
           // Keep tiles on the placeholder path (no real cover fetch).
           coverImageProvider('s1', 'book', 'b1').overrideWith((ref) async => null),
           coverImageProvider('s1', 'series', 'smA')
