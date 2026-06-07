@@ -463,6 +463,11 @@ String _$recentlyAddedBooksHash() =>
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
+/// The snapshot key is `recentlyAddedChapters` (matching
+/// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+/// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+/// with each other.
+///
 /// Copied from [recentlyAddedBooks].
 @ProviderFor(recentlyAddedBooks)
 const recentlyAddedBooksProvider = RecentlyAddedBooksFamily();
@@ -470,16 +475,31 @@ const recentlyAddedBooksProvider = RecentlyAddedBooksFamily();
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
+/// The snapshot key is `recentlyAddedChapters` (matching
+/// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+/// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+/// with each other.
+///
 /// Copied from [recentlyAddedBooks].
 class RecentlyAddedBooksFamily extends Family<AsyncValue<List<RailItem>>> {
   /// Recently added chapters (Komga `books/latest`). Books in a locked library are
   /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// The snapshot key is `recentlyAddedChapters` (matching
+  /// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+  /// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+  /// with each other.
   ///
   /// Copied from [recentlyAddedBooks].
   const RecentlyAddedBooksFamily();
 
   /// Recently added chapters (Komga `books/latest`). Books in a locked library are
   /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// The snapshot key is `recentlyAddedChapters` (matching
+  /// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+  /// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+  /// with each other.
   ///
   /// Copied from [recentlyAddedBooks].
   RecentlyAddedBooksProvider call(String sourceId) {
@@ -511,11 +531,21 @@ class RecentlyAddedBooksFamily extends Family<AsyncValue<List<RailItem>>> {
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
+/// The snapshot key is `recentlyAddedChapters` (matching
+/// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+/// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+/// with each other.
+///
 /// Copied from [recentlyAddedBooks].
 class RecentlyAddedBooksProvider
     extends AutoDisposeStreamProvider<List<RailItem>> {
   /// Recently added chapters (Komga `books/latest`). Books in a locked library are
   /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+  ///
+  /// The snapshot key is `recentlyAddedChapters` (matching
+  /// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+  /// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+  /// with each other.
   ///
   /// Copied from [recentlyAddedBooks].
   RecentlyAddedBooksProvider(String sourceId)

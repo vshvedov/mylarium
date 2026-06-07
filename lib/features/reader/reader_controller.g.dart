@@ -6,7 +6,7 @@ part of 'reader_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$readerControllerHash() => r'c8f5788234dfae1f115c5aefb6b8c88d085ae698';
+String _$readerControllerHash() => r'cff9123b4c52882a8830d6a64f52d5817341e72b';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -43,29 +43,37 @@ abstract class _$ReaderController
 }
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
-/// (no network); otherwise pages stream online and a background download is
-/// enqueued. Throws only when neither a cache nor a reachable source exists.
+/// (no network); otherwise pages stream online (per-page, through the byte
+/// cache). The full-chapter offline backfill is NOT started here: the reader
+/// defers it to close/background so it never competes with foreground page
+/// fetches. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 @ProviderFor(ReaderController)
 const readerControllerProvider = ReaderControllerFamily();
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
-/// (no network); otherwise pages stream online and a background download is
-/// enqueued. Throws only when neither a cache nor a reachable source exists.
+/// (no network); otherwise pages stream online (per-page, through the byte
+/// cache). The full-chapter offline backfill is NOT started here: the reader
+/// defers it to close/background so it never competes with foreground page
+/// fetches. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
   /// Loads a book for reading, offline-first: a cached archive is read from disk
-  /// (no network); otherwise pages stream online and a background download is
-  /// enqueued. Throws only when neither a cache nor a reachable source exists.
+  /// (no network); otherwise pages stream online (per-page, through the byte
+  /// cache). The full-chapter offline backfill is NOT started here: the reader
+  /// defers it to close/background so it never competes with foreground page
+  /// fetches. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   const ReaderControllerFamily();
 
   /// Loads a book for reading, offline-first: a cached archive is read from disk
-  /// (no network); otherwise pages stream online and a background download is
-  /// enqueued. Throws only when neither a cache nor a reachable source exists.
+  /// (no network); otherwise pages stream online (per-page, through the byte
+  /// cache). The full-chapter offline backfill is NOT started here: the reader
+  /// defers it to close/background so it never competes with foreground page
+  /// fetches. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider call(
@@ -99,15 +107,19 @@ class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
 }
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
-/// (no network); otherwise pages stream online and a background download is
-/// enqueued. Throws only when neither a cache nor a reachable source exists.
+/// (no network); otherwise pages stream online (per-page, through the byte
+/// cache). The full-chapter offline backfill is NOT started here: the reader
+/// defers it to close/background so it never competes with foreground page
+/// fetches. Throws only when neither a cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerProvider
     extends AutoDisposeAsyncNotifierProviderImpl<ReaderController, ReaderData> {
   /// Loads a book for reading, offline-first: a cached archive is read from disk
-  /// (no network); otherwise pages stream online and a background download is
-  /// enqueued. Throws only when neither a cache nor a reachable source exists.
+  /// (no network); otherwise pages stream online (per-page, through the byte
+  /// cache). The full-chapter offline backfill is NOT started here: the reader
+  /// defers it to close/background so it never competes with foreground page
+  /// fetches. Throws only when neither a cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider(
