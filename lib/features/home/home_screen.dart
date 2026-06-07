@@ -116,10 +116,12 @@ class HomeScreen extends ConsumerWidget {
           children: [for (final it in items) tileFor(kind, it)],
         );
       }
+      // Under reduce-motion, render the child directly: there is no animation
+      // to play, and a zero-duration AnimatedSize asserts in performLayout when
+      // it collapses (a rail resolving empty), so skip the wrapper entirely.
+      if (MediaQuery.disableAnimationsOf(context)) return child;
       return AnimatedSize(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 200),
         alignment: Alignment.topCenter,
         child: child,
       );

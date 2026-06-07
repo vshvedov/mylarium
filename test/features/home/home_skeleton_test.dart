@@ -20,7 +20,9 @@ Stream<List<RailItem>> _pending() => StreamController<List<RailItem>>().stream;
 /// MediaQuery wrapped above MaterialApp would be overridden by the one
 /// MaterialApp inserts from the test window). This keeps SkeletonBox static so
 /// its repeating ticker schedules no frames (test 1 holds skeletons forever via
-/// never-emitting streams; without this the ticker would never let the test end).
+/// never-emitting streams; without this the ticker would never let the test end),
+/// and skips the home's per-rail AnimatedSize so a rail collapsing to empty in
+/// test 2 settles cleanly.
 MaterialApp _app(Widget home) => MaterialApp(
       theme: lightTheme,
       builder: (context, child) => MediaQuery(
@@ -29,17 +31,6 @@ MaterialApp _app(Widget home) => MaterialApp(
       ),
       home: home,
     );
-
-/// A plain MaterialApp with animations left ON. Used by test 2, where every rail
-/// resolves empty so no SkeletonBox lingers (no perpetual ticker to stall
-/// pumpAndSettle). Crucially this leaves the home's per-rail AnimatedSize on its
-/// normal 200ms duration: under disableAnimations that AnimatedSize would use
-/// Duration.zero, and a zero-duration AnimatedSize that collapses to a smaller
-/// size throws "RenderAnimatedSize was mutated in its own performLayout" during
-/// the next layout (a Flutter framework quirk, reproducible with a bare
-/// AnimatedSize; unrelated to the home wiring). A 200ms collapse settles cleanly.
-MaterialApp _animatedApp(Widget home) =>
-    MaterialApp(theme: lightTheme, home: home);
 
 void main() {
   testWidgets('rails that are still loading show skeletons, no empty-state',
@@ -95,7 +86,7 @@ void main() {
         recentlyUpdatedSeriesProvider('s1')
             .overrideWith((ref) => Stream.value(const <RailItem>[])),
       ],
-      child: _animatedApp(const HomeScreen()),
+      child: _app(const HomeScreen()),
     ));
     await tester.pumpAndSettle();
 
