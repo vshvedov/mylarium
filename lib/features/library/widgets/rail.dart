@@ -26,19 +26,7 @@ class Rail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 18,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 8),
-              ],
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-            ],
-          ),
-        ),
+        RailHeader(title: title, icon: icon),
         SizedBox(
           height: height,
           child: ListView.separated(
@@ -54,4 +42,29 @@ class Rail extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The title row shared by [Rail] and its loading skeleton, so the header does
+/// not shift when a rail swaps from skeleton to real content.
+class RailHeader extends StatelessWidget {
+  const RailHeader({super.key, required this.title, this.icon});
+
+  final String title;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+            ],
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+          ],
+        ),
+      );
 }
