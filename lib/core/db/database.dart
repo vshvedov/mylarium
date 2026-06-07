@@ -15,6 +15,7 @@ import 'tables/color_settings.dart';
 import 'tables/download_tasks.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
+import 'tables/home_rail_items.dart';
 import 'tables/pins.dart';
 import 'tables/reader_settings.dart';
 import 'tables/reading_sessions.dart';
@@ -58,12 +59,13 @@ typedef PinnedRaw = ({
   SeriesMeta,
   ColorSettings,
   Pins,
+  HomeRailItems,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +189,14 @@ class AppDatabase extends _$AppDatabase {
           // v13 -> v14: "delete downloaded chapter on read" toggle. Additive.
           if (from < 14 && to >= 14) {
             await m.addColumn(appSettings, appSettings.deleteOnRead);
+          }
+          // v14 -> v15: cache-first home rails. A snapshot of each network
+          // rail's last fetched membership (pointers into series/books), so a
+          // warm launch renders instantly. Brand-new table -> plain additive
+          // createTable (no idempotency guard needed, like the v11 -> v12 pins
+          // table).
+          if (from < 15 && to >= 15) {
+            await m.createTable(homeRailItems);
           }
         },
       );

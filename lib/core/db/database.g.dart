@@ -9154,6 +9154,383 @@ class PinsCompanion extends UpdateCompanion<PinRow> {
   }
 }
 
+class $HomeRailItemsTable extends HomeRailItems
+    with TableInfo<$HomeRailItemsTable, HomeRailItemRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HomeRailItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _railKindMeta = const VerificationMeta(
+    'railKind',
+  );
+  @override
+  late final GeneratedColumn<String> railKind = GeneratedColumn<String>(
+    'rail_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerTypeMeta = const VerificationMeta(
+    'ownerType',
+  );
+  @override
+  late final GeneratedColumn<String> ownerType = GeneratedColumn<String>(
+    'owner_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sourceId,
+    railKind,
+    position,
+    ownerType,
+    ownerId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'home_rail_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HomeRailItemRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('rail_kind')) {
+      context.handle(
+        _railKindMeta,
+        railKind.isAcceptableOrUnknown(data['rail_kind']!, _railKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_railKindMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('owner_type')) {
+      context.handle(
+        _ownerTypeMeta,
+        ownerType.isAcceptableOrUnknown(data['owner_type']!, _ownerTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerTypeMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sourceId, railKind, position};
+  @override
+  HomeRailItemRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HomeRailItemRow(
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      railKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rail_kind'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      ownerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_type'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+    );
+  }
+
+  @override
+  $HomeRailItemsTable createAlias(String alias) {
+    return $HomeRailItemsTable(attachedDatabase, alias);
+  }
+}
+
+class HomeRailItemRow extends DataClass implements Insertable<HomeRailItemRow> {
+  /// FK to `Sources.id`.
+  final String sourceId;
+
+  /// The rail this snapshot belongs to (`HomeRailKind.name`).
+  final String railKind;
+
+  /// 0-based position in the server-returned order.
+  final int position;
+
+  /// `series` or `book`.
+  final String ownerType;
+
+  /// The series id or book id, per [ownerType].
+  final String ownerId;
+  const HomeRailItemRow({
+    required this.sourceId,
+    required this.railKind,
+    required this.position,
+    required this.ownerType,
+    required this.ownerId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['source_id'] = Variable<String>(sourceId);
+    map['rail_kind'] = Variable<String>(railKind);
+    map['position'] = Variable<int>(position);
+    map['owner_type'] = Variable<String>(ownerType);
+    map['owner_id'] = Variable<String>(ownerId);
+    return map;
+  }
+
+  HomeRailItemsCompanion toCompanion(bool nullToAbsent) {
+    return HomeRailItemsCompanion(
+      sourceId: Value(sourceId),
+      railKind: Value(railKind),
+      position: Value(position),
+      ownerType: Value(ownerType),
+      ownerId: Value(ownerId),
+    );
+  }
+
+  factory HomeRailItemRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HomeRailItemRow(
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      railKind: serializer.fromJson<String>(json['railKind']),
+      position: serializer.fromJson<int>(json['position']),
+      ownerType: serializer.fromJson<String>(json['ownerType']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sourceId': serializer.toJson<String>(sourceId),
+      'railKind': serializer.toJson<String>(railKind),
+      'position': serializer.toJson<int>(position),
+      'ownerType': serializer.toJson<String>(ownerType),
+      'ownerId': serializer.toJson<String>(ownerId),
+    };
+  }
+
+  HomeRailItemRow copyWith({
+    String? sourceId,
+    String? railKind,
+    int? position,
+    String? ownerType,
+    String? ownerId,
+  }) => HomeRailItemRow(
+    sourceId: sourceId ?? this.sourceId,
+    railKind: railKind ?? this.railKind,
+    position: position ?? this.position,
+    ownerType: ownerType ?? this.ownerType,
+    ownerId: ownerId ?? this.ownerId,
+  );
+  HomeRailItemRow copyWithCompanion(HomeRailItemsCompanion data) {
+    return HomeRailItemRow(
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      railKind: data.railKind.present ? data.railKind.value : this.railKind,
+      position: data.position.present ? data.position.value : this.position,
+      ownerType: data.ownerType.present ? data.ownerType.value : this.ownerType,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HomeRailItemRow(')
+          ..write('sourceId: $sourceId, ')
+          ..write('railKind: $railKind, ')
+          ..write('position: $position, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(sourceId, railKind, position, ownerType, ownerId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HomeRailItemRow &&
+          other.sourceId == this.sourceId &&
+          other.railKind == this.railKind &&
+          other.position == this.position &&
+          other.ownerType == this.ownerType &&
+          other.ownerId == this.ownerId);
+}
+
+class HomeRailItemsCompanion extends UpdateCompanion<HomeRailItemRow> {
+  final Value<String> sourceId;
+  final Value<String> railKind;
+  final Value<int> position;
+  final Value<String> ownerType;
+  final Value<String> ownerId;
+  final Value<int> rowid;
+  const HomeRailItemsCompanion({
+    this.sourceId = const Value.absent(),
+    this.railKind = const Value.absent(),
+    this.position = const Value.absent(),
+    this.ownerType = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HomeRailItemsCompanion.insert({
+    required String sourceId,
+    required String railKind,
+    required int position,
+    required String ownerType,
+    required String ownerId,
+    this.rowid = const Value.absent(),
+  }) : sourceId = Value(sourceId),
+       railKind = Value(railKind),
+       position = Value(position),
+       ownerType = Value(ownerType),
+       ownerId = Value(ownerId);
+  static Insertable<HomeRailItemRow> custom({
+    Expression<String>? sourceId,
+    Expression<String>? railKind,
+    Expression<int>? position,
+    Expression<String>? ownerType,
+    Expression<String>? ownerId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sourceId != null) 'source_id': sourceId,
+      if (railKind != null) 'rail_kind': railKind,
+      if (position != null) 'position': position,
+      if (ownerType != null) 'owner_type': ownerType,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HomeRailItemsCompanion copyWith({
+    Value<String>? sourceId,
+    Value<String>? railKind,
+    Value<int>? position,
+    Value<String>? ownerType,
+    Value<String>? ownerId,
+    Value<int>? rowid,
+  }) {
+    return HomeRailItemsCompanion(
+      sourceId: sourceId ?? this.sourceId,
+      railKind: railKind ?? this.railKind,
+      position: position ?? this.position,
+      ownerType: ownerType ?? this.ownerType,
+      ownerId: ownerId ?? this.ownerId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (railKind.present) {
+      map['rail_kind'] = Variable<String>(railKind.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (ownerType.present) {
+      map['owner_type'] = Variable<String>(ownerType.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HomeRailItemsCompanion(')
+          ..write('sourceId: $sourceId, ')
+          ..write('railKind: $railKind, ')
+          ..write('position: $position, ')
+          ..write('ownerType: $ownerType, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -9176,6 +9553,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SeriesMetaTable seriesMeta = $SeriesMetaTable(this);
   late final $ColorSettingsTable colorSettings = $ColorSettingsTable(this);
   late final $PinsTable pins = $PinsTable(this);
+  late final $HomeRailItemsTable homeRailItems = $HomeRailItemsTable(this);
   late final Index seriesKeyset = Index(
     'series_keyset',
     'CREATE INDEX series_keyset ON series (source_id, title_sort, id)',
@@ -9214,6 +9592,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     seriesMeta,
     colorSettings,
     pins,
+    homeRailItems,
     seriesKeyset,
     seriesKeysetLib,
     cachedAssetsLru,
@@ -13731,6 +14110,206 @@ typedef $$PinsTableProcessedTableManager =
       PinRow,
       PrefetchHooks Function()
     >;
+typedef $$HomeRailItemsTableCreateCompanionBuilder =
+    HomeRailItemsCompanion Function({
+      required String sourceId,
+      required String railKind,
+      required int position,
+      required String ownerType,
+      required String ownerId,
+      Value<int> rowid,
+    });
+typedef $$HomeRailItemsTableUpdateCompanionBuilder =
+    HomeRailItemsCompanion Function({
+      Value<String> sourceId,
+      Value<String> railKind,
+      Value<int> position,
+      Value<String> ownerType,
+      Value<String> ownerId,
+      Value<int> rowid,
+    });
+
+class $$HomeRailItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $HomeRailItemsTable> {
+  $$HomeRailItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get railKind => $composableBuilder(
+    column: $table.railKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HomeRailItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $HomeRailItemsTable> {
+  $$HomeRailItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get railKind => $composableBuilder(
+    column: $table.railKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerType => $composableBuilder(
+    column: $table.ownerType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HomeRailItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HomeRailItemsTable> {
+  $$HomeRailItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get railKind =>
+      $composableBuilder(column: $table.railKind, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerType =>
+      $composableBuilder(column: $table.ownerType, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+}
+
+class $$HomeRailItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HomeRailItemsTable,
+          HomeRailItemRow,
+          $$HomeRailItemsTableFilterComposer,
+          $$HomeRailItemsTableOrderingComposer,
+          $$HomeRailItemsTableAnnotationComposer,
+          $$HomeRailItemsTableCreateCompanionBuilder,
+          $$HomeRailItemsTableUpdateCompanionBuilder,
+          (
+            HomeRailItemRow,
+            BaseReferences<_$AppDatabase, $HomeRailItemsTable, HomeRailItemRow>,
+          ),
+          HomeRailItemRow,
+          PrefetchHooks Function()
+        > {
+  $$HomeRailItemsTableTableManager(_$AppDatabase db, $HomeRailItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HomeRailItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HomeRailItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HomeRailItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sourceId = const Value.absent(),
+                Value<String> railKind = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String> ownerType = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HomeRailItemsCompanion(
+                sourceId: sourceId,
+                railKind: railKind,
+                position: position,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sourceId,
+                required String railKind,
+                required int position,
+                required String ownerType,
+                required String ownerId,
+                Value<int> rowid = const Value.absent(),
+              }) => HomeRailItemsCompanion.insert(
+                sourceId: sourceId,
+                railKind: railKind,
+                position: position,
+                ownerType: ownerType,
+                ownerId: ownerId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HomeRailItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HomeRailItemsTable,
+      HomeRailItemRow,
+      $$HomeRailItemsTableFilterComposer,
+      $$HomeRailItemsTableOrderingComposer,
+      $$HomeRailItemsTableAnnotationComposer,
+      $$HomeRailItemsTableCreateCompanionBuilder,
+      $$HomeRailItemsTableUpdateCompanionBuilder,
+      (
+        HomeRailItemRow,
+        BaseReferences<_$AppDatabase, $HomeRailItemsTable, HomeRailItemRow>,
+      ),
+      HomeRailItemRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -13768,4 +14347,6 @@ class $AppDatabaseManager {
   $$ColorSettingsTableTableManager get colorSettings =>
       $$ColorSettingsTableTableManager(_db, _db.colorSettings);
   $$PinsTableTableManager get pins => $$PinsTableTableManager(_db, _db.pins);
+  $$HomeRailItemsTableTableManager get homeRailItems =>
+      $$HomeRailItemsTableTableManager(_db, _db.homeRailItems);
 }
