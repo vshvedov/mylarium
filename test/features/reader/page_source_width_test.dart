@@ -3,15 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/source/models/page_dto.dart';
 import 'package:mylarium/features/reader/online_page_source.dart';
+import 'package:mylarium/features/reader/page_byte_store.dart';
 
 void main() {
   OnlinePageSource source() => OnlinePageSource(
-        api: KomgaApi(Dio()),
-        sourceId: 's',
-        bookId: 'b',
-        pages: const [PageDto(number: 1, fileName: 'p1')],
-        cacheWidth: 1000,
-      );
+    api: KomgaApi(Dio()),
+    sourceId: 's',
+    bookId: 'b',
+    pages: const [PageDto(number: 1, fileName: 'p1')],
+    cacheWidth: 1000,
+    byteStore: PageByteStore(),
+  );
 
   test('imageProviderAt overrides the decode width', () {
     final p = source().imageProviderAt(0, 4096) as OnlineImageProvider;

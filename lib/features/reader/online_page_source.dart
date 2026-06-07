@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../data/source/content_api.dart';
 import '../../data/source/models/page_dto.dart';
+import 'page_byte_store.dart';
 import 'page_source.dart';
 
 /// Online page source: serves page images through any authenticated
@@ -16,6 +17,7 @@ class OnlinePageSource implements PageSource {
     required this.sourceId,
     required this.bookId,
     required this.pages,
+    required this.byteStore,
     this.cacheWidth,
   });
 
@@ -23,6 +25,7 @@ class OnlinePageSource implements PageSource {
   final String sourceId;
   final String bookId;
   final List<PageDto> pages;
+  final PageByteStore byteStore;
   final int? cacheWidth;
 
   @override
@@ -38,21 +41,23 @@ class OnlinePageSource implements PageSource {
 
   @override
   ImageProvider imageProviderAt(int i, int? cacheWidth) => OnlineImageProvider(
-        api: api,
-        sourceId: sourceId,
-        bookId: bookId,
-        pageNumber: pages[i].number,
-        cacheWidth: cacheWidth,
-      );
+    api: api,
+    sourceId: sourceId,
+    bookId: bookId,
+    pageNumber: pages[i].number,
+    cacheWidth: cacheWidth,
+    byteStore: byteStore,
+  );
 
   @override
   ImageProvider thumbnail(int i) => OnlineImageProvider(
-        api: api,
-        sourceId: sourceId,
-        bookId: bookId,
-        pageNumber: pages[i].number,
-        cacheWidth: kScrubberThumbWidth,
-      );
+    api: api,
+    sourceId: sourceId,
+    bookId: bookId,
+    pageNumber: pages[i].number,
+    cacheWidth: kScrubberThumbWidth,
+    byteStore: byteStore,
+  );
 
   @override
   double? aspectRatio(int i) {
@@ -65,9 +70,9 @@ class OnlinePageSource implements PageSource {
   /// Landscape pages (width > height), shown solo in double-page mode.
   @override
   Set<int> get widePages => {
-        for (var i = 0; i < pages.length; i++)
-          if (_isWide(i)) i,
-      };
+    for (var i = 0; i < pages.length; i++)
+      if (_isWide(i)) i,
+  };
 
   bool _isWide(int i) {
     final p = pages[i];
@@ -87,6 +92,7 @@ class OnlineImageProvider extends ImageProvider<OnlineImageProvider> {
     required this.sourceId,
     required this.bookId,
     required this.pageNumber,
+    required this.byteStore,
     this.cacheWidth,
   });
 
@@ -98,6 +104,10 @@ class OnlineImageProvider extends ImageProvider<OnlineImageProvider> {
   final int pageNumber;
   final int? cacheWidth;
 
+  /// Fetch-once byte cache: any decode width for this page reuses one network
+  /// fetch (and survives re-visits / zoom). Not part of `==` (a shared singleton).
+  final PageByteStore byteStore;
+
   @override
   Future<OnlineImageProvider> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture<OnlineImageProvider>(this);
@@ -106,15 +116,19 @@ class OnlineImageProvider extends ImageProvider<OnlineImageProvider> {
   ImageStreamCompleter loadImage(
     OnlineImageProvider key,
     ImageDecoderCallback decode,
-  ) =>
-      MultiFrameImageStreamCompleter(
-        codec: _load(decode),
-        scale: 1.0,
-        debugLabel: 'online:$sourceId:$bookId:$pageNumber',
-      );
+  ) => MultiFrameImageStreamCompleter(
+    codec: _load(decode),
+    scale: 1.0,
+    debugLabel: 'online:$sourceId:$bookId:$pageNumber',
+  );
 
   Future<ui.Codec> _load(ImageDecoderCallback decode) async {
-    final bytes = await api.getPage(bookId, pageNumber);
+    final bytes = await byteStore.bytes(
+      sourceId,
+      bookId,
+      pageNumber,
+      () => api.getPage(bookId, pageNumber),
+    );
     if (bytes.isEmpty) {
       throw StateError('Empty page bytes for $bookId/$pageNumber');
     }
@@ -128,8 +142,8 @@ class OnlineImageProvider extends ImageProvider<OnlineImageProvider> {
       getTargetSize: width == null
           ? null
           : (intrinsicWidth, intrinsicHeight) => ui.TargetImageSize(
-                width: width < intrinsicWidth ? width : intrinsicWidth,
-              ),
+              width: width < intrinsicWidth ? width : intrinsicWidth,
+            ),
     );
   }
 

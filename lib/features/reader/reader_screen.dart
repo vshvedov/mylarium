@@ -26,6 +26,7 @@ import 'gestures/tap_zones.dart';
 import 'image_quality.dart';
 import 'offline_page_source.dart';
 import 'online_page_source.dart';
+import 'page_byte_store.dart';
 import 'page_source.dart';
 import 'paged_view.dart';
 import 'page_prefetcher.dart';
@@ -59,7 +60,9 @@ class ReaderScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<DesignTokens>()!;
-    final async = ref.watch(readerControllerProvider(sourceId, bookId, preview));
+    final async = ref.watch(
+      readerControllerProvider(sourceId, bookId, preview),
+    );
     return Scaffold(
       backgroundColor: tokens.readerBackground,
       body: async.when(
@@ -67,8 +70,9 @@ class ReaderScreen extends ConsumerWidget {
         error: (e, _) => _ErrorState(
           title: 'Could not open this book',
           detail: friendlyError(e),
-          onRetry: () => ref
-              .invalidate(readerControllerProvider(sourceId, bookId, preview)),
+          onRetry: () => ref.invalidate(
+            readerControllerProvider(sourceId, bookId, preview),
+          ),
         ),
         data: (data) => _readerPageCount(data) == 0
             ? const _ErrorState(title: 'This book has no pages')
@@ -88,9 +92,9 @@ class ReaderScreen extends ConsumerWidget {
 }
 
 int _readerPageCount(ReaderData data) => switch (data.source) {
-      OnlinePages(:final pages) => pages.length,
-      OfflinePages(:final entries) => entries.length,
-    };
+  OnlinePages(:final pages) => pages.length,
+  OfflinePages(:final entries) => entries.length,
+};
 
 /// Decode headroom over the viewport so pinch-zoom stays sharp: a page is
 /// decoded up to this multiple of the viewport width (every reading mode is
@@ -339,16 +343,19 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Off-focus pages decode at display resolution (modest headroom) so only the
     // focused page holds a full-resolution texture; this is what keeps memory in
     // budget while the focused page can be sharp.
-    final neighborWidth =
-        (width * dpr * 1.5).round().clamp(1, kFallbackMaxTextureDim);
+    final neighborWidth = (width * dpr * 1.5).round().clamp(
+      1,
+      kFallbackMaxTextureDim,
+    );
     // The focused page decodes with zoom headroom over the viewport, up to the
     // image-quality ceiling (the device's probed max texture size in Smart mode),
     // bounded by the RAM-safe focus limit. The page sources clamp to each page's
     // intrinsic width (never upscaled), so a normal page costs at most its native
     // resolution and zoom reveals real detail instead of a stretched thumbnail.
     final hardwareCap = focusTextureCap(ref.read(renderCapabilitiesProvider));
-    final focusCeiling =
-        ref.read(imageQualityControllerProvider).focusCeiling(hardwareCap);
+    final focusCeiling = ref
+        .read(imageQualityControllerProvider)
+        .focusCeiling(hardwareCap);
     final cap = focusCeiling < hardwareCap ? focusCeiling : hardwareCap;
     _focusWidth = (width * dpr * kReaderZoomHeadroom).round().clamp(1, cap);
     _neighborWidth = neighborWidth;
@@ -361,28 +368,30 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _cacheWidth = neighborWidth;
     final base = switch (widget.data.source) {
       OnlinePages(:final api, :final pages) => OnlinePageSource(
-          api: api,
-          sourceId: widget.sourceId,
-          bookId: widget.bookId,
-          pages: pages,
-          cacheWidth: neighborWidth,
-        ),
+        api: api,
+        sourceId: widget.sourceId,
+        bookId: widget.bookId,
+        pages: pages,
+        cacheWidth: neighborWidth,
+        byteStore: ref.read(pageByteStoreProvider),
+      ),
       OfflinePages(:final archivePath, :final entries) => OfflinePageSource(
-          extractor: ref.read(archiveExtractorProvider),
-          sourceId: widget.sourceId,
-          bookId: widget.bookId,
-          archivePath: archivePath,
-          entries: entries,
-          cacheWidth: neighborWidth,
-        ),
+        extractor: ref.read(archiveExtractorProvider),
+        sourceId: widget.sourceId,
+        bookId: widget.bookId,
+        archivePath: archivePath,
+        entries: entries,
+        cacheWidth: neighborWidth,
+      ),
     };
     // Split the live correction: the non-linear residual (gamma/auto-levels) is
     // baked into the decoded page by a corrected provider; the affine part
     // (brightness/contrast/mode) is layered on at render via a GPU ColorFilter.
     final (affine: affine, residual: residual) = splitAdjustments(_adj);
     final source = colorCorrectedSource(base, residual);
-    _colorFilter =
-        affine.isIdentity ? null : ColorFilter.matrix(buildMatrix(affine));
+    _colorFilter = affine.isIdentity
+        ? null
+        : ColorFilter.matrix(buildMatrix(affine));
     _source = source;
     _recomputePairs();
     _prefetcher = PagePrefetcher.forContext(source, context);
@@ -464,7 +473,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final source = _source;
     if (source == null) return false;
     final maxIndex =
-        (_mode == ReadingMode.doublePage ? _pairs.length : source.pageCount) - 1;
+        (_mode == ReadingMode.doublePage ? _pairs.length : source.pageCount) -
+        1;
     return maxIndex >= 0 && controllerIndex >= maxIndex;
   }
 
@@ -513,27 +523,28 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _toggleChrome() => setState(() => _chrome = !_chrome);
 
   void _openImageQuality() => AppBottomSheet.show<void>(
-        context,
-        builder: (_) => const ImageQualitySheet(),
-      );
+    context,
+    builder: (_) => const ImageQualitySheet(),
+  );
 
   void _openColorCorrection() => AppBottomSheet.show<void>(
-        context,
-        // Keep the page fully visible (no dim) so corrections preview clearly.
-        barrierColor: Colors.transparent,
-        builder: (_) => ColorCorrectionSheet(
-          sourceId: widget.sourceId,
-          seriesId: widget.data.seriesId,
-          bookId: widget.bookId,
-        ),
-      );
+    context,
+    // Keep the page fully visible (no dim) so corrections preview clearly.
+    barrierColor: Colors.transparent,
+    builder: (_) => ColorCorrectionSheet(
+      sourceId: widget.sourceId,
+      seriesId: widget.data.seriesId,
+      bookId: widget.bookId,
+    ),
+  );
 
   void _step(int delta) {
     final controller = _pageController;
     if (controller == null || !controller.hasClients) return;
     final next = (controller.page?.round() ?? 0) + delta;
     final maxIndex =
-        (_mode == ReadingMode.doublePage ? _pairs.length : _source!.pageCount) - 1;
+        (_mode == ReadingMode.doublePage ? _pairs.length : _source!.pageCount) -
+        1;
     if (next < 0) return;
     if (next > maxIndex) {
       // Trying to advance past the last page raises the seam (re-arming it even
@@ -547,8 +558,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       return;
     }
     if (widget.data.settings.animatePageTurn) {
-      controller.animateToPage(next,
-          duration: const Duration(milliseconds: 220), curve: Curves.easeOut);
+      controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
     } else {
       controller.jumpToPage(next);
     }
@@ -617,16 +631,19 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         next.whenData((s) {
           final adj = s.resolved;
           if (adj == _adj) return;
-          final residualChanged = splitAdjustments(adj).residual.signature !=
+          final residualChanged =
+              splitAdjustments(adj).residual.signature !=
               splitAdjustments(_adj).residual.signature;
           _adj = adj;
           if (_source != null && !residualChanged) {
             // Only the affine (GPU) layer changed: swap the ColorFilter with no
             // re-decode, so brightness/contrast/mode preview in real time.
             final affine = splitAdjustments(adj).affine;
-            setState(() => _colorFilter = affine.isIdentity
-                ? null
-                : ColorFilter.matrix(buildMatrix(affine)));
+            setState(
+              () => _colorFilter = affine.isIdentity
+                  ? null
+                  : ColorFilter.matrix(buildMatrix(affine)),
+            );
           } else {
             // Residual (gamma/auto-levels) changed: re-bake via the provider.
             _rebuildSource(force: true);
@@ -641,40 +658,40 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final viewportAspect = size.height == 0 ? 0.7 : size.width / size.height;
     final view = switch (s.mode) {
       ReadingMode.pagedLtr || ReadingMode.pagedRtl => PagedView(
-          pageController: _pageController!,
-          pageCount: source.pageCount,
-          imageBuilder: _pageImage,
-          aspectRatioOf: source.aspectRatio,
-          fit: s.fit,
-          viewportAspect: viewportAspect,
-          rtl: effectiveRtl(s),
-          doubleTapZoom: s.doubleTapZoom,
-          filterQuality: _sampling,
-          zoomed: _zoomed,
-          onPageChanged: _onControllerPage,
-          onTap: _handleTap,
-        ),
+        pageController: _pageController!,
+        pageCount: source.pageCount,
+        imageBuilder: _pageImage,
+        aspectRatioOf: source.aspectRatio,
+        fit: s.fit,
+        viewportAspect: viewportAspect,
+        rtl: effectiveRtl(s),
+        doubleTapZoom: s.doubleTapZoom,
+        filterQuality: _sampling,
+        zoomed: _zoomed,
+        onPageChanged: _onControllerPage,
+        onTap: _handleTap,
+      ),
       // Double-page direction follows the per-series reading direction (T4):
       // effectiveRtl reads the `direction` field for double-page mode.
       ReadingMode.doublePage => DoublePageView(
-          pageController: _pageController!,
-          pairs: _pairs,
-          imageBuilder: _pageImage,
-          fit: s.fit,
-          rtl: effectiveRtl(s),
-          filterQuality: _sampling,
-          onPageChanged: _onControllerPage,
-          onTap: _handleTap,
-        ),
+        pageController: _pageController!,
+        pairs: _pairs,
+        imageBuilder: _pageImage,
+        fit: s.fit,
+        rtl: effectiveRtl(s),
+        filterQuality: _sampling,
+        onPageChanged: _onControllerPage,
+        onTap: _handleTap,
+      ),
       ReadingMode.webtoon || ReadingMode.webtoonGaps => WebtoonView(
-          scrollController: _scrollController,
-          pageCount: source.pageCount,
-          imageBuilder: _pageImage,
-          aspectRatio: source.aspectRatio,
-          gaps: s.mode == ReadingMode.webtoonGaps,
-          filterQuality: _sampling,
-          onTapToggle: _toggleChrome,
-        ),
+        scrollController: _scrollController,
+        pageCount: source.pageCount,
+        imageBuilder: _pageImage,
+        aspectRatio: source.aspectRatio,
+        gaps: s.mode == ReadingMode.webtoonGaps,
+        filterQuality: _sampling,
+        onTapToggle: _toggleChrome,
+      ),
     };
 
     // The GPU affine layer (brightness/contrast/mode). A single ColorFilter
@@ -682,11 +699,18 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // any affine adjustment there is no layer (zero cost for uncorrected
     // reading). The non-linear residual is already baked into [source].
     final filter = _colorFilter;
-    final filteredView =
-        filter == null ? view : ColorFiltered(colorFilter: filter, child: view);
-    final neighbors = ref
-            .watch(bookNeighborsProvider(
-                widget.sourceId, widget.data.seriesId, widget.bookId))
+    final filteredView = filter == null
+        ? view
+        : ColorFiltered(colorFilter: filter, child: view);
+    final neighbors =
+        ref
+            .watch(
+              bookNeighborsProvider(
+                widget.sourceId,
+                widget.data.seriesId,
+                widget.bookId,
+              ),
+            )
             .valueOrNull ??
         const BookNeighbors();
     return Stack(
@@ -715,19 +739,27 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             rtl: effectiveRtl(s),
             neighbors: neighbors,
             onClose: () => context.pop(),
-            onSettings: (next) =>
-                ref.read(readerControllerProvider(widget.sourceId, widget.bookId)
-                    .notifier).updateSettings(next),
+            onSettings: (next) => ref
+                .read(
+                  readerControllerProvider(
+                    widget.sourceId,
+                    widget.bookId,
+                  ).notifier,
+                )
+                .updateSettings(next),
             onSeekPage: _seekPage,
             onJumpToPage: _seekPage,
             onOpenBook: _openBook,
             onToggleDirection: s.mode.isWebtoon
                 ? null
                 : () => ref
-                    .read(readerControllerProvider(
-                            widget.sourceId, widget.bookId)
-                        .notifier)
-                    .toggleDirection(),
+                      .read(
+                        readerControllerProvider(
+                          widget.sourceId,
+                          widget.bookId,
+                        ).notifier,
+                      )
+                      .toggleDirection(),
             onImageQuality: _openImageQuality,
             onColorCorrection: _openColorCorrection,
             onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
@@ -770,18 +802,26 @@ class _ErrorState extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(AppIcons.brokenImage,
-                      size: 44, color: scheme.onSurfaceVariant),
+                  Icon(
+                    AppIcons.brokenImage,
+                    size: 44,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 14),
-                  Text(title,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   if (detail != null) ...[
                     const SizedBox(height: 6),
-                    Text(detail!,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant)),
+                    Text(
+                      detail!,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                   if (onRetry != null) ...[
                     const SizedBox(height: 20),
