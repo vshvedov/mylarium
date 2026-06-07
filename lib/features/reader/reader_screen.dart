@@ -184,6 +184,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// image-quality preference changes.
   int _focusWidth = 1;
 
+  /// GPU sampling quality for page rendering, from the device tier.
+  FilterQuality _sampling = FilterQuality.high;
+
   ReadingMode get _mode => widget.data.settings.mode;
 
   @override
@@ -332,6 +335,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _rebuildSource({bool force = false}) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
+    _sampling = kReaderSampling;
     // Off-focus pages decode at display resolution (modest headroom) so only the
     // focused page holds a full-resolution texture; this is what keeps memory in
     // budget while the focused page can be sharp.
@@ -645,6 +649,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           viewportAspect: viewportAspect,
           rtl: effectiveRtl(s),
           doubleTapZoom: s.doubleTapZoom,
+          filterQuality: _sampling,
           zoomed: _zoomed,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
@@ -657,6 +662,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           imageBuilder: _pageImage,
           fit: s.fit,
           rtl: effectiveRtl(s),
+          filterQuality: _sampling,
           onPageChanged: _onControllerPage,
           onTap: _handleTap,
         ),
@@ -666,6 +672,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           imageBuilder: _pageImage,
           aspectRatio: source.aspectRatio,
           gaps: s.mode == ReadingMode.webtoonGaps,
+          filterQuality: _sampling,
           onTapToggle: _toggleChrome,
         ),
     };

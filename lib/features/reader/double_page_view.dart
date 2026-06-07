@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'gestures/fit_scale.dart';
 import 'reader_models.dart';
-import 'upscaled_image.dart';
 import 'widgets/page_error.dart';
 
 /// Double-page (spread) reader. Renders precomputed [pairs] (each `[i]` solo or
 /// `[i, i+1]`) in a [PageView], honoring reading direction. Each spread is
-/// pinch-zoomable via [InteractiveViewer]; pages render through the upscale
-/// shader so zoom stays sharp. Taps are reported as a normalized position for
-/// the screen's tap-zone resolver.
+/// pinch-zoomable via [InteractiveViewer]; taps are reported as a normalized
+/// position for the screen's tap-zone resolver.
 class DoublePageView extends StatelessWidget {
   const DoublePageView({
     super.key,
@@ -18,6 +16,7 @@ class DoublePageView extends StatelessWidget {
     required this.imageBuilder,
     required this.fit,
     required this.rtl,
+    required this.filterQuality,
     required this.onPageChanged,
     required this.onTap,
   });
@@ -27,6 +26,9 @@ class DoublePageView extends StatelessWidget {
   final ImageProvider Function(int index) imageBuilder;
   final FitMode fit;
   final bool rtl;
+
+  /// GPU sampling quality for the page textures (device-tier driven).
+  final FilterQuality filterQuality;
   final void Function(int spreadIndex) onPageChanged;
   final void Function(Offset normalized) onTap;
 
@@ -58,10 +60,12 @@ class DoublePageView extends StatelessWidget {
                 children: [
                   for (final p in ordered)
                     Flexible(
-                      child: UpscaledImage(
+                      child: Image(
                         image: imageBuilder(p),
                         fit: boxFitFor(fit),
-                        errorBuilder: (_) => const PageError(),
+                        filterQuality: filterQuality,
+                        gaplessPlayback: true,
+                        errorBuilder: (_, _, _) => const PageError(),
                       ),
                     ),
                 ],

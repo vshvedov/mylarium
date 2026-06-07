@@ -88,9 +88,6 @@ flutter:
   assets:
     - branding/loading.json
 
-  shaders:
-    - lib/features/reader/shaders/reader_upscale.frag
-
   fonts:
     - family: Anton
       fonts:
