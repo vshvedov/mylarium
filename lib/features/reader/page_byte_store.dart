@@ -26,6 +26,8 @@ class PageCacheEntry {
 
   final String path;
   final int sizeBytes;
+
+  /// Unix epoch milliseconds.
   final int lastAccessedAt;
 }
 
@@ -52,25 +54,31 @@ List<String> selectPageEvictions(List<PageCacheEntry> entries, int capBytes) {
 /// applicationSupport (never temp/cache) and are LRU-evicted to
 /// [kPageCacheCapBytes]. Every disk operation is best-effort: a cache failure
 /// must never break reading.
+const int _defaultSweepThresholdBytes =
+    32 << 20; // sweep after ~32 MB of new writes
+
 class PageByteStore {
-  PageByteStore({int capBytes = kPageCacheCapBytes, int Function()? nowMillis})
-    : _cap = capBytes,
-      _now = nowMillis ?? (() => DateTime.now().millisecondsSinceEpoch);
+  PageByteStore({
+    int capBytes = kPageCacheCapBytes,
+    int sweepThresholdBytes = _defaultSweepThresholdBytes,
+    int Function()? nowMillis,
+  }) : _cap = capBytes,
+       _sweepThreshold = sweepThresholdBytes,
+       _now = nowMillis ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final int _cap;
+  final int _sweepThreshold;
   final int Function() _now;
   final Map<String, Future<Uint8List>> _inFlight = {};
   int _writtenSinceSweep = 0;
 
-  static const _pagesDir = 'media/pages';
-  static const _sweepThreshold = 32 << 20; // sweep after ~32 MB of new writes
-
+  // Mirrors AppPaths' segment sanitization (kept local to avoid widening its API).
   static String _safe(String s) =>
       s.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
 
   /// Relative path (under applicationSupport) for a cached page.
   String relativePath(String sourceId, String bookId, int pageNumber) =>
-      p.join(_pagesDir, _safe(sourceId), _safe(bookId), '$pageNumber');
+      p.join(AppPaths.pagesDir, _safe(sourceId), _safe(bookId), '$pageNumber');
 
   /// Bytes for a page: a disk hit when present, else [fetch] (whose result is
   /// written to disk). Concurrent callers for the same page share one [fetch].
@@ -84,6 +92,8 @@ class PageByteStore {
     final existing = _inFlight[rel];
     if (existing != null) return existing;
     final future = _load(rel, fetch);
+    // Store the unwrapped future so the whenComplete cleanup is guaranteed even
+    // if callers drop the returned future before it resolves.
     _inFlight[rel] = future;
     return future.whenComplete(() => _inFlight.remove(rel));
   }
@@ -134,12 +144,12 @@ class PageByteStore {
 
   Future<void> _sweep() async {
     try {
-      final root = Directory(await AppPaths.resolve(_pagesDir));
+      final root = Directory(await AppPaths.resolve(AppPaths.pagesDir));
       if (!root.existsSync()) return;
       final entries = <PageCacheEntry>[];
-      for (final e in root.listSync(recursive: true)) {
+      await for (final e in root.list(recursive: true)) {
         if (e is File && !e.path.endsWith('.tmp')) {
-          final stat = e.statSync();
+          final stat = await e.stat();
           entries.add(
             PageCacheEntry(
               path: e.path,

@@ -21,6 +21,9 @@ class AppPaths {
   /// separate from the auto-cache.
   static const downloadsDir = 'media/downloads';
 
+  /// Online page-image byte cache (ephemeral, LRU-evicted) root.
+  static const pagesDir = 'media/pages';
+
   /// Test seam: when set, [resolve] joins against this root instead of the
   /// platform applicationSupport directory (lets tests simulate the cross-install
   /// container-path change that the relative-path promise guards).
@@ -29,8 +32,8 @@ class AppPaths {
 
   /// Resolves a stored RELATIVE path to an absolute path for this install.
   static Future<String> resolve(String relativePath) async {
-    final root = debugOverrideRoot ??
-        (await getApplicationSupportDirectory()).path;
+    final root =
+        debugOverrideRoot ?? (await getApplicationSupportDirectory()).path;
     return p.join(root, relativePath);
   }
 
@@ -51,8 +54,12 @@ class AppPaths {
     String sourceId,
     String ownerType,
     String ownerId,
-  ) =>
-      p.join(thumbnailsDir, _safe(ownerType), _safe(sourceId), '${_safe(ownerId)}.img');
+  ) => p.join(
+    thumbnailsDir,
+    _safe(ownerType),
+    _safe(sourceId),
+    '${_safe(ownerId)}.img',
+  );
 
   static String _safe(String segment) =>
       segment.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
