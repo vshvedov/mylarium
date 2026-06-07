@@ -41,6 +41,19 @@ typedef PinnedRaw = ({
   bool resolved,
 });
 
+/// A resolved home-rail snapshot row: a pointer joined to its owner (series or
+/// book) for display + the owner's library id (used to hide a locked library's
+/// item). [title] is null when the owner row is not cached, in which case the
+/// rail provider drops it.
+typedef RailSnapshotRaw = ({
+  String ownerType,
+  String ownerId,
+  String? title,
+  String? number,
+  int booksCount,
+  String? libraryId,
+});
+
 @DriftDatabase(tables: [
   AppSettings,
   Sources,
@@ -960,6 +973,84 @@ class AppDatabase extends _$AppDatabase {
               t.ownerId.equals(ownerId)))
         .go();
   }
+
+  // --- Home rail snapshots (cache-first rails) -----------------------------
+
+  /// The saved snapshot for one rail, ordered by position, each pointer joined
+  /// to its owner (series or book) for display + gating. An empty result means
+  /// no snapshot exists (the rail has never loaded on this source) - the
+  /// provider treats that as "cold" (show a skeleton). Follows the same
+  /// LEFT-JOIN structure as [watchPinnedItems]; omits the `resolved` flag (the
+  /// rail provider simply drops rows with a null title).
+  Future<List<RailSnapshotRaw>> getRailSnapshot(
+    String sourceId,
+    String railKind,
+  ) async {
+    final rows = await customSelect(
+      'SELECT i.owner_type AS owner_type, i.owner_id AS owner_id, '
+      's.title AS s_title, s.books_count AS s_count, s.library_id AS s_lib, '
+      'b.title AS b_title, b.number AS b_number, b.library_id AS b_lib '
+      'FROM home_rail_items i '
+      "LEFT JOIN series s ON i.owner_type = 'series' "
+      'AND s.source_id = i.source_id AND s.id = i.owner_id '
+      "LEFT JOIN books b ON i.owner_type = 'book' "
+      'AND b.source_id = i.source_id AND b.id = i.owner_id '
+      'WHERE i.source_id = ?1 AND i.rail_kind = ?2 '
+      'ORDER BY i.position',
+      variables: [Variable.withString(sourceId), Variable.withString(railKind)],
+      readsFrom: {homeRailItems, series, books},
+    ).get();
+    return [
+      for (final row in rows)
+        if (row.read<String>('owner_type') == 'series')
+          (
+            ownerType: 'series',
+            ownerId: row.read<String>('owner_id'),
+            title: row.read<String?>('s_title'),
+            number: null,
+            booksCount: row.read<int?>('s_count') ?? 0,
+            libraryId: row.read<String?>('s_lib'),
+          )
+        else
+          (
+            ownerType: 'book',
+            ownerId: row.read<String>('owner_id'),
+            title: row.read<String?>('b_title'),
+            number: row.read<String?>('b_number'),
+            booksCount: 0,
+            libraryId: row.read<String?>('b_lib'),
+          ),
+    ];
+  }
+
+  /// Replaces the snapshot for one rail with [items] in order (a fresh server
+  /// fetch is the source of truth). Delete-then-insert in a transaction so a
+  /// reader never sees a partial snapshot.
+  Future<void> replaceRailSnapshot(
+    String sourceId,
+    String railKind,
+    List<({String ownerType, String ownerId})> items,
+  ) =>
+      transaction(() async {
+        await (delete(homeRailItems)
+              ..where((t) =>
+                  t.sourceId.equals(sourceId) & t.railKind.equals(railKind)))
+            .go();
+        await batch((b) {
+          for (var i = 0; i < items.length; i++) {
+            b.insert(
+              homeRailItems,
+              HomeRailItemsCompanion.insert(
+                sourceId: sourceId,
+                railKind: railKind,
+                position: i,
+                ownerType: items[i].ownerType,
+                ownerId: items[i].ownerId,
+              ),
+            );
+          }
+        });
+      });
 }
 
 LazyDatabase _open() => LazyDatabase(() async {
