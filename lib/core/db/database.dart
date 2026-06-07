@@ -78,150 +78,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        // A fresh install at the current version: createAll covers every table
-        // plus the generated indexes.
+        // Single baseline schema. The historical v1..v15 migration chain was
+        // collapsed into this baseline during alpha (there are no released
+        // users to migrate), so createAll builds every table plus the generated
+        // indexes at the current shape and there is no upgrade chain. A device
+        // carrying an older pre-collapse DB (user_version > 1) is not migrated:
+        // open will fail until its data is cleared (acceptable in alpha).
         onCreate: (m) => m.createAll(),
-        // Each bump is additive. v1 data is never touched (no data loss across
-        // an app update).
-        onUpgrade: (m, from, to) async {
-          // Each step is bounded by both `from` and `to` so migrating to an
-          // intermediate version (used by the golden migration tests) applies
-          // exactly the steps for versions in (from, to].
-          // v1 -> v2: source + metadata tables.
-          if (from < 2 && to >= 2) {
-            await m.createTable(sources);
-            await m.createTable(libraries);
-            await m.createTable(series);
-            await m.createTable(books);
-          }
-          // v2 -> v3: thumbnail/metadata caches, per-library prefs, and the
-          // series keyset indexes that back the virtualized grids.
-          if (from < 3 && to >= 3) {
-            await m.createTable(thumbnails);
-            await m.createTable(cachedMetadata);
-            await m.createTable(libraryPrefs);
-            await m.createIndex(seriesKeyset);
-            await m.createIndex(seriesKeysetLib);
-          }
-          // v3 -> v4: per-series reader settings.
-          if (from < 4 && to >= 4) {
-            await m.createTable(readerSettings);
-          }
-          // v4 -> v5: offline cache (downloaded archives) + download queue.
-          if (from < 5 && to >= 5) {
-            await m.createTable(cachedAssets);
-            await m.createTable(downloadTasks);
-            await m.createIndex(cachedAssetsLru);
-          }
-          // v5 -> v6: auto-cache settings (toggle + Wi-Fi-only) and a manual
-          // vs auto flag on download tasks (so resume picks the right pool).
-          if (from < 6 && to >= 6) {
-            await m.addColumn(appSettings, appSettings.autoCacheEnabled);
-            await m.addColumn(appSettings, appSettings.downloadWifiOnly);
-            // download_tasks was introduced in v5 without `permanent`; only a
-            // real v5 install lacks it. Upgrades from < 5 already create the
-            // table with the current (v6) shape via createTable above, so
-            // adding it again would duplicate the column.
-            if (from == 5) {
-              await m.addColumn(downloadTasks, downloadTasks.permanent);
-            }
-          }
-          // v6 -> v7: progress sync + reading stats. New tables (book state,
-          // append-only sessions, write-back queue, series metadata) plus a
-          // per-install deviceId. app_settings exists from v1 on every path
-          // reaching v7, so its addColumn is unconditional within this guard.
-          // Series publisher/genres live in a side table (series_meta) rather
-          // than as new series columns, so the historical v1 -> v2
-          // createTable(series) keeps emitting the v2 shape (see SeriesMeta).
-          if (from < 7 && to >= 7) {
-            await m.createTable(bookState);
-            await m.createTable(readingSessions);
-            await m.createTable(syncQueue);
-            await m.createIndex(syncQueueBook);
-            await m.createTable(seriesMeta);
-            await m.addColumn(appSettings, appSettings.deviceId);
-          }
-          // v7 -> v8: reader image-quality preference (Smart toggle + manual
-          // stop). app_settings exists on every path reaching v8, so the
-          // addColumns are unconditional within this guard.
-          if (from < 8 && to >= 8) {
-            await m.addColumn(appSettings, appSettings.imageQualitySmart);
-            await m.addColumn(appSettings, appSettings.imageQualityManualLevel);
-          }
-          // v8 -> v9: reader page color-correction settings (global / per-series
-          // / per-book). A new table, so additive createTable only.
-          if (from < 9 && to >= 9) {
-            await m.createTable(colorSettings);
-          }
-          // v9 -> v10: deeper Komga integration (T3). A write-back `op` kind on
-          // the sync queue (mark read/unread, series read/unread) and a local
-          // series rating mirror. Both syncQueue and seriesMeta are created in
-          // the from<7 block, where createTable already emits the current (v10)
-          // shape including these columns; only a real v7/v8/v9 install has the
-          // tables WITHOUT them, so the addColumns are guarded on from >= 7.
-          if (from < 10 && to >= 10) {
-            if (from >= 7) {
-              await m.addColumn(syncQueue, syncQueue.op);
-              await m.addColumn(seriesMeta, seriesMeta.rating);
-            }
-          }
-          // v10 -> v11: per-series reading direction (T4), the source of truth for
-          // double-page RTL. Idempotent: a half-applied upgrade (the column added
-          // but the version bump not committed, e.g. the process was killed
-          // mid-migration) must not re-add `direction` (which would throw
-          // "duplicate column"), and the from<4 createTable path already emits it.
-          // So guard the addColumn on the column actually being absent rather than
-          // on `from`. The backfill is naturally idempotent (a no-op on a fresh,
-          // empty table) and keeps a series that read pagedRtl in RTL when it later
-          // switches to double-page.
-          if (from < 11 && to >= 11) {
-            if (!await _hasColumn('reader_settings', 'direction')) {
-              await m.addColumn(readerSettings, readerSettings.direction);
-            }
-            await customStatement(
-              "UPDATE reader_settings SET direction = 'rtl' "
-              "WHERE mode = 'pagedRtl'",
-            );
-          }
-          // v11 -> v12: user-curated home pins (series/chapter). A brand-new
-          // table, so a plain additive createTable (no idempotency guard: unlike
-          // an addColumn, a half-applied createTable cannot leave a partial
-          // column, and the from<12 path never created it earlier).
-          if (from < 12 && to >= 12) {
-            await m.createTable(pins);
-          }
-          // v12 -> v13: persisted home-screen row layout (order + visibility), a
-          // single nullable JSON column on the settings row. Additive.
-          if (from < 13 && to >= 13) {
-            await m.addColumn(appSettings, appSettings.homeLayout);
-          }
-          // v13 -> v14: "delete downloaded chapter on read" toggle. Additive.
-          if (from < 14 && to >= 14) {
-            await m.addColumn(appSettings, appSettings.deleteOnRead);
-          }
-          // v14 -> v15: cache-first home rails. A snapshot of each network
-          // rail's last fetched membership (pointers into series/books), so a
-          // warm launch renders instantly. Brand-new table -> plain additive
-          // createTable (no idempotency guard needed, like the v11 -> v12 pins
-          // table).
-          if (from < 15 && to >= 15) {
-            await m.createTable(homeRailItems);
-          }
-        },
       );
-
-  /// Whether [table] currently has a column named [column]. Used to keep
-  /// additive migrations idempotent so a half-applied upgrade (e.g. the process
-  /// was killed mid-migration, leaving the column present but the version not
-  /// bumped) can re-run without an "duplicate column" error.
-  Future<bool> _hasColumn(String table, String column) async {
-    final rows = await customSelect('PRAGMA table_info($table)').get();
-    return rows.any((r) => r.data['name'] == column);
-  }
 
   /// Reads the canonical settings row (id = 1), inserting defaults exactly once
   /// and generating a stable [AppSetting.deviceId] on first read. Never
