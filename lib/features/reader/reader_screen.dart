@@ -105,6 +105,13 @@ int _readerPageCount(ReaderData data) => switch (data.source) {
 /// resolution and zoom reveals real detail instead of a stretched thumbnail.
 const double kReaderZoomHeadroom = 4.0;
 
+/// Delay after the last page change before the now-stationary page is upgraded
+/// to a full-resolution decode. Long enough that flipping quickly through pages
+/// never triggers a per-page high-res decode mid-slide (the cause of page-turn
+/// jank); short enough that a settled page is sharp well before the reader would
+/// pinch-zoom it. A zoom gesture promotes immediately, so this is never felt.
+const Duration kFocusUpgradeDelay = Duration(milliseconds: 200);
+
 class _ReaderBody extends ConsumerStatefulWidget {
   const _ReaderBody({
     super.key,
@@ -176,6 +183,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Canonical current page index (0-based).
   int _page = 0;
 
+  /// The page currently promoted to a full-resolution decode (for sharp zoom).
+  /// Deliberately LAGS [_page]: it is bumped to the current page only a beat
+  /// AFTER the controller settles ([kFocusUpgradeDelay]). While a turn is in
+  /// flight the focus set still points at the previous page, so neither the
+  /// outgoing page (stays full-res) nor the incoming page (stays at its
+  /// prefetched display resolution) changes decode width. The slide is then just
+  /// translating ready textures - no mid-slide re-decode, no dropped frames.
+  int _settledPage = 0;
+
+  /// Fires [kFocusUpgradeDelay] after the last page change to promote the
+  /// stationary page to full resolution. Reset on every turn so a fast
+  /// flip-through never decodes at full resolution until it stops.
+  Timer? _focusSettleTimer;
+
   /// End-of-book seam: true once the last page/spread is reached; [_seamDismissed]
   /// hides it after the user closes it (re-armed by leaving and returning to the
   /// end, or by trying to page past it).
@@ -211,9 +232,15 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // reading session at the opening page.
     final count = _readerPageCount(widget.data);
     _page = count == 0 ? 0 : widget.data.initialPage.clamp(0, count - 1);
+    // The opening page is stationary, so promote it to full resolution at once
+    // (no settle delay on first paint).
+    _settledPage = _page;
     _recorder.onPage(_page, _nowMs());
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onWebtoonScroll);
+    // A zoom gesture promotes the focused page to full resolution immediately,
+    // so a pinch right after a turn is sharp without waiting for the settle.
+    _zoomed.addListener(_onZoomChanged);
     // Distraction-free, full-bleed reading: hide the system bars and claim the
     // screen edges from the Android back/switch gesture (no-op on iOS).
     unawaited(enterReaderImmersive());
@@ -327,6 +354,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       setState(() => _page = page);
       _prefetcher?.onPage(page);
       _reportPage(page);
+      _scheduleFocusUpgrade();
     }
   }
 
@@ -451,8 +479,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _pageController?.dispose();
     _pageController = PageController(initialPage: target);
     // A new controller does not fire onPageChanged, so recompute end-ness here
-    // (e.g. switching mode while the seam is showing on the last page).
+    // (e.g. switching mode while the seam is showing on the last page). The
+    // current page is stationary in the new mode, so make it full-res at once.
     _setAtEnd(_isEndController(target));
+    _focusSettleTimer?.cancel();
+    _settledPage = _page;
     setState(() {});
   }
 
@@ -472,14 +503,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     return _pairs[index].first;
   }
 
-  /// Indices currently in focus (decoded at full resolution): the current page in
-  /// paged and webtoon modes, both pages of the current spread in double-page.
+  /// Indices currently in focus (decoded at full resolution): the SETTLED page in
+  /// paged and webtoon modes, both pages of the settled spread in double-page.
+  /// Keyed on [_settledPage] (not the live [_page]) so a page turn never changes
+  /// which pages are full-res mid-slide - that is what keeps paging decode-free.
   Set<int> _focusIndices() {
     if (_mode == ReadingMode.doublePage && _pairs.isNotEmpty) {
-      final i = _controllerIndexFor(_page).clamp(0, _pairs.length - 1);
+      final i = _controllerIndexFor(_settledPage).clamp(0, _pairs.length - 1);
       return _pairs[i].toSet();
     }
-    return {_page};
+    return {_settledPage};
   }
 
   /// Provider for page [i]: the focused page/spread decodes at [_focusWidth] (high
@@ -488,6 +521,27 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   ImageProvider _pageImage(int i) {
     final w = _focusIndices().contains(i) ? _focusWidth : _neighborWidth;
     return _source!.imageProviderAt(i, w);
+  }
+
+  /// Schedule the focused-page full-resolution upgrade for a beat after motion
+  /// stops. Reset on every turn, so flipping quickly never decodes at full
+  /// resolution mid-slide; the upgrade lands only once the user pauses.
+  void _scheduleFocusUpgrade() {
+    _focusSettleTimer?.cancel();
+    _focusSettleTimer = Timer(kFocusUpgradeDelay, _promoteFocusNow);
+  }
+
+  /// Promote the current page to a full-resolution decode now: after a settle,
+  /// or immediately when a zoom starts so the pinch is sharp. A no-op when the
+  /// current page is already the promoted one.
+  void _promoteFocusNow() {
+    _focusSettleTimer?.cancel();
+    if (!mounted || _settledPage == _page) return;
+    setState(() => _settledPage = _page);
+  }
+
+  void _onZoomChanged() {
+    if (_zoomed.value) _promoteFocusNow();
   }
 
   /// Whether [controllerIndex] is the last position in the current paged mode
@@ -514,6 +568,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Leave the reader: restore the app-wide chrome and clear gesture exclusion.
     unawaited(exitReaderImmersive());
     _progressDebounce?.cancel();
+    _focusSettleTimer?.cancel();
     // Push the final position (durable) and append the session (best-effort;
     // the SyncEngine + database are app-lifetime, so the write survives this
     // screen's teardown).
@@ -532,6 +587,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           .then((e) => e.maybeDeleteOnRead(sourceId, bookId))
           .catchError((Object _) {});
     }
+    _zoomed.removeListener(_onZoomChanged);
     _zoomed.dispose();
     _scrollController.dispose();
     _pageController?.dispose();
@@ -543,6 +599,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _prefetcher?.onPage(_page);
     _reportPage(_page);
     _setAtEnd(_isEndController(index));
+    // Hold the full-res focus on the previous page until the turn settles, so
+    // the slide does not re-decode either page; promote a beat after it stops.
+    _scheduleFocusUpgrade();
     setState(() {});
   }
 
@@ -615,6 +674,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _seekPage(int page) {
     _page = page;
     _reportPage(page);
+    _scheduleFocusUpgrade();
     if (_mode.isWebtoon) {
       if (_scrollController.hasClients) {
         final offsets = _webtoonOffsets();
