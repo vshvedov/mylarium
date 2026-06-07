@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/features/reader/double_page_view.dart';
 import 'package:mylarium/features/reader/reader_models.dart';
-import 'package:mylarium/features/reader/upscaled_image.dart';
 import 'package:mylarium/features/reader/webtoon_view.dart';
 
 /// A provider whose image never completes, so the test exercises widget
-/// construction without real bytes or a pending decode timer.
+/// construction (the [Image.filterQuality] property) without real bytes or a
+/// pending decode timer.
 class _StubProvider extends ImageProvider<_StubProvider> {
   const _StubProvider(this.index);
   final int index;
@@ -31,7 +31,7 @@ class _StubProvider extends ImageProvider<_StubProvider> {
 }
 
 void main() {
-  testWidgets('double-page renders pages through the upscale shader',
+  testWidgets('double-page images use the supplied filter quality',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: DoublePageView(
@@ -42,17 +42,17 @@ void main() {
         imageBuilder: (i) => _StubProvider(i),
         fit: FitMode.screen,
         rtl: false,
+        filterQuality: FilterQuality.high,
         onPageChanged: (_) {},
         onTap: (_) {},
       ),
     ));
-    await tester.pump();
-    // Both pages of the spread go through UpscaledImage (not a plain Image).
-    expect(find.byType(UpscaledImage), findsNWidgets(2));
+    final images = tester.widgetList<Image>(find.byType(Image));
+    expect(images, isNotEmpty);
+    expect(images.every((i) => i.filterQuality == FilterQuality.high), isTrue);
   });
 
-  testWidgets('webtoon renders pages through the upscale shader',
-      (tester) async {
+  testWidgets('webtoon images use the supplied filter quality', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: WebtoonView(
         scrollController: ScrollController(),
@@ -60,10 +60,12 @@ void main() {
         imageBuilder: (i) => _StubProvider(i),
         aspectRatio: (_) => 0.66,
         gaps: false,
+        filterQuality: FilterQuality.medium,
         onTapToggle: () {},
       ),
     ));
-    await tester.pump();
-    expect(find.byType(UpscaledImage), findsOneWidget);
+    final images = tester.widgetList<Image>(find.byType(Image));
+    expect(images, isNotEmpty);
+    expect(images.every((i) => i.filterQuality == FilterQuality.medium), isTrue);
   });
 }

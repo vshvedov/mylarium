@@ -3,14 +3,9 @@
 
 // High-quality page sampler for the reader. When a page is drawn larger than its
 // native size (pinch-zoom), the engine's default sampler (bilinear on Impeller)
-// produces a soft, blurry upscale. This replaces it with a Lanczos-3 kernel
-// (windowed sinc, 36 taps): sharper than bicubic, the family Komga clients use.
-// It invents no detail - it just stops throwing sharpness away.
-//
-// Cost is bounded by the on-screen area (only covered fragments run), so it is
-// fine even for a full page. Derivative-based up/down-scale gating (fwidth) is
-// avoided on purpose: it is unsupported by the SkSL backend and would make the
-// shader fail to compile there.
+// produces a soft, blurry upscale. This replaces it with a Catmull-Rom bicubic
+// kernel (16 taps): sharp, interpolating, the same family Komelia uses on
+// desktop. It invents no detail - it just stops throwing sharpness away.
 
 precision highp float;
 
@@ -26,35 +21,39 @@ uniform sampler2D uTex;
 
 out vec4 fragColor;
 
-float lanczos(float x) {
-  x = abs(x);
-  if (x < 1e-4) return 1.0;
-  if (x >= 3.0) return 0.0;
-  float px = 3.14159265358979 * x;
-  return (sin(px) / px) * (sin(px / 3.0) / (px / 3.0));
+// Catmull-Rom weights for the four taps at relative positions -1, 0, 1, 2 given
+// the fractional position f in [0, 1]. Sums to 1; can be slightly negative
+// (overshoot), which we clamp away at the end.
+vec4 catmullRom(float f) {
+  float f2 = f * f;
+  float f3 = f2 * f;
+  return 0.5 * vec4(
+    -f3 + 2.0 * f2 - f,
+    3.0 * f3 - 5.0 * f2 + 2.0,
+    -3.0 * f3 + 4.0 * f2 + f,
+    f3 - f2
+  );
 }
 
 void main() {
   vec2 uv = (FlutterFragCoord().xy - uOffset) / uResolution;
   vec2 tc = uv * uTexSize;
-
   vec2 base = floor(tc - 0.5);
   vec2 f = fract(tc - 0.5);
 
+  vec4 wx = catmullRom(f.x);
+  vec4 wy = catmullRom(f.y);
+
   vec4 color = vec4(0.0);
-  float wsum = 0.0;
-  for (int j = -2; j <= 3; j++) {
-    float wy = lanczos(f.y - float(j));
-    for (int i = -2; i <= 3; i++) {
-      float w = lanczos(f.x - float(i)) * wy;
+  for (int j = -1; j <= 2; j++) {
+    for (int i = -1; i <= 2; i++) {
       vec2 texel = base + vec2(float(i), float(j)) + 0.5;
       vec2 sampleUv = clamp(texel / uTexSize, vec2(0.0), vec2(1.0));
-      color += texture(uTex, sampleUv) * w;
-      wsum += w;
+      color += texture(uTex, sampleUv) * (wx[i + 1] * wy[j + 1]);
     }
   }
 
-  // Normalize (Lanczos weights do not sum to exactly 1 over a finite window) and
-  // clamp the sharpening overshoot so ringing never goes out of range.
-  fragColor = clamp(color / wsum, 0.0, 1.0);
+  // Clamp overshoot from the (sharpening) negative lobes so ringing never
+  // produces out-of-range colors.
+  fragColor = clamp(color, vec4(0.0), vec4(1.0));
 }
