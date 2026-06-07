@@ -12,6 +12,7 @@ import '../../app/widgets/app_loading.dart';
 import '../../core/network/content_exception.dart';
 import '../../core/platform/render_capabilities.dart';
 import '../../core/platform/system_ui.dart';
+import '../offline/download_manager.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
 import '../sync/sync_models.dart';
@@ -160,6 +161,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// disposed (which throws "Cannot use ref after the widget was disposed").
   late final Future<SyncEngine> _syncEngine;
 
+  /// Captured in [initState] so the deferred offline backfill can run from
+  /// [dispose] / lifecycle callbacks without touching `ref` after disposal
+  /// (which throws). The manager is app-lifetime (keepAlive).
+  late final DownloadManager _downloadManager;
+
   /// Debounces per-turn progress write-back (BookState + Komga queue).
   Timer? _progressDebounce;
 
@@ -197,6 +203,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void initState() {
     super.initState();
     _syncEngine = ref.read(syncEngineProvider.future);
+    _downloadManager = ref.read(downloadManagerProvider);
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
@@ -272,6 +279,21 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         .catchError((Object _) {});
   }
 
+  /// Deferred + throttled auto-cache: the full-chapter download is enqueued only
+  /// when the reader is no longer actively pulling pages (on close / background),
+  /// so foreground page fetches always have the connection to themselves. Online
+  /// sources only; never in preview. Idempotent and Wi-Fi/auto-cache gated by the
+  /// download manager.
+  void _backfillOffline() {
+    if (widget.preview) return;
+    if (widget.data.source is! OnlinePages) return;
+    final sourceId = widget.sourceId;
+    final bookId = widget.bookId;
+    unawaited(
+      _downloadManager.enqueueBook(sourceId, bookId).catchError((_) {}),
+    );
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -283,6 +305,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         _progressDebounce?.cancel();
         _pushProgress(_page, completed: _isLastPage(_page));
         _finalizeSession();
+        _backfillOffline();
       case AppLifecycleState.resumed:
         // Start a fresh session segment at the current page.
         _recorder.onPage(_page, _nowMs());
@@ -496,6 +519,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // screen's teardown).
     _pushProgress(_page, completed: _isLastPage(_page));
     _finalizeSession();
+    // Now that reading is over, backfill the rest of the chapter offline without
+    // competing with foreground page fetches.
+    _backfillOffline();
     // If the chapter was finished this session, reclaim its cached copy now that
     // the reader (and its archive reads) are tearing down - never mid-session,
     // which would fail in-flight decodes. No-op unless "delete on read" is on.

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
@@ -69,15 +67,15 @@ class ReaderData {
   final ColorAdjustments colorAdjustments;
 
   ReaderData copyWith({ReaderSettings? settings}) => ReaderData(
-        sourceId: sourceId,
-        bookId: bookId,
-        seriesId: seriesId,
-        title: title,
-        settings: settings ?? this.settings,
-        source: source,
-        initialPage: initialPage,
-        colorAdjustments: colorAdjustments,
-      );
+    sourceId: sourceId,
+    bookId: bookId,
+    seriesId: seriesId,
+    title: title,
+    settings: settings ?? this.settings,
+    source: source,
+    initialPage: initialPage,
+    colorAdjustments: colorAdjustments,
+  );
 }
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
@@ -86,8 +84,11 @@ class ReaderData {
 @riverpod
 class ReaderController extends _$ReaderController {
   @override
-  Future<ReaderData> build(String sourceId, String bookId,
-      [bool preview = false]) async {
+  Future<ReaderData> build(
+    String sourceId,
+    String bookId, [
+    bool preview = false,
+  ]) async {
     final db = ref.watch(appDatabaseProvider);
     final settingsRepo = ReaderSettingsRepository(db);
 
@@ -100,14 +101,16 @@ class ReaderController extends _$ReaderController {
     final archivePath = await cache.archivePath(sourceId, bookId);
     if (archivePath != null) {
       try {
-        final entries =
-            await ref.watch(archiveExtractorProvider).entries(archivePath);
+        final entries = await ref
+            .watch(archiveExtractorProvider)
+            .entries(archivePath);
         final book = await db.getBook(sourceId, bookId);
         final seriesId = book?.seriesId ?? '';
         final title = book?.title ?? '';
         final settings = await settingsRepo.load(sourceId, seriesId);
-        final colorAdjustments =
-            await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
+        final colorAdjustments = await ColorSettingsRepository(
+          db,
+        ).resolve(sourceId, seriesId, bookId);
         return ReaderData(
           sourceId: sourceId,
           bookId: bookId,
@@ -153,19 +156,14 @@ class ReaderController extends _$ReaderController {
         // Fall back to LTR defaults.
       }
     }
-    final settings =
-        await settingsRepo.load(sourceId, seriesId, mangaDirection: direction);
-    final colorAdjustments =
-        await ColorSettingsRepository(db).resolve(sourceId, seriesId, bookId);
-
-    // Background full-chapter download (idempotent, fire-and-forget). Skipped in
-    // preview mode: a peek must not auto-cache the chapter.
-    if (!preview) {
-      unawaited(ref
-          .read(downloadManagerProvider)
-          .enqueueBook(sourceId, bookId)
-          .catchError((_) {}));
-    }
+    final settings = await settingsRepo.load(
+      sourceId,
+      seriesId,
+      mangaDirection: direction,
+    );
+    final colorAdjustments = await ColorSettingsRepository(
+      db,
+    ).resolve(sourceId, seriesId, bookId);
 
     return ReaderData(
       sourceId: sourceId,
@@ -186,8 +184,9 @@ class ReaderController extends _$ReaderController {
     final data = state.valueOrNull;
     if (data == null) return;
     final normalized = _normalizeDirection(settings);
-    await ReaderSettingsRepository(ref.read(appDatabaseProvider))
-        .save(data.sourceId, data.seriesId, normalized);
+    await ReaderSettingsRepository(
+      ref.read(appDatabaseProvider),
+    ).save(data.sourceId, data.seriesId, normalized);
     state = AsyncData(data.copyWith(settings: normalized));
   }
 
@@ -202,10 +201,10 @@ class ReaderController extends _$ReaderController {
       ReadingMode.pagedLtr => s.copyWith(mode: ReadingMode.pagedRtl),
       ReadingMode.pagedRtl => s.copyWith(mode: ReadingMode.pagedLtr),
       ReadingMode.doublePage => s.copyWith(
-          direction: s.direction == ReadingDirection.rtl
-              ? ReadingDirection.ltr
-              : ReadingDirection.rtl,
-        ),
+        direction: s.direction == ReadingDirection.rtl
+            ? ReadingDirection.ltr
+            : ReadingDirection.rtl,
+      ),
       ReadingMode.webtoon || ReadingMode.webtoonGaps => s,
     };
     if (identical(next, s)) return;
@@ -216,8 +215,8 @@ class ReaderController extends _$ReaderController {
   /// mode is authoritative for direction (sets it); double-page/webtoon inherit the
   /// current direction unchanged.
   ReaderSettings _normalizeDirection(ReaderSettings s) => switch (s.mode) {
-        ReadingMode.pagedLtr => s.copyWith(direction: ReadingDirection.ltr),
-        ReadingMode.pagedRtl => s.copyWith(direction: ReadingDirection.rtl),
-        _ => s,
-      };
+    ReadingMode.pagedLtr => s.copyWith(direction: ReadingDirection.ltr),
+    ReadingMode.pagedRtl => s.copyWith(direction: ReadingDirection.rtl),
+    _ => s,
+  };
 }
