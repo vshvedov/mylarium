@@ -74,7 +74,7 @@ void main() {
     stubLatest('b1');
 
     final result = await container().read(recentlyAddedBooksProvider('s1').future);
-    expect(result.map((b) => b.id), ['b1']);
+    expect(result.map((i) => i.ownerId), ['b1']);
   });
 
   test('a chapter in a locked library is hidden', () async {

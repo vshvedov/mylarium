@@ -68,7 +68,7 @@ void main() {
     addTearDown(c.dispose);
 
     final result = await c.read(keepReadingProvider('s1').future);
-    expect(result.map((b) => b.id), ['b1', 'b2', 'b3'],
+    expect(result.map((i) => i.ownerId), ['b1', 'b2', 'b3'],
         reason: 'in-progress first, on-deck appended, b2 de-duplicated');
   });
 

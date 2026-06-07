@@ -6,7 +6,7 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keepReadingHash() => r'c979d62746114f24b74c3a7b9f8c6d3f4db5233c';
+String _$keepReadingHash() => r'f853735301c5e1304e629b8d86f8a1dc04b252c0';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -46,7 +46,7 @@ const keepReadingProvider = KeepReadingFamily();
 /// reader mid-book would see an empty rail; the in-progress query fixes it.
 ///
 /// Copied from [keepReading].
-class KeepReadingFamily extends Family<AsyncValue<List<BookDto>>> {
+class KeepReadingFamily extends Family<AsyncValue<List<RailItem>>> {
   /// Keep-reading books for the active source: the user's in-progress books first
   /// (most recently read), then on-deck (the next book in a series with a
   /// completed book) appended and de-duplicated. Books in a locked library are
@@ -96,7 +96,7 @@ class KeepReadingFamily extends Family<AsyncValue<List<BookDto>>> {
 /// reader mid-book would see an empty rail; the in-progress query fixes it.
 ///
 /// Copied from [keepReading].
-class KeepReadingProvider extends AutoDisposeFutureProvider<List<BookDto>> {
+class KeepReadingProvider extends AutoDisposeStreamProvider<List<RailItem>> {
   /// Keep-reading books for the active source: the user's in-progress books first
   /// (most recently read), then on-deck (the next book in a series with a
   /// completed book) appended and de-duplicated. Books in a locked library are
@@ -131,7 +131,7 @@ class KeepReadingProvider extends AutoDisposeFutureProvider<List<BookDto>> {
 
   @override
   Override overrideWith(
-    FutureOr<List<BookDto>> Function(KeepReadingRef provider) create,
+    Stream<List<RailItem>> Function(KeepReadingRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -148,7 +148,7 @@ class KeepReadingProvider extends AutoDisposeFutureProvider<List<BookDto>> {
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<BookDto>> createElement() {
+  AutoDisposeStreamProviderElement<List<RailItem>> createElement() {
     return _KeepReadingProviderElement(this);
   }
 
@@ -168,13 +168,13 @@ class KeepReadingProvider extends AutoDisposeFutureProvider<List<BookDto>> {
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin KeepReadingRef on AutoDisposeFutureProviderRef<List<BookDto>> {
+mixin KeepReadingRef on AutoDisposeStreamProviderRef<List<RailItem>> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 }
 
 class _KeepReadingProviderElement
-    extends AutoDisposeFutureProviderElement<List<BookDto>>
+    extends AutoDisposeStreamProviderElement<List<RailItem>>
     with KeepReadingRef {
   _KeepReadingProviderElement(super.provider);
 
@@ -183,7 +183,7 @@ class _KeepReadingProviderElement
 }
 
 String _$recentlyAddedSeriesHash() =>
-    r'dc1a0b0669e98566fedca5a79265f2ae17a6e168';
+    r'f075197d16a2535c04fa11b03eb9f1c9d7bcd248';
 
 /// Recently added series. Age-gated by each series' own ageRating + its
 /// library's prefs (no series cache needed, so no leak on a fresh install).
@@ -196,7 +196,7 @@ const recentlyAddedSeriesProvider = RecentlyAddedSeriesFamily();
 /// library's prefs (no series cache needed, so no leak on a fresh install).
 ///
 /// Copied from [recentlyAddedSeries].
-class RecentlyAddedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
+class RecentlyAddedSeriesFamily extends Family<AsyncValue<List<RailItem>>> {
   /// Recently added series. Age-gated by each series' own ageRating + its
   /// library's prefs (no series cache needed, so no leak on a fresh install).
   ///
@@ -238,7 +238,7 @@ class RecentlyAddedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
 ///
 /// Copied from [recentlyAddedSeries].
 class RecentlyAddedSeriesProvider
-    extends AutoDisposeFutureProvider<List<SeriesDto>> {
+    extends AutoDisposeStreamProvider<List<RailItem>> {
   /// Recently added series. Age-gated by each series' own ageRating + its
   /// library's prefs (no series cache needed, so no leak on a fresh install).
   ///
@@ -271,7 +271,7 @@ class RecentlyAddedSeriesProvider
 
   @override
   Override overrideWith(
-    FutureOr<List<SeriesDto>> Function(RecentlyAddedSeriesRef provider) create,
+    Stream<List<RailItem>> Function(RecentlyAddedSeriesRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -288,7 +288,7 @@ class RecentlyAddedSeriesProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<SeriesDto>> createElement() {
+  AutoDisposeStreamProviderElement<List<RailItem>> createElement() {
     return _RecentlyAddedSeriesProviderElement(this);
   }
 
@@ -308,13 +308,13 @@ class RecentlyAddedSeriesProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin RecentlyAddedSeriesRef on AutoDisposeFutureProviderRef<List<SeriesDto>> {
+mixin RecentlyAddedSeriesRef on AutoDisposeStreamProviderRef<List<RailItem>> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 }
 
 class _RecentlyAddedSeriesProviderElement
-    extends AutoDisposeFutureProviderElement<List<SeriesDto>>
+    extends AutoDisposeStreamProviderElement<List<RailItem>>
     with RecentlyAddedSeriesRef {
   _RecentlyAddedSeriesProviderElement(super.provider);
 
@@ -323,7 +323,7 @@ class _RecentlyAddedSeriesProviderElement
 }
 
 String _$recentlyUpdatedSeriesHash() =>
-    r'c14c8b2a41fd55e35d9ca4ea7e85447ac68a89ba';
+    r'aa0fcf576b0675f31cd4db7a84987ed648ddeb2e';
 
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 ///
@@ -334,7 +334,7 @@ const recentlyUpdatedSeriesProvider = RecentlyUpdatedSeriesFamily();
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 ///
 /// Copied from [recentlyUpdatedSeries].
-class RecentlyUpdatedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
+class RecentlyUpdatedSeriesFamily extends Family<AsyncValue<List<RailItem>>> {
   /// Recently updated series. Age-gated like [recentlyAddedSeries].
   ///
   /// Copied from [recentlyUpdatedSeries].
@@ -373,7 +373,7 @@ class RecentlyUpdatedSeriesFamily extends Family<AsyncValue<List<SeriesDto>>> {
 ///
 /// Copied from [recentlyUpdatedSeries].
 class RecentlyUpdatedSeriesProvider
-    extends AutoDisposeFutureProvider<List<SeriesDto>> {
+    extends AutoDisposeStreamProvider<List<RailItem>> {
   /// Recently updated series. Age-gated like [recentlyAddedSeries].
   ///
   /// Copied from [recentlyUpdatedSeries].
@@ -406,8 +406,7 @@ class RecentlyUpdatedSeriesProvider
 
   @override
   Override overrideWith(
-    FutureOr<List<SeriesDto>> Function(RecentlyUpdatedSeriesRef provider)
-    create,
+    Stream<List<RailItem>> Function(RecentlyUpdatedSeriesRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -424,7 +423,7 @@ class RecentlyUpdatedSeriesProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<SeriesDto>> createElement() {
+  AutoDisposeStreamProviderElement<List<RailItem>> createElement() {
     return _RecentlyUpdatedSeriesProviderElement(this);
   }
 
@@ -444,14 +443,13 @@ class RecentlyUpdatedSeriesProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin RecentlyUpdatedSeriesRef
-    on AutoDisposeFutureProviderRef<List<SeriesDto>> {
+mixin RecentlyUpdatedSeriesRef on AutoDisposeStreamProviderRef<List<RailItem>> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 }
 
 class _RecentlyUpdatedSeriesProviderElement
-    extends AutoDisposeFutureProviderElement<List<SeriesDto>>
+    extends AutoDisposeStreamProviderElement<List<RailItem>>
     with RecentlyUpdatedSeriesRef {
   _RecentlyUpdatedSeriesProviderElement(super.provider);
 
@@ -460,7 +458,7 @@ class _RecentlyUpdatedSeriesProviderElement
 }
 
 String _$recentlyAddedBooksHash() =>
-    r'42a3c9b3e2fc77375daba6de9a408b0b61092c86';
+    r'4b019f72c4e93d76a45bdcf723ba7fe6197bb671';
 
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
@@ -473,7 +471,7 @@ const recentlyAddedBooksProvider = RecentlyAddedBooksFamily();
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
 ///
 /// Copied from [recentlyAddedBooks].
-class RecentlyAddedBooksFamily extends Family<AsyncValue<List<BookDto>>> {
+class RecentlyAddedBooksFamily extends Family<AsyncValue<List<RailItem>>> {
   /// Recently added chapters (Komga `books/latest`). Books in a locked library are
   /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
   ///
@@ -515,7 +513,7 @@ class RecentlyAddedBooksFamily extends Family<AsyncValue<List<BookDto>>> {
 ///
 /// Copied from [recentlyAddedBooks].
 class RecentlyAddedBooksProvider
-    extends AutoDisposeFutureProvider<List<BookDto>> {
+    extends AutoDisposeStreamProvider<List<RailItem>> {
   /// Recently added chapters (Komga `books/latest`). Books in a locked library are
   /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
   ///
@@ -548,7 +546,7 @@ class RecentlyAddedBooksProvider
 
   @override
   Override overrideWith(
-    FutureOr<List<BookDto>> Function(RecentlyAddedBooksRef provider) create,
+    Stream<List<RailItem>> Function(RecentlyAddedBooksRef provider) create,
   ) {
     return ProviderOverride(
       origin: this,
@@ -565,7 +563,7 @@ class RecentlyAddedBooksProvider
   }
 
   @override
-  AutoDisposeFutureProviderElement<List<BookDto>> createElement() {
+  AutoDisposeStreamProviderElement<List<RailItem>> createElement() {
     return _RecentlyAddedBooksProviderElement(this);
   }
 
@@ -585,13 +583,13 @@ class RecentlyAddedBooksProvider
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-mixin RecentlyAddedBooksRef on AutoDisposeFutureProviderRef<List<BookDto>> {
+mixin RecentlyAddedBooksRef on AutoDisposeStreamProviderRef<List<RailItem>> {
   /// The parameter `sourceId` of this provider.
   String get sourceId;
 }
 
 class _RecentlyAddedBooksProviderElement
-    extends AutoDisposeFutureProviderElement<List<BookDto>>
+    extends AutoDisposeStreamProviderElement<List<RailItem>>
     with RecentlyAddedBooksRef {
   _RecentlyAddedBooksProviderElement(super.provider);
 

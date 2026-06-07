@@ -12,6 +12,7 @@ import '../../data/source/models/readlist_dto.dart';
 import '../../data/source/models/series_dto.dart';
 import '../../data/source/models/series_search.dart';
 import '../../data/source/source_providers.dart';
+import 'rail_item.dart';
 
 part 'library_browse_controllers.g.dart';
 
@@ -21,11 +22,20 @@ part 'library_browse_controllers.g.dart';
 /// hidden. Komga's `/books/ondeck` alone only surfaces next-after-completed, so a
 /// reader mid-book would see an empty rail; the in-progress query fixes it.
 @riverpod
-Future<List<BookDto>> keepReading(Ref ref, String sourceId) async {
-  if (sourceId.isEmpty) return const [];
-  final api = await ref.watch(contentApiForProvider(sourceId).future);
-  if (api == null) return const [];
+Stream<List<RailItem>> keepReading(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
   final lock = await ref.watch(appLockProvider.future);
+  final cached = await _resolveSnapshot(ref, sourceId, 'keepReading', lock);
+  if (cached != null) yield cached; // warm: instant render
+
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
+  if (api == null) {
+    if (cached == null) yield const [];
+    return;
+  }
   try {
     final inProgress = (await api.listBooks(
       page: 0,
@@ -42,42 +52,68 @@ Future<List<BookDto>> keepReading(Ref ref, String sourceId) async {
         if (seen.add(b.id)) b,
     ].where((b) => !lock.isLocked(b.libraryId)).take(20).toList();
     await _cacheBooks(ref, sourceId, result);
-    return result;
+    await _writeSnapshot(ref, sourceId, 'keepReading',
+        [for (final b in result) (ownerType: 'book', ownerId: b.id)]);
+    yield [for (final b in result) RailItem.fromBookDto(b)];
   } on ContentException {
-    return const [];
+    if (cached == null) yield const [];
   }
 }
 
 /// Recently added series. Age-gated by each series' own ageRating + its
 /// library's prefs (no series cache needed, so no leak on a fresh install).
 @riverpod
-Future<List<SeriesDto>> recentlyAddedSeries(Ref ref, String sourceId) async {
-  if (sourceId.isEmpty) return const [];
-  final api = await ref.watch(contentApiForProvider(sourceId).future);
-  if (api == null) return const [];
+Stream<List<RailItem>> recentlyAddedSeries(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
   final lock = await ref.watch(appLockProvider.future);
+  final cached =
+      await _resolveSnapshot(ref, sourceId, 'recentlyAddedSeries', lock);
+  if (cached != null) yield cached;
+
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
+  if (api == null) {
+    if (cached == null) yield const [];
+    return;
+  }
   try {
     final page = await api.listSeriesNew(size: 20);
     await _cacheSeries(ref, sourceId, page.content);
-    return _gate(page.content, lock);
+    await _writeSnapshot(ref, sourceId, 'recentlyAddedSeries',
+        [for (final s in page.content) (ownerType: 'series', ownerId: s.id)]);
+    yield [for (final s in _gate(page.content, lock)) RailItem.fromSeriesDto(s)];
   } on ContentException {
-    return const [];
+    if (cached == null) yield const [];
   }
 }
 
 /// Recently updated series. Age-gated like [recentlyAddedSeries].
 @riverpod
-Future<List<SeriesDto>> recentlyUpdatedSeries(Ref ref, String sourceId) async {
-  if (sourceId.isEmpty) return const [];
-  final api = await ref.watch(contentApiForProvider(sourceId).future);
-  if (api == null) return const [];
+Stream<List<RailItem>> recentlyUpdatedSeries(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
   final lock = await ref.watch(appLockProvider.future);
+  final cached =
+      await _resolveSnapshot(ref, sourceId, 'recentlyUpdatedSeries', lock);
+  if (cached != null) yield cached;
+
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
+  if (api == null) {
+    if (cached == null) yield const [];
+    return;
+  }
   try {
     final page = await api.listSeriesUpdated(size: 20);
     await _cacheSeries(ref, sourceId, page.content);
-    return _gate(page.content, lock);
+    await _writeSnapshot(ref, sourceId, 'recentlyUpdatedSeries',
+        [for (final s in page.content) (ownerType: 'series', ownerId: s.id)]);
+    yield [for (final s in _gate(page.content, lock)) RailItem.fromSeriesDto(s)];
   } on ContentException {
-    return const [];
+    if (cached == null) yield const [];
   }
 }
 
@@ -117,21 +153,97 @@ Future<void> _cacheBooks(Ref ref, String sourceId, List<BookDto> books) async {
   }
 }
 
+/// Resolves a rail's saved snapshot into gated [RailItem]s for an instant warm
+/// render. Returns null only when no snapshot exists at all (cold launch -> the
+/// provider stays in loading and the home shows a skeleton); a snapshot that
+/// exists but whose owner rows are not (yet) cached resolves to a shorter list,
+/// not null, since those individual rows are silently dropped. Re-gates by the
+/// owner's library so a now-locked library's item never shows from a stale
+/// snapshot.
+Future<List<RailItem>?> _resolveSnapshot(
+  Ref ref,
+  String sourceId,
+  String railKind,
+  AppLockState lock,
+) async {
+  final raw = await ref.read(appDatabaseProvider).getRailSnapshot(
+        sourceId,
+        railKind,
+      );
+  if (raw.isEmpty) return null; // no snapshot -> cold
+  return [
+    for (final r in raw)
+      if (r.title != null &&
+          r.libraryId != null &&
+          !lock.isLocked(r.libraryId!))
+        r.ownerType == 'series'
+            ? RailItem(
+                ownerType: 'series',
+                ownerId: r.ownerId,
+                title: r.title!,
+                stacked: r.booksCount > 1,
+              )
+            : RailItem(
+                ownerType: 'book',
+                ownerId: r.ownerId,
+                title: r.title!,
+                subtitle: (r.number == null || r.number!.isEmpty)
+                    ? null
+                    : 'No. ${r.number}',
+              ),
+  ];
+}
+
+/// Persists a rail's fresh membership so the next launch renders it instantly.
+Future<void> _writeSnapshot(
+  Ref ref,
+  String sourceId,
+  String railKind,
+  List<({String ownerType, String ownerId})> items,
+) async {
+  try {
+    await ref
+        .read(appDatabaseProvider)
+        .replaceRailSnapshot(sourceId, railKind, items);
+  } catch (_) {
+    // Best-effort: a snapshot write must never break the rail it backs.
+  }
+}
+
 /// Recently added chapters (Komga `books/latest`). Books in a locked library are
 /// hidden (by the book's own libraryId). Degrades to empty on a Komga error.
+///
+/// The snapshot key is `recentlyAddedChapters` (matching
+/// `HomeRailKind.recentlyAddedChapters.name`, the rail this provider backs), not
+/// the provider name `recentlyAddedBooks`. Keep them in sync with the enum, not
+/// with each other.
 @riverpod
-Future<List<BookDto>> recentlyAddedBooks(Ref ref, String sourceId) async {
-  if (sourceId.isEmpty) return const [];
-  final api = await ref.watch(contentApiForProvider(sourceId).future);
-  if (api == null) return const [];
+Stream<List<RailItem>> recentlyAddedBooks(Ref ref, String sourceId) async* {
+  if (sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
   final lock = await ref.watch(appLockProvider.future);
+  final cached =
+      await _resolveSnapshot(ref, sourceId, 'recentlyAddedChapters', lock);
+  if (cached != null) yield cached;
+
+  final api = await ref.watch(contentApiForProvider(sourceId).future);
+  if (api == null) {
+    if (cached == null) yield const [];
+    return;
+  }
   try {
     final books = (await api.listBooksLatest(size: 20)).content;
-    // Cache the chapters (title/number) so pinning one resolves on the rail.
     await _cacheBooks(ref, sourceId, books);
-    return [for (final b in books) if (!lock.isLocked(b.libraryId)) b];
+    await _writeSnapshot(ref, sourceId, 'recentlyAddedChapters',
+        [for (final b in books) (ownerType: 'book', ownerId: b.id)]);
+    yield [
+      for (final b in books)
+        if (!lock.isLocked(b.libraryId)) RailItem.fromBookDto(b),
+    ];
   } on ContentException {
-    return const [];
+    if (cached == null) yield const [];
   }
 }
 
