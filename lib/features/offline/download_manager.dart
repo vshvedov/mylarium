@@ -84,8 +84,9 @@ class DownloadManager {
   ///
   /// [manual] true = an explicit user "Download": goes to the permanent
   /// downloads pool, ignores the Wi-Fi-only setting, and runs even when
-  /// auto-cache is disabled. [manual] false = the on-open auto-cache: skipped
-  /// when auto-cache is disabled and gated by the Wi-Fi-only setting.
+  /// auto-cache is disabled. [manual] false = the deferred auto-cache backfill
+  /// (enqueued by the reader on close/background, not on open): skipped when
+  /// auto-cache is disabled and gated by the Wi-Fi-only setting.
   ///
   /// Idempotent: a manual request promotes an existing auto-cached copy; an
   /// existing cache or active task is otherwise a no-op. Never throws.

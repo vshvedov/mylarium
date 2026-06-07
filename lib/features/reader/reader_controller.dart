@@ -79,8 +79,10 @@ class ReaderData {
 }
 
 /// Loads a book for reading, offline-first: a cached archive is read from disk
-/// (no network); otherwise pages stream online and a background download is
-/// enqueued. Throws only when neither a cache nor a reachable source exists.
+/// (no network); otherwise pages stream online (per-page, through the byte
+/// cache). The full-chapter offline backfill is NOT started here: the reader
+/// defers it to close/background so it never competes with foreground page
+/// fetches. Throws only when neither a cache nor a reachable source exists.
 @riverpod
 class ReaderController extends _$ReaderController {
   @override
