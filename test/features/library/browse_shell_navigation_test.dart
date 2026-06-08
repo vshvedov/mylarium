@@ -18,8 +18,8 @@ import 'package:mylarium/features/offline/offline_providers.dart';
 
 import '../../support/test_scope.dart';
 
-/// A repository whose network refresh always fails, so [SeriesGridController]
-/// degrades to whatever the local cache holds (no real HTTP in the test).
+/// A repository whose network refresh always fails, so the background series
+/// sync degrades to whatever the local cache holds (no real HTTP in the test).
 class _OfflineSeriesRepository extends SeriesRepository {
   _OfflineSeriesRepository(super.db, super.api);
 

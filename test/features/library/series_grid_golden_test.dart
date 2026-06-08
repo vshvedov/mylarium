@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
-import 'package:mylarium/features/library/series_grid_controller.dart';
 
 import '../../support/test_scope.dart';
 
@@ -30,12 +28,6 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
   final scope = await TestScope.create();
   addTearDown(scope.db.close);
 
-  final paging = PagingController<SeriesCursor, SeriesRow>(
-    firstPageKey: const SeriesCursor.start(),
-  );
-  addTearDown(paging.dispose);
-  paging.appendLastPage([for (var i = 0; i < 8; i++) _series(i)]);
-
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -46,7 +38,11 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
       child: MaterialApp(
         theme: theme,
         home: Scaffold(
-          body: SeriesGridBody(paging: paging, onTap: (_) {}),
+          body: SeriesGridBody(
+            items: [for (var i = 0; i < 8; i++) _series(i)],
+            syncComplete: true,
+            onTap: (_) {},
+          ),
         ),
       ),
     ),

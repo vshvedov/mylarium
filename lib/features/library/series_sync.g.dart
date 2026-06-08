@@ -199,5 +199,189 @@ class _SeriesSyncProviderElement extends FutureProviderElement<SeriesSync?>
   String? get libraryId => (origin as SeriesSyncProvider).libraryId;
 }
 
+String _$seriesSyncCompleteHash() =>
+    r'47f5a6a2fea6291463936e40ec27f4319dd52232';
+
+/// Resolves to true once the background fill for (sourceId, libraryId) has
+/// finished (all cached, or degraded on error). The grid watches this to decide
+/// whether an empty list means "still loading" (show the loader) or "genuinely
+/// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+/// mutation and does NOT rebuild a widget, so an empty library would otherwise
+/// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+/// real rebuild signal.
+///
+/// Copied from [seriesSyncComplete].
+@ProviderFor(seriesSyncComplete)
+const seriesSyncCompleteProvider = SeriesSyncCompleteFamily();
+
+/// Resolves to true once the background fill for (sourceId, libraryId) has
+/// finished (all cached, or degraded on error). The grid watches this to decide
+/// whether an empty list means "still loading" (show the loader) or "genuinely
+/// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+/// mutation and does NOT rebuild a widget, so an empty library would otherwise
+/// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+/// real rebuild signal.
+///
+/// Copied from [seriesSyncComplete].
+class SeriesSyncCompleteFamily extends Family<AsyncValue<bool>> {
+  /// Resolves to true once the background fill for (sourceId, libraryId) has
+  /// finished (all cached, or degraded on error). The grid watches this to decide
+  /// whether an empty list means "still loading" (show the loader) or "genuinely
+  /// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+  /// mutation and does NOT rebuild a widget, so an empty library would otherwise
+  /// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+  /// real rebuild signal.
+  ///
+  /// Copied from [seriesSyncComplete].
+  const SeriesSyncCompleteFamily();
+
+  /// Resolves to true once the background fill for (sourceId, libraryId) has
+  /// finished (all cached, or degraded on error). The grid watches this to decide
+  /// whether an empty list means "still loading" (show the loader) or "genuinely
+  /// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+  /// mutation and does NOT rebuild a widget, so an empty library would otherwise
+  /// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+  /// real rebuild signal.
+  ///
+  /// Copied from [seriesSyncComplete].
+  SeriesSyncCompleteProvider call(String sourceId, String? libraryId) {
+    return SeriesSyncCompleteProvider(sourceId, libraryId);
+  }
+
+  @override
+  SeriesSyncCompleteProvider getProviderOverride(
+    covariant SeriesSyncCompleteProvider provider,
+  ) {
+    return call(provider.sourceId, provider.libraryId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'seriesSyncCompleteProvider';
+}
+
+/// Resolves to true once the background fill for (sourceId, libraryId) has
+/// finished (all cached, or degraded on error). The grid watches this to decide
+/// whether an empty list means "still loading" (show the loader) or "genuinely
+/// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+/// mutation and does NOT rebuild a widget, so an empty library would otherwise
+/// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+/// real rebuild signal.
+///
+/// Copied from [seriesSyncComplete].
+class SeriesSyncCompleteProvider extends FutureProvider<bool> {
+  /// Resolves to true once the background fill for (sourceId, libraryId) has
+  /// finished (all cached, or degraded on error). The grid watches this to decide
+  /// whether an empty list means "still loading" (show the loader) or "genuinely
+  /// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+  /// mutation and does NOT rebuild a widget, so an empty library would otherwise
+  /// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+  /// real rebuild signal.
+  ///
+  /// Copied from [seriesSyncComplete].
+  SeriesSyncCompleteProvider(String sourceId, String? libraryId)
+    : this._internal(
+        (ref) => seriesSyncComplete(
+          ref as SeriesSyncCompleteRef,
+          sourceId,
+          libraryId,
+        ),
+        from: seriesSyncCompleteProvider,
+        name: r'seriesSyncCompleteProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$seriesSyncCompleteHash,
+        dependencies: SeriesSyncCompleteFamily._dependencies,
+        allTransitiveDependencies:
+            SeriesSyncCompleteFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+        libraryId: libraryId,
+      );
+
+  SeriesSyncCompleteProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+    required this.libraryId,
+  }) : super.internal();
+
+  final String sourceId;
+  final String? libraryId;
+
+  @override
+  Override overrideWith(
+    FutureOr<bool> Function(SeriesSyncCompleteRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: SeriesSyncCompleteProvider._internal(
+        (ref) => create(ref as SeriesSyncCompleteRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+        libraryId: libraryId,
+      ),
+    );
+  }
+
+  @override
+  FutureProviderElement<bool> createElement() {
+    return _SeriesSyncCompleteProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SeriesSyncCompleteProvider &&
+        other.sourceId == sourceId &&
+        other.libraryId == libraryId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+    hash = _SystemHash.combine(hash, libraryId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin SeriesSyncCompleteRef on FutureProviderRef<bool> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+
+  /// The parameter `libraryId` of this provider.
+  String? get libraryId;
+}
+
+class _SeriesSyncCompleteProviderElement extends FutureProviderElement<bool>
+    with SeriesSyncCompleteRef {
+  _SeriesSyncCompleteProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as SeriesSyncCompleteProvider).sourceId;
+  @override
+  String? get libraryId => (origin as SeriesSyncCompleteProvider).libraryId;
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

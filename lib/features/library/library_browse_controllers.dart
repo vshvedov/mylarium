@@ -13,8 +13,46 @@ import '../../data/source/models/series_dto.dart';
 import '../../data/source/models/series_search.dart';
 import '../../data/source/source_providers.dart';
 import 'rail_item.dart';
+import 'series_sync.dart';
 
 part 'library_browse_controllers.g.dart';
+
+/// The full sorted series list for the browse-all grid, scoped to [libraryId]
+/// and lock-gated. Watching it kicks the shared background full sync (so the
+/// whole list fills into the cache once, instead of the grid demand-paging the
+/// network per scroll) and streams the cached rows as they land. [descending]
+/// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+/// there is no keyset cursor.
+///
+/// This deliberately materialises the whole sorted list in memory (and again on
+/// each sort flip). The rows are lightweight and the SliverGrid virtualises
+/// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+/// and A-Z jump with no per-scroll network paging.
+@riverpod
+Stream<List<SeriesRow>> browseSeries(
+  Ref ref,
+  String sourceId,
+  String? libraryId,
+  bool descending,
+) async* {
+  if (sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
+  // Kick the shared background fill (idempotent per source/library). Use read,
+  // not watch: watching an async provider here would let it resolve during the
+  // appLock await below and trip Riverpod's "dependency changed mid-await"
+  // assertion. The grid widget watches the sync separately for its `complete`
+  // flag; this provider only needs the fill started.
+  ref.read(seriesSyncProvider(sourceId, libraryId));
+  final lock = await ref.watch(appLockProvider.future);
+  yield* ref.watch(appDatabaseProvider).watchSeriesSorted(
+        sourceId,
+        libraryId: libraryId,
+        descending: descending,
+        hiddenLibraryIds: lock.hiddenLibraryIds,
+      );
+}
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
+import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
-import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
-import '../../core/security/app_lock.dart';
 import '../../app/widgets/adaptive_layout.dart';
+import '../../app/widgets/app_loading.dart';
 import '../../core/db/database.dart';
-import '../../data/source/source_providers.dart';
+import 'library_browse_controllers.dart';
 import 'series_detail.dart';
-import 'series_grid_controller.dart';
+import 'series_sync.dart';
+import 'widgets/item_context_menu.dart';
 import 'widgets/library_tiles.dart';
 
 /// The selected series in the two-pane browse shell, keyed per source so a stale
@@ -19,10 +18,16 @@ import 'widgets/library_tiles.dart';
 final selectedSeriesProvider = StateProvider.autoDispose
     .family<String?, String>((ref, sourceId) => null);
 
-/// Virtualized series grid backed by keyset pagination over the local cache
-/// (filled on demand from the network). Handles 50k+ series at a fixed tile
-/// extent. In a two-pane shell it runs [embedded] (no Scaffold) and reports taps
-/// via [onSelectSeries] instead of pushing a route.
+/// Title sort direction for the browse grid, per source. false = A-Z, true = Z-A.
+final browseSortProvider =
+    StateProvider.autoDispose.family<bool, String>((ref, sourceId) => false);
+
+/// Virtualized series grid over the whole locally-cached library for a source. A
+/// shared background full sync (see [seriesSyncProvider]) fills the cache once;
+/// this grid renders the sorted rows from [browseSeriesProvider] as they land,
+/// so scrolling (and the A-Z scrubber) are pure local reads with no per-scroll
+/// network paging. In a two-pane shell it runs [embedded] (no Scaffold) and
+/// reports taps via [onSelectSeries] instead of pushing a route.
 class SeriesGridScreen extends ConsumerStatefulWidget {
   const SeriesGridScreen({
     super.key,
@@ -44,54 +49,12 @@ class SeriesGridScreen extends ConsumerStatefulWidget {
 }
 
 class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
-  final _paging = PagingController<SeriesCursor, SeriesRow>(
-    firstPageKey: const SeriesCursor.start(),
-  );
-  SeriesGridController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _paging.addPageRequestListener(_fetch);
-  }
-
-  Future<void> _fetch(SeriesCursor cursor) async {
-    try {
-      final controller = _controller ??= await _buildController();
-      if (controller == null) {
-        _paging.appendLastPage(const []);
-        return;
-      }
-      final result = await controller.page(cursor);
-      if (result.last || result.content.isEmpty) {
-        _paging.appendLastPage(result.content);
-      } else {
-        _paging.appendPage(
-          result.content,
-          SeriesCursor.after(result.content.last),
-        );
-      }
-    } catch (e) {
-      _paging.error = e;
-    }
-  }
-
-  Future<SeriesGridController?> _buildController() async {
-    final repo = await ref.read(seriesRepositoryProvider.future);
-    if (repo == null) return null;
-    final lock = await ref.read(appLockProvider.future);
-    return SeriesGridController(
-      db: ref.read(appDatabaseProvider),
-      repo: repo,
-      sourceId: widget.sourceId,
-      libraryId: widget.libraryId,
-      hiddenLibraryIds: lock.hiddenLibraryIds,
-    );
-  }
+  // Owned here so the A-Z scrubber can drive it.
+  final ScrollController _scroll = ScrollController();
 
   @override
   void dispose() {
-    _paging.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -106,12 +69,28 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final descending = ref.watch(browseSortProvider(widget.sourceId));
+    final async = ref.watch(
+      browseSeriesProvider(widget.sourceId, widget.libraryId, descending),
+    );
+    // Observable completion (not SeriesSync.complete, which mutates in place and
+    // would never rebuild the grid - leaving an empty library on the loader
+    // forever). Resolves true once the background fill finishes or degrades.
+    final syncComplete = ref
+            .watch(seriesSyncCompleteProvider(widget.sourceId, widget.libraryId))
+            .valueOrNull ??
+        false;
+
     final body = RefreshIndicator(
       onRefresh: () async {
-        _controller = null;
-        _paging.refresh();
+        ref.invalidate(seriesSyncProvider(widget.sourceId, widget.libraryId));
       },
-      child: SeriesGridBody(paging: _paging, onTap: _onTap),
+      child: SeriesGridBody(
+        items: async.valueOrNull,
+        syncComplete: syncComplete,
+        onTap: _onTap,
+        controller: _scroll,
+      ),
     );
     if (widget.embedded) return body;
     return Scaffold(
@@ -122,6 +101,7 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
+          SortButton(sourceId: widget.sourceId),
         ],
       ),
       body: body,
@@ -129,55 +109,107 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
   }
 }
 
-/// The grid body (no Scaffold): a paginated sliver grid of [CoverTile]s. Shared
-/// by [SeriesGridScreen] (route and embedded master) so the visual is identical
-/// and golden-testable with a pre-filled controller.
+/// The grid body (no Scaffold): a virtualized sliver grid of [CoverTile]s over
+/// the fully-synced [items]. Shows the branded loader while the cache is still
+/// filling (empty + sync incomplete) and a friendly message once the sync is
+/// complete and still empty. Kept separate so it stays golden/widget-testable
+/// with a fixed list.
 class SeriesGridBody extends StatelessWidget {
-  const SeriesGridBody({super.key, required this.paging, required this.onTap});
+  const SeriesGridBody({
+    super.key,
+    required this.items,
+    required this.syncComplete,
+    required this.onTap,
+    this.controller,
+  });
 
-  final PagingController<SeriesCursor, SeriesRow> paging;
+  /// The sorted series, or null before the first cache emission.
+  final List<SeriesRow>? items;
+
+  /// Whether the background full sync has finished (so an empty list is a true
+  /// empty, not "still loading").
+  final bool syncComplete;
   final void Function(SeriesRow series) onTap;
+
+  /// Drives the scroll position (the A-Z scrubber jumps it).
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
+    final list = items ?? const <SeriesRow>[];
+    if (list.isEmpty) {
+      if (!syncComplete) return const AppLoadingIndicator();
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48),
+          child: Text('No series here yet.'),
+        ),
+      );
+    }
     final gutter = Theme.of(context).extension<DesignTokens>()!.gridGutter;
     return CustomScrollView(
+      controller: controller,
       slivers: [
         SliverPadding(
           padding: EdgeInsets.all(gutter),
-          sliver: PagedSliverGrid<SeriesCursor, SeriesRow>(
-            pagingController: paging,
+          sliver: SliverGrid.builder(
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 160,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               childAspectRatio: 0.58,
             ),
-            builderDelegate: PagedChildBuilderDelegate<SeriesRow>(
-              itemBuilder: (context, series, _) => CoverTile(
-                sourceId: series.sourceId,
+            itemCount: list.length,
+            itemBuilder: (context, i) {
+              final s = list[i];
+              return CoverTile(
+                sourceId: s.sourceId,
                 ownerType: 'series',
-                ownerId: series.id,
-                title: series.title,
+                ownerId: s.id,
+                title: s.title,
                 // Unknown count (e.g. a Kavita series not yet browsed; its list
                 // endpoint omits counts) shows no subtitle rather than "0 books".
-                subtitle: series.booksCount <= 0
+                subtitle: s.booksCount <= 0
                     ? null
-                    : series.booksCount == 1
+                    : s.booksCount == 1
                         ? '1 book'
-                        : '${series.booksCount} books',
-                stacked: series.booksCount > 1,
-                onTap: () => onTap(series),
-              ),
-              noItemsFoundIndicatorBuilder: (_) => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(48),
-                  child: Text('No series here yet.'),
+                        : '${s.booksCount} books',
+                stacked: s.booksCount > 1,
+                onTap: () => onTap(s),
+                onLongPress: () => showItemContextMenu(
+                  context,
+                  sourceId: s.sourceId,
+                  ownerType: 'series',
+                  ownerId: s.id,
+                  title: s.title,
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// The Title A-Z / Z-A sort control for the browse grid.
+class SortButton extends ConsumerWidget {
+  const SortButton({super.key, required this.sourceId});
+
+  final String sourceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final descending = ref.watch(browseSortProvider(sourceId));
+    return PopupMenuButton<bool>(
+      icon: const Icon(AppIcons.sort),
+      initialValue: descending,
+      tooltip: 'Sort',
+      onSelected: (v) =>
+          ref.read(browseSortProvider(sourceId).notifier).state = v,
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: false, child: Text('Title A-Z')),
+        PopupMenuItem(value: true, child: Text('Title Z-A')),
       ],
     );
   }
@@ -186,7 +218,7 @@ class SeriesGridBody extends StatelessWidget {
 /// Two-pane browse shell: the series grid (master) beside the selected series'
 /// detail. [AdaptiveLayout] collapses to the grid alone on phone widths, where
 /// taps push the detail route as before. Only the detail [Consumer] rebuilds on
-/// selection, so the master grid's paging and scroll state are preserved.
+/// selection, so the master grid's scroll state is preserved.
 class BrowseShell extends ConsumerWidget {
   const BrowseShell({
     super.key,
@@ -212,6 +244,7 @@ class BrowseShell extends ConsumerWidget {
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
+          SortButton(sourceId: sourceId),
         ],
       ),
       body: LayoutBuilder(

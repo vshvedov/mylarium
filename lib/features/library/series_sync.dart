@@ -105,3 +105,22 @@ Future<SeriesSync?> seriesSync(Ref ref, String sourceId, String? libraryId) asyn
   unawaited(sync.ensureSynced());
   return sync;
 }
+
+/// Resolves to true once the background fill for (sourceId, libraryId) has
+/// finished (all cached, or degraded on error). The grid watches this to decide
+/// whether an empty list means "still loading" (show the loader) or "genuinely
+/// empty" (show the empty message): [SeriesSync.complete] flips via in-place
+/// mutation and does NOT rebuild a widget, so an empty library would otherwise
+/// spin the loader forever. Awaiting the shared `ensureSynced` future gives a
+/// real rebuild signal.
+@Riverpod(keepAlive: true)
+Future<bool> seriesSyncComplete(
+  Ref ref,
+  String sourceId,
+  String? libraryId,
+) async {
+  final sync = await ref.watch(seriesSyncProvider(sourceId, libraryId).future);
+  if (sync == null) return true; // no repo: nothing to wait for.
+  await sync.ensureSynced();
+  return true;
+}

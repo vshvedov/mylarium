@@ -6,7 +6,7 @@ part of 'library_browse_controllers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$keepReadingHash() => r'f853735301c5e1304e629b8d86f8a1dc04b252c0';
+String _$browseSeriesHash() => r'624a88c83e5fde8d4c10253e27b13733ef1cdfd3';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -28,6 +28,230 @@ class _SystemHash {
     return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
   }
 }
+
+/// The full sorted series list for the browse-all grid, scoped to [libraryId]
+/// and lock-gated. Watching it kicks the shared background full sync (so the
+/// whole list fills into the cache once, instead of the grid demand-paging the
+/// network per scroll) and streams the cached rows as they land. [descending]
+/// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+/// there is no keyset cursor.
+///
+/// This deliberately materialises the whole sorted list in memory (and again on
+/// each sort flip). The rows are lightweight and the SliverGrid virtualises
+/// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+/// and A-Z jump with no per-scroll network paging.
+///
+/// Copied from [browseSeries].
+@ProviderFor(browseSeries)
+const browseSeriesProvider = BrowseSeriesFamily();
+
+/// The full sorted series list for the browse-all grid, scoped to [libraryId]
+/// and lock-gated. Watching it kicks the shared background full sync (so the
+/// whole list fills into the cache once, instead of the grid demand-paging the
+/// network per scroll) and streams the cached rows as they land. [descending]
+/// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+/// there is no keyset cursor.
+///
+/// This deliberately materialises the whole sorted list in memory (and again on
+/// each sort flip). The rows are lightweight and the SliverGrid virtualises
+/// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+/// and A-Z jump with no per-scroll network paging.
+///
+/// Copied from [browseSeries].
+class BrowseSeriesFamily extends Family<AsyncValue<List<SeriesRow>>> {
+  /// The full sorted series list for the browse-all grid, scoped to [libraryId]
+  /// and lock-gated. Watching it kicks the shared background full sync (so the
+  /// whole list fills into the cache once, instead of the grid demand-paging the
+  /// network per scroll) and streams the cached rows as they land. [descending]
+  /// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+  /// there is no keyset cursor.
+  ///
+  /// This deliberately materialises the whole sorted list in memory (and again on
+  /// each sort flip). The rows are lightweight and the SliverGrid virtualises
+  /// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+  /// and A-Z jump with no per-scroll network paging.
+  ///
+  /// Copied from [browseSeries].
+  const BrowseSeriesFamily();
+
+  /// The full sorted series list for the browse-all grid, scoped to [libraryId]
+  /// and lock-gated. Watching it kicks the shared background full sync (so the
+  /// whole list fills into the cache once, instead of the grid demand-paging the
+  /// network per scroll) and streams the cached rows as they land. [descending]
+  /// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+  /// there is no keyset cursor.
+  ///
+  /// This deliberately materialises the whole sorted list in memory (and again on
+  /// each sort flip). The rows are lightweight and the SliverGrid virtualises
+  /// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+  /// and A-Z jump with no per-scroll network paging.
+  ///
+  /// Copied from [browseSeries].
+  BrowseSeriesProvider call(
+    String sourceId,
+    String? libraryId,
+    bool descending,
+  ) {
+    return BrowseSeriesProvider(sourceId, libraryId, descending);
+  }
+
+  @override
+  BrowseSeriesProvider getProviderOverride(
+    covariant BrowseSeriesProvider provider,
+  ) {
+    return call(provider.sourceId, provider.libraryId, provider.descending);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'browseSeriesProvider';
+}
+
+/// The full sorted series list for the browse-all grid, scoped to [libraryId]
+/// and lock-gated. Watching it kicks the shared background full sync (so the
+/// whole list fills into the cache once, instead of the grid demand-paging the
+/// network per scroll) and streams the cached rows as they land. [descending]
+/// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+/// there is no keyset cursor.
+///
+/// This deliberately materialises the whole sorted list in memory (and again on
+/// each sort flip). The rows are lightweight and the SliverGrid virtualises
+/// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+/// and A-Z jump with no per-scroll network paging.
+///
+/// Copied from [browseSeries].
+class BrowseSeriesProvider extends AutoDisposeStreamProvider<List<SeriesRow>> {
+  /// The full sorted series list for the browse-all grid, scoped to [libraryId]
+  /// and lock-gated. Watching it kicks the shared background full sync (so the
+  /// whole list fills into the cache once, instead of the grid demand-paging the
+  /// network per scroll) and streams the cached rows as they land. [descending]
+  /// flips Title A-Z / Z-A. The grid renders this list directly (virtualized);
+  /// there is no keyset cursor.
+  ///
+  /// This deliberately materialises the whole sorted list in memory (and again on
+  /// each sort flip). The rows are lightweight and the SliverGrid virtualises
+  /// rendering, so even a 50k library is a few MB; the win is instant scroll, sort
+  /// and A-Z jump with no per-scroll network paging.
+  ///
+  /// Copied from [browseSeries].
+  BrowseSeriesProvider(String sourceId, String? libraryId, bool descending)
+    : this._internal(
+        (ref) => browseSeries(
+          ref as BrowseSeriesRef,
+          sourceId,
+          libraryId,
+          descending,
+        ),
+        from: browseSeriesProvider,
+        name: r'browseSeriesProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$browseSeriesHash,
+        dependencies: BrowseSeriesFamily._dependencies,
+        allTransitiveDependencies:
+            BrowseSeriesFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+        libraryId: libraryId,
+        descending: descending,
+      );
+
+  BrowseSeriesProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+    required this.libraryId,
+    required this.descending,
+  }) : super.internal();
+
+  final String sourceId;
+  final String? libraryId;
+  final bool descending;
+
+  @override
+  Override overrideWith(
+    Stream<List<SeriesRow>> Function(BrowseSeriesRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: BrowseSeriesProvider._internal(
+        (ref) => create(ref as BrowseSeriesRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+        libraryId: libraryId,
+        descending: descending,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<List<SeriesRow>> createElement() {
+    return _BrowseSeriesProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BrowseSeriesProvider &&
+        other.sourceId == sourceId &&
+        other.libraryId == libraryId &&
+        other.descending == descending;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+    hash = _SystemHash.combine(hash, libraryId.hashCode);
+    hash = _SystemHash.combine(hash, descending.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin BrowseSeriesRef on AutoDisposeStreamProviderRef<List<SeriesRow>> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+
+  /// The parameter `libraryId` of this provider.
+  String? get libraryId;
+
+  /// The parameter `descending` of this provider.
+  bool get descending;
+}
+
+class _BrowseSeriesProviderElement
+    extends AutoDisposeStreamProviderElement<List<SeriesRow>>
+    with BrowseSeriesRef {
+  _BrowseSeriesProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as BrowseSeriesProvider).sourceId;
+  @override
+  String? get libraryId => (origin as BrowseSeriesProvider).libraryId;
+  @override
+  bool get descending => (origin as BrowseSeriesProvider).descending;
+}
+
+String _$keepReadingHash() => r'f853735301c5e1304e629b8d86f8a1dc04b252c0';
 
 /// Keep-reading books for the active source: the user's in-progress books first
 /// (most recently read), then on-deck (the next book in a series with a
