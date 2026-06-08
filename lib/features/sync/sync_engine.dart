@@ -234,6 +234,12 @@ class SyncEngine {
   /// Reconciles local state with Komga on launch.
   Future<void> reconcile() => _reconciler.reconcile();
 
+  /// Reconciles one book out of the launch rotation - the live-sync (T1) path
+  /// for a Komga read-progress event, which names a book whose authoritative
+  /// page is then re-fetched and merged (furthest-page-wins, never rewind).
+  Future<void> reconcileBook(String sourceId, String bookId) =>
+      _reconciler.reconcileBook(sourceId, bookId);
+
   /// Whether a source does two-way progress sync (enqueues + flushes a
   /// write-back). True for the remote server sources (Komga and Kavita); local
   /// sources keep progress on-device only.

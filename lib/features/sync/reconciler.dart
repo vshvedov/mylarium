@@ -47,7 +47,7 @@ class Reconciler {
       final api = apis[cur.sourceId] ??= await _apiFor(cur.sourceId);
       if (api == null) continue;
       try {
-        await _reconcileOne(cur, api);
+        await _merge(cur.sourceId, cur.bookId, cur, api);
       } on ContentException catch (e) {
         if (_isConnectivity(e)) return; // server down; try again next launch
         // A per-book error (deleted / forbidden): advance the rotation clock so
@@ -64,61 +64,92 @@ class Reconciler {
     }
   }
 
-  Future<void> _reconcileOne(BookStateRow cur, ContentApi api) async {
-    final dto = await api.getBook(cur.bookId);
+  /// Reconciles a single book's server read-progress into local [BookState],
+  /// out of the launch rotation. The live-sync path (T1) calls this when a
+  /// Komga read-progress event names a book, because the SSE payload carries
+  /// only the id - the merge always re-fetches the authoritative server page.
+  /// Resolves the source's API itself and is best-effort: a per-book server
+  /// error is swallowed (the next launch reconcile retries); a connectivity
+  /// error propagates so the caller can back off.
+  Future<void> reconcileBook(String sourceId, String bookId) async {
+    final api = await _apiFor(sourceId);
+    if (api == null) return;
+    try {
+      final cur = await _db.getBookState(sourceId, bookId);
+      await _merge(sourceId, bookId, cur, api);
+    } on ContentException catch (e) {
+      if (_isConnectivity(e)) rethrow;
+      // A per-book error (deleted / forbidden): leave local state untouched.
+    }
+  }
+
+  /// Merges the server read-progress for [bookId] into [cur] (the local row, or
+  /// null when the book is not yet tracked locally). Shared by the launch
+  /// rotation and the single-book live path. Furthest-page-wins, never rewind.
+  Future<void> _merge(
+    String sourceId,
+    String bookId,
+    BookStateRow? cur,
+    ContentApi api,
+  ) async {
+    final dto = await api.getBook(bookId);
     final runNow = _now();
 
-    // Server has no read progress for this book: advance the rotation clock so
-    // the row leaves the never-reconciled head; the server freshness baseline
-    // stays a server value (null here means the server has nothing).
+    // Server has no read progress for this book.
     if (dto.readPage == null) {
-      await _db.upsertBookState(
-        BookStateCompanion(
-          sourceId: Value(cur.sourceId),
-          bookId: Value(cur.bookId),
-          reconciledAt: Value(runNow),
-          remoteUpdatedAt: Value(dto.readLastModified),
-          updatedAt: Value(cur.updatedAt),
-        ),
-      );
+      // For a tracked row, advance the rotation clock so it leaves the
+      // never-reconciled head; never create an empty row for an untracked book.
+      if (cur != null) {
+        await _db.upsertBookState(
+          BookStateCompanion(
+            sourceId: Value(sourceId),
+            bookId: Value(bookId),
+            reconciledAt: Value(runNow),
+            remoteUpdatedAt: Value(dto.readLastModified),
+            updatedAt: Value(cur.updatedAt),
+          ),
+        );
+      }
       return;
     }
 
     final remoteMod = dto.readLastModified;
     // Nothing new since we last reconciled this book.
     if (remoteMod != null &&
-        cur.remoteUpdatedAt != null &&
-        remoteMod <= cur.remoteUpdatedAt!) {
+        cur?.remoteUpdatedAt != null &&
+        remoteMod <= cur!.remoteUpdatedAt!) {
       return;
     }
 
-    final priorPage = cur.currentPage;
+    final priorPage = cur?.currentPage ?? 0;
     final remote = ReadProgress(
       page: dto.readPage! - 1, // 1-based Komga -> 0-based internal
       completed: dto.completed,
       lastModified: remoteMod ?? runNow,
     );
-    final curState = BookProgressState(
-      currentPage: cur.currentPage,
-      completed: cur.status == ReadStatus.completed.name,
-      lastModified: cur.updatedAt,
-      timesReread: cur.timesReread,
-      isRereading: cur.isRereading,
-    );
+    final curState = cur == null
+        ? null
+        : BookProgressState(
+            currentPage: cur.currentPage,
+            completed: cur.status == ReadStatus.completed.name,
+            lastModified: cur.updatedAt,
+            timesReread: cur.timesReread,
+            isRereading: cur.isRereading,
+          );
     final outcome = applyProgress(curState, remote);
 
     await _db.upsertBookState(
       BookStateCompanion(
-        sourceId: Value(cur.sourceId),
-        bookId: Value(cur.bookId),
+        sourceId: Value(sourceId),
+        bookId: Value(bookId),
         status: Value(outcome.status.name),
         currentPage: Value(outcome.currentPage),
         timesReread: Value(outcome.timesReread),
         isRereading: Value(outcome.isRereading),
-        startedAt: Value(cur.startedAt ?? runNow),
+        startedAt: Value(cur?.startedAt ?? runNow),
         finishedAt: outcome.newlyCompleted
             ? Value(runNow)
-            : Value(cur.finishedAt),
+            : Value(cur?.finishedAt),
         updatedAt: Value(runNow),
         reconciledAt: Value(runNow),
         remoteUpdatedAt: Value(remoteMod),
@@ -134,8 +165,8 @@ class Reconciler {
       await _db.insertReadingSession(
         ReadingSessionsCompanion.insert(
           id: _uuid.v4(),
-          sourceId: cur.sourceId,
-          bookId: cur.bookId,
+          sourceId: sourceId,
+          bookId: bookId,
           seriesId: dto.seriesId,
           startedAt: ts,
           endedAt: ts,

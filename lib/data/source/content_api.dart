@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../source/models/book_dto.dart';
 import '../source/models/collection_dto.dart';
 import '../source/models/library_dto.dart';
+import '../source/models/live_event.dart';
 import '../source/models/page.dart';
 import '../source/models/page_dto.dart';
 import '../source/models/readlist_dto.dart';
@@ -138,4 +139,12 @@ abstract class ContentApi {
   Future<List<String>> listPublishers();
 
   Future<List<int>> listAgeRatings();
+
+  /// A live stream of server-pushed updates (T1), for steady-state freshness on
+  /// top of the launch reconcile. A backend without live updates (or that is
+  /// offline) returns an empty stream and the app falls back to reconcile +
+  /// manual refresh. The default is no live events; Komga overrides it with its
+  /// SSE stream. Each subscription opens one connection; the caller owns the
+  /// subscription lifecycle (connect when active/online, cancel on teardown).
+  Stream<LiveEvent> liveEvents() => const Stream.empty();
 }

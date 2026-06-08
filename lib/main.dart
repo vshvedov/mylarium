@@ -10,6 +10,7 @@ import 'app/theme/theme_controller.dart';
 import 'core/db/database.dart';
 import 'core/platform/system_ui.dart';
 import 'features/offline/offline_providers.dart';
+import 'features/sync/live_sync_providers.dart';
 import 'features/sync/sync_providers.dart';
 
 Future<void> main() async {
@@ -51,6 +52,9 @@ Future<void> main() async {
   // Reconcile read-progress with Komga and flush any queued write-backs on
   // launch; flush again whenever the app returns to the foreground.
   unawaited(_runLaunchSync(container));
+  // Open the Komga live-event stream for steady-state freshness (T1); the
+  // observer keeps it connected only while the app is foregrounded.
+  unawaited(container.read(liveSyncProvider.notifier).start());
   WidgetsBinding.instance.addObserver(_ForegroundObserver(container));
 }
 
@@ -77,11 +81,19 @@ class _ForegroundObserver with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final live = _container.read(liveSyncProvider.notifier);
+    // Disconnect the live stream off-foreground; reconnect (and flush) on return.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      unawaited(live.stop());
+      return;
+    }
     if (state != AppLifecycleState.resumed) return;
     _container
         .read(syncEngineProvider.future)
         .then((e) => e.flushQueue())
         .catchError((Object _) {});
     unawaited(_container.read(downloadManagerProvider).onAppForeground());
+    unawaited(live.start());
   }
 }

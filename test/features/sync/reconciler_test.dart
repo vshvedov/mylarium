@@ -156,4 +156,59 @@ void main() {
       expect(await db.allReadingSessions(), isEmpty);
     },
   );
+
+  group('reconcileBook (single-book live path)', () {
+    test('a further server read advances the named book and adds a session',
+        () async {
+      await seedState(10);
+      adapter.onGet('/api/v1/books/b1', (s) => s.reply(200, bookJson(page: 50)));
+
+      await reconciler().reconcileBook('src', 'b1');
+
+      expect((await db.getBookState('src', 'b1'))!.currentPage, 49);
+      expect(await db.allReadingSessions(), hasLength(1));
+    });
+
+    test('a server page behind the local page never rewinds', () async {
+      await seedState(80);
+      adapter.onGet('/api/v1/books/b1', (s) => s.reply(200, bookJson(page: 10)));
+
+      await reconciler().reconcileBook('src', 'b1');
+
+      expect((await db.getBookState('src', 'b1'))!.currentPage, 80);
+      expect(await db.allReadingSessions(), isEmpty);
+    });
+
+    test('an untracked book gets a fresh BookState from server progress',
+        () async {
+      // No seedState: simulates a live read-progress event for a book this
+      // device has never opened (the SSE payload carries only the id).
+      adapter.onGet('/api/v1/books/b1', (s) => s.reply(200, bookJson(page: 30)));
+
+      await reconciler().reconcileBook('src', 'b1');
+
+      final state = await db.getBookState('src', 'b1');
+      expect(state, isNotNull, reason: 'created from the server page');
+      expect(state!.currentPage, 29);
+    });
+
+    test('an untracked book with no server progress creates no empty row',
+        () async {
+      adapter.onGet(
+        '/api/v1/books/b1',
+        (s) => s.reply(200, {
+          'id': 'b1',
+          'seriesId': 'ser1',
+          'libraryId': 'lib1',
+          'name': 'V1',
+          'metadata': {'title': 'V1', 'number': '1'},
+          'media': {'pagesCount': 100},
+        }),
+      );
+
+      await reconciler().reconcileBook('src', 'b1');
+
+      expect(await db.getBookState('src', 'b1'), isNull);
+    });
+  });
 }

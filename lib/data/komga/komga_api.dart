@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 
 import '../../core/network/content_exception.dart';
 import '../source/content_api.dart';
+import '../source/models/live_event.dart';
+import 'sse/komga_sse_decoder.dart';
 import '../source/models/book_dto.dart';
 import '../source/models/collection_dto.dart';
 import '../source/models/library_dto.dart';
@@ -247,6 +249,33 @@ class KomgaApi implements ContentApi {
         );
         return res.data!.stream;
       });
+
+  /// Komga's live event stream (T1). Opens a long-lived SSE connection at
+  /// `/sse/v1/events` (note: not under `/api`) with the source's auth applied by
+  /// the Dio interceptor, and decodes frames into [LiveEvent]s. A connect-time
+  /// failure is mapped to [ContentException] (so the controller can tell an
+  /// expired session from an unreachable server); a mid-stream drop surfaces as
+  /// a stream error, which the controller treats as a reconnect trigger.
+  /// `receiveTimeout` is disabled because the stream is intentionally idle
+  /// between events (Komga sends keep-alive comments).
+  @override
+  Stream<LiveEvent> liveEvents() async* {
+    final ResponseBody body;
+    try {
+      final res = await _dio.get<ResponseBody>(
+        '/sse/v1/events',
+        options: Options(
+          responseType: ResponseType.stream,
+          receiveTimeout: Duration.zero,
+          headers: const {'Accept': 'text/event-stream'},
+        ),
+      );
+      body = res.data!;
+    } on DioException catch (e) {
+      throw ContentException.fromDio(e);
+    }
+    yield* decodeKomgaSse(body.stream);
+  }
 
   @override
   Future<void> patchReadProgress(

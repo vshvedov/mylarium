@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/network/content_exception.dart';
 import '../source/content_api.dart';
+import '../source/models/live_event.dart';
 import '../source/models/book_dto.dart';
 import '../source/models/collection_dto.dart';
 import '../source/models/library_dto.dart';
@@ -334,6 +335,11 @@ class KavitaApi implements ContentApi {
         );
         return res.data!.stream;
       });
+
+  // Kavita has no live-event stream; the app falls back to reconcile + manual
+  // refresh (T1 capability negotiation: an empty stream means no live updates).
+  @override
+  Stream<LiveEvent> liveEvents() => const Stream.empty();
 
   // --- Progress --------------------------------------------------------------
 
