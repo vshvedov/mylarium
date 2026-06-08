@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/app_loading.dart';
 import '../../../app/widgets/app_text_field.dart';
 import '../../../core/network/content_exception.dart';
@@ -14,6 +15,7 @@ Future<String?> promptName(BuildContext context, {required String title}) {
   final controller = TextEditingController();
   return showDialog<String>(
     context: context,
+    barrierColor: einkOf(context) ? kEinkBarrierColor : null,
     builder: (context) => AlertDialog(
       title: Text(title),
       content: AppTextField(

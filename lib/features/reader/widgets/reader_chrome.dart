@@ -218,6 +218,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
   Future<void> _openJumpToPage(BuildContext context, int count) async {
     final page = await showDialog<int>(
       context: context,
+      barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (_) => _JumpToPageDialog(count: count),
     );
     if (page == null) return; // cancelled / non-numeric

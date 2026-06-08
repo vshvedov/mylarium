@@ -347,3 +347,13 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
     isEink: true,
   );
 }
+
+/// Reads the e-ink flag from the ambient theme. True only under the e-ink theme.
+/// Centralizes the `Theme.of(context).extension<DesignTokens>()?.isEink` lookup
+/// that e-ink branches throughout the app use.
+bool einkOf(BuildContext context) =>
+    Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+
+/// A light modal barrier for e-ink: enough to signal modality without the heavy
+/// ink coverage (and ghosting) of the framework default ~54% black scrim.
+const Color kEinkBarrierColor = Color(0x1F000000);

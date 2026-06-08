@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_card.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
@@ -125,6 +126,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final summary = async.valueOrNull ?? StatsSummary.empty;
     showDialog<void>(
       context: context,
+      barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (_) => Dialog(
         backgroundColor: Colors.transparent,
         child: WrapCard(year: year, summary: summary),

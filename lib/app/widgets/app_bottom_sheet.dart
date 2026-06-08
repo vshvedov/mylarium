@@ -12,13 +12,16 @@ class AppBottomSheet {
     required WidgetBuilder builder,
     Color? barrierColor,
   }) {
-    final radius = Theme.of(context).extension<DesignTokens>()!.sheetRadius;
+    final tokens = Theme.of(context).extension<DesignTokens>()!;
+    final radius = tokens.sheetRadius;
     return showModalBottomSheet<T>(
       context: context,
       showDragHandle: true,
-      // Allow a transparent barrier (e.g. the reader color panel keeps the page
-      // fully visible while adjusting); null uses the framework default scrim.
-      barrierColor: barrierColor,
+      // Honor an explicit barrierColor (e.g. the reader color panel passes
+      // transparent to keep the page visible). Otherwise, in e-ink, use a light
+      // barrier instead of the framework's heavy ~54% black scrim; null keeps
+      // the framework default in the normal themes.
+      barrierColor: barrierColor ?? (tokens.isEink ? kEinkBarrierColor : null),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
       ),

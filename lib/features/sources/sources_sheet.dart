@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_list_row.dart';
@@ -40,6 +41,7 @@ class _SourcesSheet extends ConsumerWidget {
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (ctx) => AlertDialog(
         title: Text('Remove ${source.label}?'),
         content: const Text(
