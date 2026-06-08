@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/app_theme.dart' show kSeed;
+import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,29 +101,31 @@ class _LockedLibraryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
     return Scaffold(
       body: Stack(
         children: [
           // A soft violet wash bleeding down from the top, echoing the detail
           // hero, so the lock badge sits in a pool of brand light.
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 360,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    kSeed.withValues(alpha: 0.22),
-                    scheme.surface.withValues(alpha: 0.0),
-                  ],
+          if (!eink)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 360,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      kSeed.withValues(alpha: 0.22),
+                      scheme.surface.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -133,24 +136,31 @@ class _LockedLibraryView extends StatelessWidget {
                   Container(
                     width: 116,
                     height: 116,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          Color.lerp(kSeed, Colors.white, 0.22)!,
-                          kSeed,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: kSeed.withValues(alpha: 0.55),
-                          blurRadius: 60,
-                          spreadRadius: 6,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(AppIcons.lockFill,
-                        size: 52, color: Colors.white),
+                    decoration: eink
+                        ? BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.surface,
+                            border: Border.all(color: scheme.onSurface, width: 2),
+                          )
+                        : BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                Color.lerp(kSeed, Colors.white, 0.22)!,
+                                kSeed,
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kSeed.withValues(alpha: 0.55),
+                                blurRadius: 60,
+                                spreadRadius: 6,
+                              ),
+                            ],
+                          ),
+                    child: Icon(AppIcons.lockFill,
+                        size: 52,
+                        color: eink ? scheme.onSurface : Colors.white),
                   ),
                   const SizedBox(height: 28),
                   Text(
