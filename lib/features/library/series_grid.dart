@@ -10,6 +10,7 @@ import '../../core/db/database.dart';
 import 'library_browse_controllers.dart';
 import 'series_detail.dart';
 import 'series_sync.dart';
+import 'widgets/alphabet_scrubber.dart';
 import 'widgets/item_context_menu.dart';
 import 'widgets/library_tiles.dart';
 
@@ -147,47 +148,92 @@ class SeriesGridBody extends StatelessWidget {
       );
     }
     final gutter = Theme.of(context).extension<DesignTokens>()!.gridGutter;
-    return CustomScrollView(
-      controller: controller,
-      slivers: [
-        SliverPadding(
-          padding: EdgeInsets.all(gutter),
-          sliver: SliverGrid.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 160,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.58,
-            ),
-            itemCount: list.length,
-            itemBuilder: (context, i) {
-              final s = list[i];
-              return CoverTile(
-                sourceId: s.sourceId,
-                ownerType: 'series',
-                ownerId: s.id,
-                title: s.title,
-                // Unknown count (e.g. a Kavita series not yet browsed; its list
-                // endpoint omits counts) shows no subtitle rather than "0 books".
-                subtitle: s.booksCount <= 0
-                    ? null
-                    : s.booksCount == 1
-                        ? '1 book'
-                        : '${s.booksCount} books',
-                stacked: s.booksCount > 1,
-                onTap: () => onTap(s),
-                onLongPress: () => showItemContextMenu(
-                  context,
-                  sourceId: s.sourceId,
-                  ownerType: 'series',
-                  ownerId: s.id,
-                  title: s.title,
+    // Grid metrics, shared between the delegate and the scrubber's row-offset
+    // math so a letter jump lands exactly.
+    const maxExtent = 160.0;
+    const spacing = 12.0;
+    const aspect = 0.58;
+    const scrubberWidth = 22.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossExtent =
+            (constraints.maxWidth - gutter * 2 - scrubberWidth)
+                .clamp(1.0, double.infinity);
+        final cols = (crossExtent / (maxExtent + spacing)).ceil();
+        final columns = cols < 1 ? 1 : cols;
+        final childWidth = (crossExtent - (columns - 1) * spacing) / columns;
+        final rowStride = childWidth / aspect + spacing;
+
+        void jumpToLetter(String letter) {
+          final c = controller;
+          if (c == null || !c.hasClients) return;
+          final idx =
+              list.indexWhere((s) => letterBucket(s.titleSort) == letter);
+          if (idx < 0) return;
+          final offset = gutter + (idx ~/ columns) * rowStride;
+          c.jumpTo(offset.clamp(0.0, c.position.maxScrollExtent));
+        }
+
+        return Stack(
+          children: [
+            CustomScrollView(
+              controller: controller,
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                      gutter, gutter, gutter + scrubberWidth, gutter),
+                  sliver: SliverGrid.builder(
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: maxExtent,
+                      mainAxisSpacing: spacing,
+                      crossAxisSpacing: spacing,
+                      childAspectRatio: aspect,
+                    ),
+                    itemCount: list.length,
+                    itemBuilder: (context, i) {
+                      final s = list[i];
+                      return CoverTile(
+                        sourceId: s.sourceId,
+                        ownerType: 'series',
+                        ownerId: s.id,
+                        title: s.title,
+                        // Unknown count (e.g. a Kavita series not yet browsed;
+                        // its list endpoint omits counts) shows no subtitle
+                        // rather than "0 books".
+                        subtitle: s.booksCount <= 0
+                            ? null
+                            : s.booksCount == 1
+                                ? '1 book'
+                                : '${s.booksCount} books',
+                        stacked: s.booksCount > 1,
+                        onTap: () => onTap(s),
+                        onLongPress: () => showItemContextMenu(
+                          context,
+                          sourceId: s.sourceId,
+                          ownerType: 'series',
+                          ownerId: s.id,
+                          title: s.title,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
+              ],
+            ),
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: scrubberWidth,
+              child: AlphabetScrubber(
+                present: {for (final s in list) letterBucket(s.titleSort)},
+                onLetter: jumpToLetter,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

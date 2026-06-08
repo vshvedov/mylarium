@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
 import 'package:mylarium/app/widgets/app_loading.dart';
 import 'package:mylarium/core/db/database.dart';
+import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
 import 'package:mylarium/features/library/series_sync.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
@@ -128,6 +129,66 @@ void main() {
 
     expect(find.text('No series here yet.'), findsOneWidget);
     expect(find.byType(AppLoadingIndicator), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('A-Z scrubber jumps the grid to the tapped letter',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final scope = await TestScope.create();
+    addTearDown(scope.db.close);
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+
+    // One series per letter A..Z, sorted, enough to scroll past one screen.
+    final items = [
+      for (var i = 0; i < 26; i++)
+        SeriesRow(
+          sourceId: 's1',
+          id: 'id$i',
+          libraryId: 'lib1',
+          title: '${String.fromCharCode(65 + i)} Series',
+          titleSort: String.fromCharCode(97 + i),
+          booksCount: 1,
+        ),
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...scope.overrides,
+          // No server: covers resolve to the deterministic placeholder.
+          contentApiForProvider('s1').overrideWith((ref) async => null),
+        ],
+        child: MaterialApp(
+          theme: lightTheme,
+          home: Scaffold(
+            body: SeriesGridBody(
+              items: items,
+              syncComplete: true,
+              onTap: (_) {},
+              controller: controller,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.offset, 0);
+
+    // Tap the scrubber's 'Z' (exact-text match hits the rail letter, not a
+    // series title) -> the grid jumps down to the Z row.
+    await tester.tap(find.text('Z'));
+    await tester.pumpAndSettle();
+
+    expect(controller.offset, greaterThan(0),
+        reason: 'tapping Z should scroll toward the end of the list');
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
