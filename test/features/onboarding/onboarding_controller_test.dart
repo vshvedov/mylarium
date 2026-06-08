@@ -8,6 +8,7 @@ import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/core/storage/secure_store.dart';
 import 'package:mylarium/data/komga/komga_api.dart';
 import 'package:mylarium/data/komga/komga_providers.dart';
+import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/onboarding/connection_result.dart';
 import 'package:mylarium/features/onboarding/onboarding_controller.dart';
 
@@ -93,6 +94,32 @@ void main() {
     final cred =
         await container.read(komgaCredentialStoreProvider).read(sourceId);
     expect(cred, isNotNull);
+  });
+
+  test('a successful connection becomes the active source without a restart',
+      () async {
+    mockVersion('1.21.0');
+    mockRoles(['PAGE_STREAMING', 'FILE_DOWNLOAD']);
+
+    // Mirror the running app: the home screen reads the active source before
+    // onboarding completes, so the keepAlive provider has already resolved to
+    // null (no sources yet). Force that cached null here.
+    final before = await container.read(activeSourceIdProvider.future);
+    expect(before, isNull);
+
+    await controller().connect(
+      url: 'komga.test',
+      method: AuthMethod.apiKey,
+      apiKey: 'sek',
+    );
+
+    final r = result();
+    expect(r, isA<ConnSuccess>());
+    final sourceId = (r! as ConnSuccess).sourceId;
+
+    // The freshly connected source must be active immediately, with no restart
+    // or manual invalidation. Without the fix this stays null until rebuild.
+    expect(container.read(activeSourceIdProvider).valueOrNull, sourceId);
   });
 
   test('an API key on a pre-1.20.0 server steers to password', () async {

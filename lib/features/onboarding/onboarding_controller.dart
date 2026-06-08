@@ -13,6 +13,7 @@ import '../../data/komga/auth/komga_credential.dart';
 import '../../data/komga/komga_api.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/content_source.dart';
+import '../../data/source/source_providers.dart';
 import 'connection_result.dart';
 
 part 'onboarding_controller.g.dart';
@@ -154,6 +155,11 @@ class OnboardingController extends _$OnboardingController {
       await db.deleteSource(sourceId);
       return const ConnUnknown('Could not store credentials securely.');
     }
+    // Make the freshly connected source active immediately. ActiveSourceId is a
+    // keepAlive one-shot read of the sources table, so it does not observe this
+    // insert on its own; without this the home screen shows "No source
+    // connected" until the next app launch rebuilds the provider.
+    ref.read(activeSourceIdProvider.notifier).select(sourceId);
     return ConnSuccess(sourceId);
   }
 }

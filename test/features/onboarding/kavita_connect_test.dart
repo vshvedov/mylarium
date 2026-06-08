@@ -12,6 +12,7 @@ import 'package:mylarium/data/kavita/auth/kavita_auth.dart';
 import 'package:mylarium/data/kavita/kavita_api.dart';
 import 'package:mylarium/data/kavita/kavita_providers.dart';
 import 'package:mylarium/data/komga/komga_providers.dart';
+import 'package:mylarium/data/source/source_providers.dart';
 import 'package:mylarium/features/onboarding/connection_result.dart';
 import 'package:mylarium/features/onboarding/kavita_connect_controller.dart';
 
@@ -83,6 +84,28 @@ void main() {
     expect(sources, hasLength(1));
     expect(sources.single.kind, 'kavita');
     expect(store.values.keys.single, startsWith('kavita.cred.'));
+  });
+
+  test('a successful connection becomes the active source without a restart',
+      () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final container = _container(db, _InMemorySecureStore(), _fakeApi());
+    addTearDown(container.dispose);
+    container.listen(kavitaConnectControllerProvider, (_, _) {});
+
+    // Mirror the running app: the active source is read (and cached null) before
+    // onboarding completes.
+    expect(await container.read(activeSourceIdProvider.future), isNull);
+
+    await container
+        .read(kavitaConnectControllerProvider.notifier)
+        .connect(url: 'kavita.test', apiKey: 'k');
+
+    final result = container.read(kavitaConnectControllerProvider).valueOrNull;
+    expect(result, isA<ConnSuccess>());
+    final sourceId = (result! as ConnSuccess).sourceId;
+    expect(container.read(activeSourceIdProvider).valueOrNull, sourceId);
   });
 
   test('connect reports missing role when the JWT lacks Login', () async {

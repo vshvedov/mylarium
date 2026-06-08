@@ -9,6 +9,7 @@ import '../../core/network/content_exception.dart';
 import '../../data/kavita/auth/kavita_credential.dart';
 import '../../data/kavita/kavita_providers.dart';
 import '../../data/source/content_source.dart';
+import '../../data/source/source_providers.dart';
 import 'connection_result.dart';
 import 'onboarding_controller.dart' show normalizeServerUrl;
 
@@ -89,6 +90,11 @@ class KavitaConnectController extends _$KavitaConnectController {
       await db.deleteSource(sourceId);
       return const ConnUnknown('Could not store credentials securely.');
     }
+    // Make the freshly connected source active immediately. ActiveSourceId is a
+    // keepAlive one-shot read of the sources table, so it does not observe this
+    // insert on its own; without this the home screen shows "No source
+    // connected" until the next app launch rebuilds the provider.
+    ref.read(activeSourceIdProvider.notifier).select(sourceId);
     return ConnSuccess(sourceId);
   }
 }
