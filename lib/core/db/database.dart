@@ -235,6 +235,32 @@ class AppDatabase extends _$AppDatabase {
     return q.get();
   }
 
+  /// The full series list for [sourceId], sorted by `(titleSort, id)` (ascending
+  /// unless [descending]), as a reactive stream. Optionally scoped to
+  /// [libraryId]; [hiddenLibraryIds] (locked libraries) are excluded in SQL.
+  /// Backs the browse grid, which renders the whole cached list (filled by the
+  /// background sync) rather than keyset-paging the network.
+  Stream<List<SeriesRow>> watchSeriesSorted(
+    String sourceId, {
+    String? libraryId,
+    bool descending = false,
+    Set<String> hiddenLibraryIds = const {},
+  }) {
+    final q = select(series)..where((t) => t.sourceId.equals(sourceId));
+    if (libraryId != null) {
+      q.where((t) => t.libraryId.equals(libraryId));
+    }
+    if (hiddenLibraryIds.isNotEmpty) {
+      q.where((t) => t.libraryId.isNotIn(hiddenLibraryIds.toList()));
+    }
+    final mode = descending ? OrderingMode.desc : OrderingMode.asc;
+    q.orderBy([
+      (t) => OrderingTerm(expression: t.titleSort, mode: mode),
+      (t) => OrderingTerm(expression: t.id, mode: mode),
+    ]);
+    return q.watch();
+  }
+
   /// Count of cached series for a source (used to detect a partially-filled
   /// cache against the server's reported total).
   Future<int> seriesCount(String sourceId, {String? libraryId}) async {
