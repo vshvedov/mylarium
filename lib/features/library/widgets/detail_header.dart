@@ -10,6 +10,18 @@ import '../../../app/widgets/pressable_scale.dart';
 import '../pin_controllers.dart';
 import 'cover_image.dart';
 
+/// The hero floating-button background: a bordered light chip on e-ink, a dark
+/// translucent scrim otherwise.
+BoxDecoration _heroChipDecoration(bool eink, ColorScheme scheme) => BoxDecoration(
+      color: eink ? scheme.surface : const Color(0x66000000),
+      shape: BoxShape.circle,
+      border: eink ? Border.all(color: scheme.outline) : null,
+    );
+
+/// The hero floating-button glyph color paired with [_heroChipDecoration].
+Color _heroChipIcon(bool eink, ColorScheme scheme) =>
+    eink ? scheme.onSurface : Colors.white;
+
 /// A floating back affordance for cover-forward detail screens: a light Phosphor
 /// icon on a subtle dark scrim, legible over any cover art and the dark bar.
 class HeroBackButton extends StatelessWidget {
@@ -24,14 +36,10 @@ class HeroBackButton extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: eink ? scheme.surface : const Color(0x66000000),
-            shape: BoxShape.circle,
-            border: eink ? Border.all(color: scheme.outline) : null,
-          ),
+          decoration: _heroChipDecoration(eink, scheme),
           child: IconButton(
             iconSize: 20,
-            color: eink ? scheme.onSurface : Colors.white,
+            color: _heroChipIcon(eink, scheme),
             icon: const Icon(AppIcons.back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             onPressed: () => Navigator.maybePop(context),
@@ -70,14 +78,10 @@ class HeroPinButton extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: eink ? scheme.surface : const Color(0x66000000),
-            shape: BoxShape.circle,
-            border: eink ? Border.all(color: scheme.outline) : null,
-          ),
+          decoration: _heroChipDecoration(eink, scheme),
           child: IconButton(
             iconSize: 20,
-            color: eink ? scheme.onSurface : Colors.white,
+            color: _heroChipIcon(eink, scheme),
             icon: Icon(pinned ? AppIcons.pinFill : AppIcons.pin),
             tooltip: pinned ? 'Unpin' : 'Pin',
             onPressed: () => ref.read(appDatabaseProvider).setPinned(
@@ -357,12 +361,13 @@ class DetailHeader extends StatelessWidget {
         final wide = constraints.maxWidth >= 560;
         final coverW = wide ? 188.0 : 152.0;
 
+        final scheme = Theme.of(context).colorScheme;
         final eink =
             Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
         final titleStyle = TextStyle(
           fontFamily: 'Anton',
           fontSize: wide ? 48 : 34,
-          color: eink ? const Color(0xFF111111) : Colors.white,
+          color: eink ? scheme.onSurface : Colors.white,
           height: 1.04,
           letterSpacing: 0.5,
           shadows: eink
