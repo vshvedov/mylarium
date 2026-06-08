@@ -9,10 +9,19 @@ class SecureStore {
   SecureStore([FlutterSecureStorage? storage])
       : _storage = storage ??
             const FlutterSecureStorage(
-              // Keystore-backed encrypted storage on Android (not the legacy
-              // plaintext-ish SharedPreferences); device-only Keychain on iOS
-              // that survives reboot and never syncs to iCloud.
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
+              // Android: the plugin's DEFAULT backend - values encrypted with a
+              // hardware-backed Android Keystore key, stored in SharedPreferences.
+              // We deliberately do NOT use `encryptedSharedPreferences: true`
+              // (AndroidX Security Crypto / Tink): on this app's devices that
+              // backend fails to re-initialize on app restart, and the plugin
+              // then SILENTLY falls back to an empty non-encrypted store
+              // (FlutterSecureStorage.java: failedToUseEncryptedSharedPreferences).
+              // The effect is that a credential written during onboarding reads
+              // back null on the next launch, so the app re-prompts for Komga
+              // creds every restart (Android-only; iOS Keychain is unaffected).
+              // The default backend keeps values Keystore-encrypted without that
+              // failure mode. Switching backends means existing creds re-auth
+              // once; acceptable.
               iOptions: IOSOptions(
                 accessibility: KeychainAccessibility.first_unlock_this_device,
               ),
