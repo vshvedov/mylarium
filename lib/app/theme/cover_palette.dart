@@ -155,6 +155,21 @@ class CoverBackground extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<DesignTokens>()!;
+    // E-ink: render only the flat (white) fallback, no palette tint, no blurred
+    // cover, no scrim. Skip the palette watch entirely.
+    if (tokens.isEink) {
+      return Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: tokens.gradients.coverFallback),
+            ),
+          ),
+          ?child,
+        ],
+      );
+    }
     final palette = ref
         .watch(coverPaletteProvider(sourceId, ownerType, ownerId))
         .valueOrNull;
