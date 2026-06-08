@@ -14,6 +14,7 @@ import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.d
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/pin_controllers.dart';
 import 'package:mylarium/features/library/series_grid.dart';
+import 'package:mylarium/features/library/series_sync.dart';
 import 'package:mylarium/features/offline/offline_providers.dart';
 
 import '../../support/test_scope.dart';
@@ -95,9 +96,49 @@ Future<GoRouter> _pumpBrowse(
         // Comic Vine off (avoids hitting secure storage, which never resolves
         // in a widget test and would leave the panel spinning forever).
         comicVineApiKeyProvider.overrideWith((ref) async => null),
+        // Stub the grid's data with a plain (non-Drift) stream + a resolved
+        // sync, so no live Drift query stream is opened. A live watch() stream
+        // schedules a close-timer on dispose that a non-tree-disposing test
+        // never pumps out, hanging pumpAndSettle. (See the "stub live Drift
+        // streams" rule.) The grid itself is exercised in browse_grid_test.
+        browseSeriesProvider('s1', null, false).overrideWith(
+          (ref) => Stream.value([
+            SeriesRow(
+                sourceId: 's1',
+                id: 'ida',
+                libraryId: 'lib1',
+                title: 'Alpha',
+                titleSort: 'a',
+                booksCount: 0),
+            SeriesRow(
+                sourceId: 's1',
+                id: 'idb',
+                libraryId: 'lib1',
+                title: 'Bravo',
+                titleSort: 'b',
+                booksCount: 0),
+            SeriesRow(
+                sourceId: 's1',
+                id: 'idc',
+                libraryId: 'lib1',
+                title: 'Charlie',
+                titleSort: 'c',
+                booksCount: 0),
+          ]),
+        ),
+        seriesSyncCompleteProvider('s1', null).overrideWith((ref) async => true),
         ...extra,
       ],
-      child: MaterialApp.router(theme: lightTheme, routerConfig: router),
+      child: MaterialApp.router(
+        theme: lightTheme,
+        routerConfig: router,
+        // Disable animations below MaterialApp so the transient branded loader
+        // (a repeating Lottie) renders static and pumpAndSettle can settle.
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
+      ),
     ),
   );
   await tester.pumpAndSettle();

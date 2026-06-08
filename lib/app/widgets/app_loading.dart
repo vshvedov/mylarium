@@ -11,14 +11,22 @@ class AppLoadingIndicator extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: SizedBox.square(
-          dimension: size,
-          child: Lottie.asset(
-            'branding/loading.json',
-            repeat: true,
-            fit: BoxFit.contain,
-          ),
+  Widget build(BuildContext context) {
+    // Honor reduce-motion: render a single static frame (no perpetual ticker)
+    // instead of the looping animation. This is both an accessibility win and
+    // keeps widget tests deterministic - a repeating Lottie never lets
+    // pumpAndSettle settle.
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    return Center(
+      child: SizedBox.square(
+        dimension: size,
+        child: Lottie.asset(
+          'branding/loading.json',
+          repeat: !reduce,
+          animate: !reduce,
+          fit: BoxFit.contain,
         ),
-      );
+      ),
+    );
+  }
 }
