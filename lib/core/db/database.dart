@@ -78,17 +78,25 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        // Single baseline schema. The historical v1..v15 migration chain was
-        // collapsed into this baseline during alpha (there are no released
+        // Single baseline schema (v1). The historical v1..v15 migration chain
+        // was collapsed into this baseline during alpha (there are no released
         // users to migrate), so createAll builds every table plus the generated
-        // indexes at the current shape and there is no upgrade chain. A device
-        // carrying an older pre-collapse DB (user_version > 1) is not migrated:
-        // open will fail until its data is cleared (acceptable in alpha).
+        // indexes at the current shape. From v1 onward, real step migrations
+        // resume. A device carrying an older pre-collapse DB (a user_version
+        // between 2 and 15 from before the collapse) cannot be told apart from a
+        // post-collapse v2 and is not handled: clearing its data is acceptable
+        // in alpha.
         onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // v1 -> v2: global auto-advance setting (T2).
+          if (from < 2) {
+            await m.addColumn(appSettings, appSettings.autoAdvance);
+          }
+        },
       );
 
   /// Reads the canonical settings row (id = 1), inserting defaults exactly once
@@ -122,6 +130,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateAutoCacheEnabled(bool v) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(autoCacheEnabled: Value(v)));
+
+  Future<void> updateAutoAdvance(bool v) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(autoAdvance: Value(v)));
 
   Future<void> updateDownloadWifiOnly(bool v) =>
       (update(appSettings)..where((t) => t.id.equals(1)))

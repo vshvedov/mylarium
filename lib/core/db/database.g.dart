@@ -149,6 +149,21 @@ class $AppSettingsTable extends AppSettings
       'CHECK ("delete_on_read" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _autoAdvanceMeta = const VerificationMeta(
+    'autoAdvance',
+  );
+  @override
+  late final GeneratedColumn<bool> autoAdvance = GeneratedColumn<bool>(
+    'auto_advance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_advance" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -162,6 +177,7 @@ class $AppSettingsTable extends AppSettings
     imageQualityManualLevel,
     homeLayout,
     deleteOnRead,
+    autoAdvance,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -259,6 +275,15 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('auto_advance')) {
+      context.handle(
+        _autoAdvanceMeta,
+        autoAdvance.isAcceptableOrUnknown(
+          data['auto_advance']!,
+          _autoAdvanceMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -312,6 +337,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}delete_on_read'],
       ),
+      autoAdvance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto_advance'],
+      )!,
     );
   }
 
@@ -356,6 +385,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// current row mapper can read an older settings row that predates this column
   /// (intermediate-version reads); a null value means off (the default).
   final bool? deleteOnRead;
+
+  /// When true, reaching the last page of a chapter auto-loads the next book in
+  /// the series after a brief, cancelable seam (T2). Global, default off.
+  final bool autoAdvance;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -368,6 +401,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     required this.imageQualityManualLevel,
     this.homeLayout,
     this.deleteOnRead,
+    required this.autoAdvance,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -389,6 +423,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     if (!nullToAbsent || deleteOnRead != null) {
       map['delete_on_read'] = Variable<bool>(deleteOnRead);
     }
+    map['auto_advance'] = Variable<bool>(autoAdvance);
     return map;
   }
 
@@ -411,6 +446,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       deleteOnRead: deleteOnRead == null && nullToAbsent
           ? const Value.absent()
           : Value(deleteOnRead),
+      autoAdvance: Value(autoAdvance),
     );
   }
 
@@ -435,6 +471,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       ),
       homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       deleteOnRead: serializer.fromJson<bool?>(json['deleteOnRead']),
+      autoAdvance: serializer.fromJson<bool>(json['autoAdvance']),
     );
   }
   @override
@@ -454,6 +491,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       ),
       'homeLayout': serializer.toJson<String?>(homeLayout),
       'deleteOnRead': serializer.toJson<bool?>(deleteOnRead),
+      'autoAdvance': serializer.toJson<bool>(autoAdvance),
     };
   }
 
@@ -469,6 +507,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     int? imageQualityManualLevel,
     Value<String?> homeLayout = const Value.absent(),
     Value<bool?> deleteOnRead = const Value.absent(),
+    bool? autoAdvance,
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -482,6 +521,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         imageQualityManualLevel ?? this.imageQualityManualLevel,
     homeLayout: homeLayout.present ? homeLayout.value : this.homeLayout,
     deleteOnRead: deleteOnRead.present ? deleteOnRead.value : this.deleteOnRead,
+    autoAdvance: autoAdvance ?? this.autoAdvance,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -512,6 +552,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       deleteOnRead: data.deleteOnRead.present
           ? data.deleteOnRead.value
           : this.deleteOnRead,
+      autoAdvance: data.autoAdvance.present
+          ? data.autoAdvance.value
+          : this.autoAdvance,
     );
   }
 
@@ -528,7 +571,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('imageQualitySmart: $imageQualitySmart, ')
           ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
           ..write('homeLayout: $homeLayout, ')
-          ..write('deleteOnRead: $deleteOnRead')
+          ..write('deleteOnRead: $deleteOnRead, ')
+          ..write('autoAdvance: $autoAdvance')
           ..write(')'))
         .toString();
   }
@@ -546,6 +590,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     imageQualityManualLevel,
     homeLayout,
     deleteOnRead,
+    autoAdvance,
   );
   @override
   bool operator ==(Object other) =>
@@ -561,7 +606,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.imageQualitySmart == this.imageQualitySmart &&
           other.imageQualityManualLevel == this.imageQualityManualLevel &&
           other.homeLayout == this.homeLayout &&
-          other.deleteOnRead == this.deleteOnRead);
+          other.deleteOnRead == this.deleteOnRead &&
+          other.autoAdvance == this.autoAdvance);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -576,6 +622,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<int> imageQualityManualLevel;
   final Value<String?> homeLayout;
   final Value<bool?> deleteOnRead;
+  final Value<bool> autoAdvance;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -588,6 +635,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.imageQualityManualLevel = const Value.absent(),
     this.homeLayout = const Value.absent(),
     this.deleteOnRead = const Value.absent(),
+    this.autoAdvance = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -601,6 +649,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.imageQualityManualLevel = const Value.absent(),
     this.homeLayout = const Value.absent(),
     this.deleteOnRead = const Value.absent(),
+    this.autoAdvance = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -614,6 +663,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<int>? imageQualityManualLevel,
     Expression<String>? homeLayout,
     Expression<bool>? deleteOnRead,
+    Expression<bool>? autoAdvance,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -629,6 +679,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         'image_quality_manual_level': imageQualityManualLevel,
       if (homeLayout != null) 'home_layout': homeLayout,
       if (deleteOnRead != null) 'delete_on_read': deleteOnRead,
+      if (autoAdvance != null) 'auto_advance': autoAdvance,
     });
   }
 
@@ -644,6 +695,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<int>? imageQualityManualLevel,
     Value<String?>? homeLayout,
     Value<bool?>? deleteOnRead,
+    Value<bool>? autoAdvance,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -658,6 +710,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           imageQualityManualLevel ?? this.imageQualityManualLevel,
       homeLayout: homeLayout ?? this.homeLayout,
       deleteOnRead: deleteOnRead ?? this.deleteOnRead,
+      autoAdvance: autoAdvance ?? this.autoAdvance,
     );
   }
 
@@ -701,6 +754,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (deleteOnRead.present) {
       map['delete_on_read'] = Variable<bool>(deleteOnRead.value);
     }
+    if (autoAdvance.present) {
+      map['auto_advance'] = Variable<bool>(autoAdvance.value);
+    }
     return map;
   }
 
@@ -717,7 +773,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('imageQualitySmart: $imageQualitySmart, ')
           ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
           ..write('homeLayout: $homeLayout, ')
-          ..write('deleteOnRead: $deleteOnRead')
+          ..write('deleteOnRead: $deleteOnRead, ')
+          ..write('autoAdvance: $autoAdvance')
           ..write(')'))
         .toString();
   }
@@ -9613,6 +9670,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> imageQualityManualLevel,
       Value<String?> homeLayout,
       Value<bool?> deleteOnRead,
+      Value<bool> autoAdvance,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -9627,6 +9685,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<int> imageQualityManualLevel,
       Value<String?> homeLayout,
       Value<bool?> deleteOnRead,
+      Value<bool> autoAdvance,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -9690,6 +9749,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get deleteOnRead => $composableBuilder(
     column: $table.deleteOnRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get autoAdvance => $composableBuilder(
+    column: $table.autoAdvance,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -9757,6 +9821,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.deleteOnRead,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get autoAdvance => $composableBuilder(
+    column: $table.autoAdvance,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -9816,6 +9885,11 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.deleteOnRead,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get autoAdvance => $composableBuilder(
+    column: $table.autoAdvance,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -9860,6 +9934,7 @@ class $$AppSettingsTableTableManager
                 Value<int> imageQualityManualLevel = const Value.absent(),
                 Value<String?> homeLayout = const Value.absent(),
                 Value<bool?> deleteOnRead = const Value.absent(),
+                Value<bool> autoAdvance = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -9872,6 +9947,7 @@ class $$AppSettingsTableTableManager
                 imageQualityManualLevel: imageQualityManualLevel,
                 homeLayout: homeLayout,
                 deleteOnRead: deleteOnRead,
+                autoAdvance: autoAdvance,
               ),
           createCompanionCallback:
               ({
@@ -9886,6 +9962,7 @@ class $$AppSettingsTableTableManager
                 Value<int> imageQualityManualLevel = const Value.absent(),
                 Value<String?> homeLayout = const Value.absent(),
                 Value<bool?> deleteOnRead = const Value.absent(),
+                Value<bool> autoAdvance = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -9898,6 +9975,7 @@ class $$AppSettingsTableTableManager
                 imageQualityManualLevel: imageQualityManualLevel,
                 homeLayout: homeLayout,
                 deleteOnRead: deleteOnRead,
+                autoAdvance: autoAdvance,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

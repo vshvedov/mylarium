@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
+import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_list_row.dart';
 import '../home/home_layout.dart';
 import '../home/home_layout_controller.dart';
+import 'settings_providers.dart';
 
 /// Global / advanced settings. First section: hide and reorder the home rows.
 class SettingsScreen extends ConsumerWidget {
@@ -45,6 +47,22 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: 'Hide libraries behind Face ID / passcode',
                   onTap: () => context.push('/settings/library-lock'),
                 ),
+              ),
+              const Divider(height: 24, indent: 20, endIndent: 20),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                child: Text('Reading', style: theme.textTheme.titleMedium),
+              ),
+              SwitchListTile(
+                secondary: const Icon(AppIcons.nextChapter),
+                title: const Text('Auto-advance'),
+                subtitle: const Text(
+                  'Load the next chapter automatically at the end of a book',
+                ),
+                value:
+                    ref.watch(autoAdvanceEnabledProvider).valueOrNull ?? false,
+                onChanged: (v) =>
+                    ref.read(appDatabaseProvider).updateAutoAdvance(v),
               ),
               const Divider(height: 24, indent: 20, endIndent: 20),
               Padding(

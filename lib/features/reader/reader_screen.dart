@@ -33,6 +33,7 @@ import 'paged_view.dart';
 import 'page_prefetcher.dart';
 import 'reader_controller.dart';
 import 'reader_models.dart';
+import '../settings/settings_providers.dart';
 import 'reader_navigation.dart';
 import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
@@ -799,6 +800,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             )
             .valueOrNull ??
         const BookNeighbors();
+    final autoAdvance =
+        ref.watch(autoAdvanceEnabledProvider).valueOrNull ?? false;
     return Stack(
       children: [
         Positioned.fill(child: filteredView),
@@ -809,6 +812,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
               neighbors: neighbors,
               onOpenBook: _openBook,
               onDismiss: () => setState(() => _seamDismissed = true),
+              autoAdvance: autoAdvance,
             ),
           ),
         Positioned.fill(

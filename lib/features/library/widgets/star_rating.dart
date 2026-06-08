@@ -62,7 +62,9 @@ class StarRating extends StatelessWidget {
 }
 
 /// A "Your rating" label paired with the tap-to-rate stars, shared by the book
-/// and series detail screens.
+/// and series detail screens. Ratings are local-only: Komga's API has no
+/// user-rating field (see the live-sync PRD, OQ1), so the caption is honest
+/// rather than implying a sync that cannot happen.
 class RatingRow extends StatelessWidget {
   const RatingRow({super.key, required this.value, required this.onChanged});
 
@@ -70,16 +72,31 @@ class RatingRow extends StatelessWidget {
   final ValueChanged<int?> onChanged;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Text(
-            'Your rating',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Your rating',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            StarRating(value: value, onChanged: onChanged, size: 26),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Saved on this device',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
           ),
-          const Spacer(),
-          StarRating(value: value, onChanged: onChanged, size: 26),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }

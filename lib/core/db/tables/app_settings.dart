@@ -45,6 +45,10 @@ class AppSettings extends Table {
   /// (intermediate-version reads); a null value means off (the default).
   BoolColumn get deleteOnRead => boolean().nullable()();
 
+  /// When true, reaching the last page of a chapter auto-loads the next book in
+  /// the series after a brief, cancelable seam (T2). Global, default off.
+  BoolColumn get autoAdvance => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
