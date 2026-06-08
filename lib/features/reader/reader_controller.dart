@@ -78,6 +78,26 @@ class ReaderData {
   );
 }
 
+/// The 0-based page to open the reader on for a book.
+///
+/// Prefers [savedCurrentPage] (the local `BookState`), which is authoritative
+/// once the book has been read or reconciled on this device. When there is no
+/// local read state yet - e.g. right after a fresh install, before the book has
+/// been reconciled - it falls back to the server's last-read page cached on the
+/// book ([serverReadPage], Komga's 1-based `readProgress.page`) converted to our
+/// 0-based index. Without this fallback a reinstalled app showed the correct
+/// "Continue reading" percentage (which already falls back to the cached page)
+/// but opened every book at page 1, because the missing `BookState` defaulted
+/// the start page to 0.
+int resolveInitialReaderPage({
+  required int? savedCurrentPage,
+  required int? serverReadPage,
+}) {
+  if (savedCurrentPage != null) return savedCurrentPage;
+  final page = (serverReadPage ?? 0) - 1;
+  return page < 0 ? 0 : page;
+}
+
 /// Loads a book for reading, offline-first: a cached archive is read from disk
 /// (no network); otherwise pages stream online (per-page, through the byte
 /// cache). The full-chapter offline backfill is NOT started here: the reader
@@ -94,9 +114,10 @@ class ReaderController extends _$ReaderController {
     final db = ref.watch(appDatabaseProvider);
     final settingsRepo = ReaderSettingsRepository(db);
 
-    // Resume position: seed the reader from the saved local read state.
-    final initialPage =
-        (await db.getBookState(sourceId, bookId))?.currentPage ?? 0;
+    // Resume position: prefer the saved local read state; fall back to the
+    // server page cached on the book (resolved per-path below, once the book is
+    // known) so a fresh install resumes where the user left off.
+    final savedPage = (await db.getBookState(sourceId, bookId))?.currentPage;
 
     // Offline-first: read a cached archive if available.
     final cache = ref.watch(offlineCacheManagerProvider);
@@ -120,7 +141,10 @@ class ReaderController extends _$ReaderController {
           title: title,
           settings: settings,
           source: OfflinePages(archivePath, entries),
-          initialPage: initialPage,
+          initialPage: resolveInitialReaderPage(
+            savedCurrentPage: savedPage,
+            serverReadPage: book?.readPage,
+          ),
           colorAdjustments: colorAdjustments,
         );
       } on ArchiveException {
@@ -138,13 +162,16 @@ class ReaderController extends _$ReaderController {
     final cached = await db.getBook(sourceId, bookId);
     String seriesId;
     String title;
+    int? serverReadPage;
     if (cached != null) {
       seriesId = cached.seriesId;
       title = cached.title;
+      serverReadPage = cached.readPage;
     } else {
       final dto = await api.getBook(bookId);
       seriesId = dto.seriesId;
       title = dto.title;
+      serverReadPage = dto.readPage;
       await db.upsertBook(bookToRow(sourceId, dto));
     }
 
@@ -174,7 +201,10 @@ class ReaderController extends _$ReaderController {
       title: title,
       settings: settings,
       source: OnlinePages(api, pages),
-      initialPage: initialPage,
+      initialPage: resolveInitialReaderPage(
+        savedCurrentPage: savedPage,
+        serverReadPage: serverReadPage,
+      ),
       colorAdjustments: colorAdjustments,
     );
   }
