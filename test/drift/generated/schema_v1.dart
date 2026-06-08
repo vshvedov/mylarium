@@ -109,6 +109,17 @@ class AppSettings extends Table with TableInfo {
       'CHECK ("delete_on_read" IN (0, 1))',
     ),
   );
+  late final GeneratedColumn<bool> autoAdvance = GeneratedColumn<bool>(
+    'auto_advance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto_advance" IN (0, 1))',
+    ),
+    defaultValue: const CustomExpression('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -122,6 +133,7 @@ class AppSettings extends Table with TableInfo {
     imageQualityManualLevel,
     homeLayout,
     deleteOnRead,
+    autoAdvance,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
