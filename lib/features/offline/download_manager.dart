@@ -196,6 +196,44 @@ class DownloadManager {
     }
   }
 
+  /// Stops an in-flight download and clears its task row so the UI control
+  /// resets (the series goes back to a pressable "Download" state). A completed
+  /// download is left alone: its file and CachedAsset stay, only an active or
+  /// stuck task is cancelled.
+  Future<void> cancelBook(String sourceId, String bookId) async {
+    final task = await _db.getDownloadTask(sourceId, bookId);
+    if (task == null || task.state == 'complete') return;
+    try {
+      await _downloader.cancel(task.taskId);
+    } catch (_) {
+      // Best-effort: even if the platform cancel fails, drop the row below so
+      // the user is not stuck; resumeAll/recoverPending will not revive a row
+      // that no longer exists.
+    }
+    await _db.deleteDownloadTask(sourceId, bookId);
+  }
+
+  /// Cancels every in-flight download of a series (the series-detail "Stop
+  /// downloading" action). Already-downloaded chapters are kept.
+  Future<void> cancelSeries(String sourceId, String seriesId) async {
+    for (final b in await _db.getBooksForSeries(sourceId, seriesId)) {
+      await cancelBook(sourceId, b.id);
+    }
+  }
+
+  /// Called whenever the app returns to the foreground. Hands off to the
+  /// platform downloader to revive any task the OS paused or killed while the
+  /// app was suspended (e.g. the device screen turned off mid-download), so a
+  /// download is never left stuck. Never throws.
+  Future<void> onAppForeground() async {
+    try {
+      await _downloader.recoverPending();
+    } catch (_) {
+      // Non-fatal: the next foreground return (or a cold-launch resumeAll)
+      // retries.
+    }
+  }
+
   Future<void> _enqueue({
     required String sourceId,
     required String bookId,

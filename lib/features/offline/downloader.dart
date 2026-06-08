@@ -37,6 +37,13 @@ abstract class Downloader {
   });
 
   Future<void> cancel(String taskId);
+
+  /// Recovers downloads after the app returns from the background. Flushes
+  /// status/progress updates that the platform recorded while the app was
+  /// suspended, resumes tasks the OS paused (e.g. on device sleep / Doze), and
+  /// re-enqueues tasks the OS killed but that the platform still has on record.
+  /// Called on every foreground return so a download is never left stuck.
+  Future<void> recoverPending();
 }
 
 /// Real [Downloader] backed by `background_downloader`. Resumable, Wi-Fi-aware,
@@ -102,4 +109,14 @@ class BackgroundDownloaderAdapter implements Downloader {
   @override
   Future<void> cancel(String taskId) =>
       FileDownloader().cancelTaskWithId(taskId);
+
+  @override
+  Future<void> recoverPending() async {
+    // Flush updates (incl. a `complete` that fired natively) accrued while
+    // suspended, then revive paused tasks, then re-enqueue OS-killed ones.
+    // `rescheduleKilledTasks` requires tracking, which the constructor enables.
+    await FileDownloader().resumeFromBackground();
+    await FileDownloader().resumeAll();
+    await FileDownloader().rescheduleKilledTasks();
+  }
 }

@@ -231,8 +231,9 @@ class _MarkSeriesControl extends ConsumerWidget {
 }
 
 /// Download / remove the whole series. Permanent (pinned) downloads, so they
-/// are never auto-evicted. Three states: none -> Download, partial -> a disabled
-/// progress label, all -> Remove.
+/// are never auto-evicted. States: none -> Download, in-flight -> Stop (cancel,
+/// keeping completed chapters), partial+idle -> Download remaining, all ->
+/// Remove.
 class _SeriesDownloadControl extends ConsumerWidget {
   const _SeriesDownloadControl({required this.sourceId, required this.seriesId});
 
@@ -257,16 +258,18 @@ class _SeriesDownloadControl extends ConsumerWidget {
             .deleteSeries(sourceId, seriesId),
       );
     }
-    // Only show a (disabled) progress state while downloads are actually
-    // in-flight. A series that is partially downloaded but idle stays
-    // pressable so the remaining chapters can be downloaded (enqueueSeries is
-    // idempotent and skips already-cached chapters).
+    // While downloads are in-flight the control becomes a "Stop" action so the
+    // user can cancel; cancelling clears the in-flight tasks and keeps any
+    // already-downloaded chapters. (A series that is partially downloaded but
+    // idle falls through to the pressable "Download remaining" below, since
+    // enqueueSeries is idempotent and skips already-cached chapters.)
     if (status.active > 0) {
       return HeroAction(
-        label: 'Downloading $downloaded/$total...',
-        icon: AppIcons.download,
+        label: 'Stop downloading ($downloaded/$total)',
+        icon: AppIcons.close,
         style: HeroActionStyle.ghost,
-        onPressed: null,
+        onPressed: () =>
+            ref.read(downloadManagerProvider).cancelSeries(sourceId, seriesId),
       );
     }
     return HeroAction(

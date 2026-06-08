@@ -24,12 +24,17 @@ class _InMemorySecureStore extends SecureStore {
 }
 
 /// Fake downloader that writes [bytes] to the destination on enqueue and emits
-/// a complete event on the global updates stream.
+/// a complete event on the global updates stream. When [autoComplete] is false
+/// it only records the enqueue (no file, no event) so a task stays in-flight,
+/// which the cancel tests need.
 class _FakeDownloader implements Downloader {
-  _FakeDownloader(this.bytes);
+  _FakeDownloader(this.bytes, {this.autoComplete = true});
   final List<int> bytes;
+  final bool autoComplete;
   int calls = 0;
   String? lastUrl;
+  final List<String> canceled = [];
+  int recoverCalls = 0;
   final _controller = StreamController<DownloadUpdate>.broadcast();
 
   @override
@@ -46,6 +51,7 @@ class _FakeDownloader implements Downloader {
   }) async {
     calls++;
     lastUrl = url;
+    if (!autoComplete) return;
     final abs = await AppPaths.resolve(p.join(relativeDirectory, filename));
     await Directory(p.dirname(abs)).create(recursive: true);
     await File(abs).writeAsBytes(bytes);
@@ -53,7 +59,10 @@ class _FakeDownloader implements Downloader {
   }
 
   @override
-  Future<void> cancel(String taskId) async {}
+  Future<void> cancel(String taskId) async => canceled.add(taskId);
+
+  @override
+  Future<void> recoverPending() async => recoverCalls++;
 
   void close() => _controller.close();
 }
@@ -252,5 +261,59 @@ void main() {
     expect(dl.lastUrl,
         'https://kavita.test/api/Download/chapter?chapterId=163&apiKey=SECRETKEY');
     expect(await db.getCachedAsset('s2', '163'), isNotNull);
+  });
+
+  test('cancelBook cancels the in-flight task and removes its row', () async {
+    final dl = _FakeDownloader([1, 2, 3], autoComplete: false);
+    final m = manager(dl);
+    await m.enqueueBook('s1', 'b1', manual: true);
+    expect(dl.calls, 1);
+    expect(await db.getDownloadTask('s1', 'b1'), isNotNull);
+
+    await m.cancelBook('s1', 'b1');
+
+    expect(dl.canceled, ['s1|b1']);
+    expect(await db.getDownloadTask('s1', 'b1'), isNull,
+        reason: 'the stuck/in-flight task row is cleared so the control resets');
+  });
+
+  test('cancelSeries stops in-flight books but keeps completed ones', () async {
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'b1',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'B1',
+        number: '1'));
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'b2',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'B2',
+        number: '2'));
+
+    // b1 completes; b2 stays in-flight.
+    final done = _FakeDownloader([1, 2, 3]);
+    await manager(done).enqueueBook('s1', 'b1', manual: true);
+    await waitForAsset('b1');
+    final inflight = _FakeDownloader([4, 5, 6], autoComplete: false);
+    final m = manager(inflight);
+    await m.enqueueBook('s1', 'b2', manual: true);
+
+    await m.cancelSeries('s1', 'ser1');
+
+    expect(inflight.canceled, ['s1|b2']);
+    expect(await db.getDownloadTask('s1', 'b2'), isNull);
+    expect(await db.getCachedAsset('s1', 'b1'), isNotNull,
+        reason: 'an already-downloaded chapter is kept');
+    expect((await db.getDownloadTask('s1', 'b1'))?.state, 'complete',
+        reason: 'cancel does not touch a completed task');
+  });
+
+  test('onAppForeground reconciles resumable downloads via the seam', () async {
+    final dl = _FakeDownloader([1]);
+    await manager(dl).onAppForeground();
+    expect(dl.recoverCalls, 1);
   });
 }

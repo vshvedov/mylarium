@@ -51,7 +51,7 @@ Future<void> main() async {
   // Reconcile read-progress with Komga and flush any queued write-backs on
   // launch; flush again whenever the app returns to the foreground.
   unawaited(_runLaunchSync(container));
-  WidgetsBinding.instance.addObserver(_SyncLifecycleObserver(container));
+  WidgetsBinding.instance.addObserver(_ForegroundObserver(container));
 }
 
 Future<void> _runLaunchSync(ProviderContainer container) async {
@@ -66,9 +66,12 @@ Future<void> _runLaunchSync(ProviderContainer container) async {
   }
 }
 
-/// Flushes the Komga write-back queue when the app returns to the foreground.
-class _SyncLifecycleObserver with WidgetsBindingObserver {
-  _SyncLifecycleObserver(this._container);
+/// Runs the foreground-return reconciles: flushes the Komga write-back queue,
+/// and revives any offline download the OS paused or killed while the app was
+/// suspended (e.g. the device screen turned off mid-download) so it is never
+/// left stuck.
+class _ForegroundObserver with WidgetsBindingObserver {
+  _ForegroundObserver(this._container);
 
   final ProviderContainer _container;
 
@@ -79,5 +82,6 @@ class _SyncLifecycleObserver with WidgetsBindingObserver {
         .read(syncEngineProvider.future)
         .then((e) => e.flushQueue())
         .catchError((Object _) {});
+    unawaited(_container.read(downloadManagerProvider).onAppForeground());
   }
 }
