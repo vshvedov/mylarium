@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/cover_palette.dart';
+import '../../../app/theme/design_tokens.dart';
 import '../reader_models.dart';
 import '../reader_navigation.dart';
 
@@ -94,13 +95,17 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final palette = ref
-        .watch(coverPaletteProvider(widget.sourceId, 'book', widget.bookId))
-        .valueOrNull;
+    final eink =
+        Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+    final palette = eink
+        ? null
+        : ref
+            .watch(coverPaletteProvider(widget.sourceId, 'book', widget.bookId))
+            .valueOrNull;
     // Tint the chrome bars with the book's cover palette; fall back to the plain
-    // translucent surface when there is no cover.
+    // surface when there is no cover or when e-ink (flat, opaque).
     final barColor = palette == null
-        ? scheme.surface.withValues(alpha: 0.92)
+        ? scheme.surface.withValues(alpha: eink ? 1.0 : 0.92)
         : Color.alphaBlend(
             palette.muted.withValues(alpha: 0.32),
             scheme.surface,

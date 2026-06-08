@@ -643,7 +643,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       }
       return;
     }
-    if (widget.data.settings.animatePageTurn) {
+    final eink =
+        Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+    if (widget.data.settings.animatePageTurn && !eink) {
       controller.animateToPage(
         next,
         duration: const Duration(milliseconds: 220),
