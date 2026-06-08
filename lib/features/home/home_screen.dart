@@ -207,6 +207,7 @@ class HomeScreen extends ConsumerWidget {
                     AppSegment(AppThemeMode.light, 'Light'),
                     AppSegment(AppThemeMode.dark, 'Dark'),
                     AppSegment(AppThemeMode.system, 'Auto'),
+                    AppSegment(AppThemeMode.eink, 'E-ink'),
                   ],
                   selected: mode,
                   onChanged: (m) =>

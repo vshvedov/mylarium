@@ -6,17 +6,19 @@ import '../../core/db/database.dart';
 
 part 'theme_controller.g.dart';
 
-enum AppThemeMode { light, dark, system }
+enum AppThemeMode { light, dark, system, eink }
 
 ThemeMode toThemeMode(AppThemeMode m) => switch (m) {
       AppThemeMode.light => ThemeMode.light,
       AppThemeMode.dark => ThemeMode.dark,
+      AppThemeMode.eink => ThemeMode.light,
       AppThemeMode.system => ThemeMode.system,
     };
 
 AppThemeMode _parse(String s) => switch (s) {
       'light' => AppThemeMode.light,
       'dark' => AppThemeMode.dark,
+      'eink' => AppThemeMode.eink,
       _ => AppThemeMode.system,
     };
 

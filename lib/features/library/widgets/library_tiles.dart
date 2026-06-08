@@ -67,11 +67,15 @@ class CoverTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<DesignTokens>()!;
+    final eink = tokens.isEink;
     final cover = Container(
       key: const ValueKey('coverShadow'),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(tokens.coverRadius),
         boxShadow: tokens.elevation.card,
+        border: eink
+            ? Border.all(color: Theme.of(context).colorScheme.outlineVariant)
+            : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(tokens.coverRadius),
@@ -197,13 +201,17 @@ class OfflineBadge extends ConsumerWidget {
     final cached =
         ref.watch(cachedAssetProvider(sourceId, bookId)).valueOrNull;
     if (cached == null) return const SizedBox.shrink();
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+    final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(3),
-      decoration: const BoxDecoration(
-        color: Color(0x99000000),
+      decoration: BoxDecoration(
+        color: eink ? scheme.surface : const Color(0x99000000),
         shape: BoxShape.circle,
+        border: eink ? Border.all(color: scheme.onSurface) : null,
       ),
-      child: const Icon(AppIcons.downloaded, size: 13, color: Colors.white),
+      child: Icon(AppIcons.downloaded,
+          size: 13, color: eink ? scheme.onSurface : Colors.white),
     );
   }
 }

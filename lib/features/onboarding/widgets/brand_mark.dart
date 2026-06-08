@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_theme.dart' show kSeed;
+import '../../../app/theme/design_tokens.dart';
 
 /// The Mylarium "M" monogram, drawn with the same polyline as the launcher icon
 /// (`branding/icon-fg.svg`) so onboarding reads as a continuation of the app
@@ -12,18 +13,25 @@ class BrandMark extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: size,
-        height: size,
-        child: CustomPaint(
-          painter: _MonogramPainter(),
-          isComplex: false,
-          willChange: false,
-        ),
-      );
+  Widget build(BuildContext context) {
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MonogramPainter(eink),
+        isComplex: false,
+        willChange: false,
+      ),
+    );
+  }
 }
 
 class _MonogramPainter extends CustomPainter {
+  const _MonogramPainter(this.eink);
+
+  final bool eink;
+
   // The M from the icon source, in its native 1024 viewBox. Bounding box is
   // x:322..702, y:322..706, so we map that box into the paint area with a
   // small inset and stroke the polyline.
@@ -57,6 +65,18 @@ class _MonogramPainter extends CustomPainter {
       }
     }
 
+    if (eink) {
+      // Flat black stroke, no glow, no gradient.
+      final stroke = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.width * 0.16
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..color = const Color(0xFF000000);
+      canvas.drawPath(path, stroke);
+      return;
+    }
+
     final glow = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.18
@@ -80,5 +100,5 @@ class _MonogramPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_MonogramPainter oldDelegate) => false;
+  bool shouldRepaint(_MonogramPainter oldDelegate) => oldDelegate.eink != eink;
 }

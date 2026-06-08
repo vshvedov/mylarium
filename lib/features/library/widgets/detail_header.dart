@@ -10,31 +10,44 @@ import '../../../app/widgets/pressable_scale.dart';
 import '../pin_controllers.dart';
 import 'cover_image.dart';
 
+/// The hero floating-button background: a bordered light chip on e-ink, a dark
+/// translucent scrim otherwise.
+BoxDecoration _heroChipDecoration(bool eink, ColorScheme scheme) => BoxDecoration(
+      color: eink ? scheme.surface : const Color(0x66000000),
+      shape: BoxShape.circle,
+      border: eink ? Border.all(color: scheme.outline) : null,
+    );
+
+/// The hero floating-button glyph color paired with [_heroChipDecoration].
+Color _heroChipIcon(bool eink, ColorScheme scheme) =>
+    eink ? scheme.onSurface : Colors.white;
+
 /// A floating back affordance for cover-forward detail screens: a light Phosphor
 /// icon on a subtle dark scrim, legible over any cover art and the dark bar.
 class HeroBackButton extends StatelessWidget {
   const HeroBackButton({super.key});
 
   @override
-  Widget build(BuildContext context) => SafeArea(
-    bottom: false,
-    child: Padding(
-      padding: const EdgeInsets.all(4),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0x66000000),
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-          iconSize: 20,
-          color: Colors.white,
-          icon: const Icon(AppIcons.back),
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-          onPressed: () => Navigator.maybePop(context),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: DecoratedBox(
+          decoration: _heroChipDecoration(eink, scheme),
+          child: IconButton(
+            iconSize: 20,
+            color: _heroChipIcon(eink, scheme),
+            icon: const Icon(AppIcons.back),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            onPressed: () => Navigator.maybePop(context),
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// A floating icon-only pin toggle for a detail hero, mirroring [HeroBackButton]
@@ -58,18 +71,17 @@ class HeroPinButton extends ConsumerWidget {
             .watch(isPinnedProvider(sourceId, ownerType, ownerId))
             .valueOrNull ??
         false;
+    final scheme = Theme.of(context).colorScheme;
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
     return SafeArea(
       bottom: false,
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Color(0x66000000),
-            shape: BoxShape.circle,
-          ),
+          decoration: _heroChipDecoration(eink, scheme),
           child: IconButton(
             iconSize: 20,
-            color: Colors.white,
+            color: _heroChipIcon(eink, scheme),
             icon: Icon(pinned ? AppIcons.pinFill : AppIcons.pin),
             tooltip: pinned ? 'Unpin' : 'Pin',
             onPressed: () => ref.read(appDatabaseProvider).setPinned(
@@ -160,12 +172,16 @@ class HeroCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<DesignTokens>()!;
+    final eink = tokens.isEink;
     return Container(
       width: width,
       height: width / 0.7,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(tokens.coverRadius),
         boxShadow: tokens.elevation.hero,
+        border: eink
+            ? Border.all(color: Theme.of(context).colorScheme.outlineVariant)
+            : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(tokens.coverRadius),
@@ -238,28 +254,31 @@ class HeroAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
     final primary = style == HeroActionStyle.primary;
     final fg = primary ? scheme.onPrimary : scheme.onSurface;
     final radius = BorderRadius.circular(14);
     final decoration = primary
-        ? BoxDecoration(
-            borderRadius: radius,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color.lerp(scheme.primary, Colors.white, 0.16)!,
-                scheme.primary,
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: scheme.primary.withValues(alpha: 0.42),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          )
+        ? (eink
+            ? BoxDecoration(borderRadius: radius, color: scheme.primary)
+            : BoxDecoration(
+                borderRadius: radius,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.lerp(scheme.primary, Colors.white, 0.16)!,
+                    scheme.primary,
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: scheme.primary.withValues(alpha: 0.42),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ))
         : BoxDecoration(
             borderRadius: radius,
             color: scheme.onSurface.withValues(alpha: 0.06),
@@ -342,15 +361,24 @@ class DetailHeader extends StatelessWidget {
         final wide = constraints.maxWidth >= 560;
         final coverW = wide ? 188.0 : 152.0;
 
+        final scheme = Theme.of(context).colorScheme;
+        final eink =
+            Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
         final titleStyle = TextStyle(
           fontFamily: 'Anton',
           fontSize: wide ? 48 : 34,
-          color: Colors.white,
+          color: eink ? scheme.onSurface : Colors.white,
           height: 1.04,
           letterSpacing: 0.5,
-          shadows: const [
-            Shadow(color: Color(0xCC000000), blurRadius: 18, offset: Offset(0, 3)),
-          ],
+          shadows: eink
+              ? null
+              : const [
+                  Shadow(
+                    color: Color(0xCC000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 3),
+                  ),
+                ],
         );
 
         // A shorter title band over the cover-derived backdrop.
@@ -428,17 +456,18 @@ class DetailHeader extends StatelessWidget {
 
         return Stack(
           children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: leakHeight,
-              child: CoverHeroBackdrop(
-                sourceId: sourceId,
-                ownerType: ownerType,
-                ownerId: ownerId,
+            if (!eink)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: leakHeight,
+                child: CoverHeroBackdrop(
+                  sourceId: sourceId,
+                  ownerType: ownerType,
+                  ownerId: ownerId,
+                ),
               ),
-            ),
             Column(
               children: [
                 titleBand,

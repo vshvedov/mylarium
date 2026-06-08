@@ -10,22 +10,28 @@ class MylariumApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeControllerProvider);
+    final eink = mode == AppThemeMode.eink;
+    // E-ink must never animate routes; fold it into the reduce-motion signal.
     final reduce =
+        eink ||
         ref.watch(reduceMotionProvider) ||
         MediaQuery.disableAnimationsOf(context);
     final pt = reduce ? noMotionTransitions : motionTransitions;
+    // In e-ink, supply the monochrome theme for every slot so neither OS dark
+    // nor OS high-contrast can swap in the violet themes.
+    final light = eink ? einkTheme : lightTheme;
+    final dark = eink ? einkTheme : darkTheme;
+    final hcLight = eink ? einkTheme : highContrastLightTheme;
+    final hcDark = eink ? einkTheme : highContrastDarkTheme;
     return MaterialApp.router(
       title: 'Mylarium',
-      theme: withTransitions(lightTheme, pt),
-      darkTheme: withTransitions(darkTheme, pt),
-      highContrastTheme: withTransitions(highContrastLightTheme, pt),
-      highContrastDarkTheme: withTransitions(highContrastDarkTheme, pt),
-      themeMode: toThemeMode(ref.watch(themeControllerProvider)),
+      theme: withTransitions(light, pt),
+      darkTheme: withTransitions(dark, pt),
+      highContrastTheme: withTransitions(hcLight, pt),
+      highContrastDarkTheme: withTransitions(hcDark, pt),
+      themeMode: toThemeMode(mode),
       routerConfig: ref.watch(appRouterProvider),
-      // Fold the in-app reduce-motion override and the OS flag into one signal
-      // every descendant reads via MediaQuery.disableAnimationsOf (so e.g.
-      // PressableScale honors the in-app toggle, not just the OS flag). Goes in
-      // builder: so it reaches the routed subtree's MediaQuery.
       builder: (context, child) => reduce
           ? MediaQuery(
               data: MediaQuery.of(context).copyWith(disableAnimations: true),

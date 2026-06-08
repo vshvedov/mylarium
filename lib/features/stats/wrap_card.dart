@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/design_tokens.dart';
 import 'badges.dart';
 import 'stats_models.dart';
 
@@ -15,6 +16,7 @@ class WrapCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final eink = Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
     final text = Theme.of(context).textTheme;
     final topGenre = summary.byGenre.isEmpty ? null : summary.byGenre.first.key;
     final earned = earnedBadges(summary).where((b) => b.earned).toList();
@@ -24,11 +26,15 @@ class WrapCard extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primaryContainer, scheme.surfaceContainerHighest],
-        ),
+        color: eink ? scheme.surface : null,
+        border: eink ? Border.all(color: scheme.outlineVariant) : null,
+        gradient: eink
+            ? null
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [scheme.primaryContainer, scheme.surfaceContainerHighest],
+              ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

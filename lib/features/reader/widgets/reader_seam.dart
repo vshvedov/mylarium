@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/app_button.dart';
 import '../reader_navigation.dart';
 
@@ -76,8 +77,9 @@ class _ReaderSeamState extends State<ReaderSeam> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final eink = theme.extension<DesignTokens>()?.isEink ?? false;
     return Material(
-      color: Colors.black.withValues(alpha: 0.72),
+      color: eink ? scheme.surface : Colors.black.withValues(alpha: 0.72),
       child: SafeArea(
         child: Stack(
           children: [

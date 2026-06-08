@@ -118,6 +118,78 @@ ThemeData _base(Brightness b, {double contrastLevel = 0.0}) {
   );
 }
 
+/// Hand-built monochrome scheme for e-ink. Not ColorScheme.fromSeed: a gray
+/// seed still yields tinted grays. Pure grays only; error is monochrome because
+/// B/W panels cannot show red (error state is carried by text and iconography).
+const einkScheme = ColorScheme(
+  brightness: Brightness.light,
+  primary: Color(0xFF000000),
+  onPrimary: Color(0xFFFFFFFF),
+  primaryContainer: Color(0xFFE2E2E2),
+  onPrimaryContainer: Color(0xFF111111),
+  secondary: Color(0xFF333333),
+  onSecondary: Color(0xFFFFFFFF),
+  secondaryContainer: Color(0xFFE9E9E9),
+  onSecondaryContainer: Color(0xFF111111),
+  tertiary: Color(0xFF333333),
+  onTertiary: Color(0xFFFFFFFF),
+  tertiaryContainer: Color(0xFFE9E9E9),
+  onTertiaryContainer: Color(0xFF111111),
+  error: Color(0xFF000000),
+  onError: Color(0xFFFFFFFF),
+  errorContainer: Color(0xFFE2E2E2),
+  onErrorContainer: Color(0xFF111111),
+  surface: Color(0xFFFFFFFF),
+  onSurface: Color(0xFF111111),
+  onSurfaceVariant: Color(0xFF555555),
+  surfaceContainerLowest: Color(0xFFFFFFFF),
+  surfaceContainerLow: Color(0xFFF7F7F7),
+  surfaceContainer: Color(0xFFF0F0F0),
+  surfaceContainerHigh: Color(0xFFE9E9E9),
+  surfaceContainerHighest: Color(0xFFE2E2E2),
+  outline: Color(0xFF6E6E6E),
+  outlineVariant: Color(0xFFCFCFCF),
+  inverseSurface: Color(0xFF111111),
+  onInverseSurface: Color(0xFFFFFFFF),
+  inversePrimary: Color(0xFFFFFFFF),
+  shadow: Color(0xFF000000),
+  scrim: Color(0xFF000000),
+);
+
+ThemeData _eink() {
+  final theme = ThemeData(
+    useMaterial3: true,
+    colorScheme: einkScheme,
+    scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+    extensions: <ThemeExtension<dynamic>>[DesignTokens.eink],
+    pageTransitionsTheme: noMotionTransitions,
+  );
+  // Reuse the heavier display/title weights: bold reads well on e-ink.
+  final t = theme.textTheme;
+  return theme.copyWith(
+    textTheme: t.copyWith(
+      displaySmall: t.displaySmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+      ),
+      headlineSmall: t.headlineSmall?.copyWith(
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+      ),
+      titleLarge: t.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      titleMedium: t.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+      ),
+    ),
+  );
+}
+
+final einkTheme = _eink();
+
 final lightTheme = _base(Brightness.light);
 final darkTheme = _base(Brightness.dark);
 final highContrastLightTheme = _base(Brightness.light, contrastLevel: 1.0);

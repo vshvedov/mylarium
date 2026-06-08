@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -246,6 +247,7 @@ Future<void> _confirmRemove(
 }) async {
   final ok = await showDialog<bool>(
     context: context,
+    barrierColor: einkOf(context) ? kEinkBarrierColor : null,
     builder: (context) => AlertDialog(
       title: Text(title),
       content: Text(label),

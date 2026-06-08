@@ -147,6 +147,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
     required this.motion,
     required this.elevation,
     required this.gradients,
+    this.isEink = false,
   });
 
   final Color readerBackground;
@@ -160,6 +161,10 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
   final ElevationTokens elevation;
   final GradientTokens gradients;
 
+  /// True only for the e-ink token set. Widgets that hardcode dark scrims,
+  /// gradients, or the violet seed read this to take a flat monochrome branch.
+  final bool isEink;
+
   @override
   DesignTokens copyWith({
     Color? readerBackground,
@@ -172,6 +177,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
     MotionTokens? motion,
     ElevationTokens? elevation,
     GradientTokens? gradients,
+    bool? isEink,
   }) => DesignTokens(
     readerBackground: readerBackground ?? this.readerBackground,
     gridGutter: gridGutter ?? this.gridGutter,
@@ -183,6 +189,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
     motion: motion ?? this.motion,
     elevation: elevation ?? this.elevation,
     gradients: gradients ?? this.gradients,
+    isEink: isEink ?? this.isEink,
   );
 
   @override
@@ -211,6 +218,7 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
       motion: MotionTokens.lerp(motion, other.motion, t),
       elevation: ElevationTokens.lerp(elevation, other.elevation, t),
       gradients: GradientTokens.lerp(gradients, other.gradients, t),
+      isEink: t < 0.5 ? isEink : other.isEink,
     );
   }
 
@@ -302,4 +310,50 @@ class DesignTokens extends ThemeExtension<DesignTokens> {
       scrim: _scrim,
     ),
   );
+
+  /// Monochrome token set for e-ink panels: pure-white reader surface, no
+  /// shadows, a flat (hue-free) cover fallback, and a transparent scrim so the
+  /// shared scrim DecoratedBox paints nothing.
+  static const eink = DesignTokens(
+    readerBackground: Color(0xFFFFFFFF),
+    gridGutter: 12.0,
+    coverRadius: 10.0,
+    sheetRadius: 28.0,
+    tapZones: TapZoneTokens(overlay: Color(0x1A000000), edgeFraction: 0.30),
+    coverTitleStyle: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      height: 1.2,
+    ),
+    coverSubtitleStyle: TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.2,
+    ),
+    motion: _motion,
+    elevation: ElevationTokens(card: [], hero: []),
+    gradients: GradientTokens(
+      coverFallback: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+      ),
+      scrim: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0x00000000), Color(0x00000000)],
+      ),
+    ),
+    isEink: true,
+  );
 }
+
+/// Reads the e-ink flag from the ambient theme. True only under the e-ink theme.
+/// Centralizes the `Theme.of(context).extension<DesignTokens>()?.isEink` lookup
+/// that e-ink branches throughout the app use.
+bool einkOf(BuildContext context) =>
+    Theme.of(context).extension<DesignTokens>()?.isEink ?? false;
+
+/// A light modal barrier for e-ink: enough to signal modality without the heavy
+/// ink coverage (and ghosting) of the framework default ~54% black scrim.
+const Color kEinkBarrierColor = Color(0x1F000000);
