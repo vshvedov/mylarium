@@ -1,0 +1,16 @@
+# Dev-badged launcher icon for the debug build type (com.vsh.mylarium.dev).
+# Generated into android/app/src/debug/res, which Android merges over main/ for
+# debug builds. Regenerate with: dart run flutter_launcher_icons -f flutter_launcher_icons-debug.yaml
+flutter_launcher_icons:
+  image_path: "branding/icon-dev.png"
+  min_sdk_android: 26
+  android: true
+  ios: false
+  adaptive_icon_background: "branding/icon-bg.png"
+  adaptive_icon_foreground: "branding/icon-fg-dev.png"
+  web:
+    generate: false
+  macos:
+    generate: false
+  windows:
+    generate: false

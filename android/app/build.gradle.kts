@@ -27,6 +27,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // The per-build-type `app_name` string (Mylarium vs Mylarium Dev) is injected
+    // via resValue, which requires this feature (disabled by default here).
+    buildFeatures {
+        resValues = true
+    }
+
     defaultConfig {
         applicationId = "com.vsh.mylarium"
         // You can update the following values to match your application needs.
@@ -51,7 +57,20 @@ android {
     }
 
     buildTypes {
+        // Local dev builds (debug + profile) install side by side with the
+        // Play Store app: a distinct applicationId suffix, a "Mylarium Dev"
+        // label, and the dev-badged launcher icon (android/app/src/{debug,
+        // profile}/res). The Play Store release keeps the clean id and name.
+        getByName("debug") {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Mylarium Dev")
+        }
+        getByName("profile") {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Mylarium Dev")
+        }
         release {
+            resValue("string", "app_name", "Mylarium")
             // Use the release upload key when key.properties is present;
             // otherwise fall back to debug signing for local builds.
             signingConfig = signingConfigs.getByName(
