@@ -168,12 +168,12 @@ class _LockedLibraryView extends StatelessWidget {
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Anton',
                       fontSize: 34,
                       height: 1.05,
                       letterSpacing: 0.5,
-                      color: Colors.white,
+                      color: eink ? scheme.onSurface : Colors.white,
                     ),
                   ),
                   const SizedBox(height: 10),
