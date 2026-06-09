@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/theme_controller.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
+import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/source_providers.dart';
@@ -163,27 +164,37 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: sourceId == null
-          ? const _NoSource()
-          : RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(keepReadingProvider);
-                ref.invalidate(recentlyAddedBooksProvider);
-                ref.invalidate(recentlyAddedSeriesProvider);
-                ref.invalidate(recentlyUpdatedSeriesProvider);
-              },
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 820),
-                  child: ListView(
-                    children: [
-                      for (final kind in visibleRails) railSlot(kind),
-                      if (allResolved && everythingEmpty) const _EmptyHome(),
-                    ],
+      body: Column(
+        children: [
+          // Non-blocking: visible only when the on-disk DB failed to open and we
+          // are running in memory only; renders nothing otherwise.
+          const EphemeralStorageBanner(),
+          Expanded(
+            child: sourceId == null
+                ? const _NoSource()
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(keepReadingProvider);
+                      ref.invalidate(recentlyAddedBooksProvider);
+                      ref.invalidate(recentlyAddedSeriesProvider);
+                      ref.invalidate(recentlyUpdatedSeriesProvider);
+                    },
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 820),
+                        child: ListView(
+                          children: [
+                            for (final kind in visibleRails) railSlot(kind),
+                            if (allResolved && everythingEmpty)
+                              const _EmptyHome(),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
+          ),
+        ],
+      ),
     );
   }
 

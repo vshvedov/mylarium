@@ -22,6 +22,11 @@ Future<void> main() async {
   // splash) on any DB-open failure.
   late AppDatabase db;
   late AppSetting settings;
+  // True once the on-disk open has failed and we are running on an ephemeral
+  // in-memory DB (now only genuinely catastrophic failures: openOrResetDatabase
+  // already recovers incompatible/corrupt files). Surfaced in the UI so the
+  // session is observably non-persistent rather than a silent re-prompt loop.
+  var storageIsEphemeral = false;
   try {
     db = AppDatabase();
     settings = await db.getOrCreateSettings();
@@ -29,6 +34,7 @@ Future<void> main() async {
     debugPrint('Mylarium: DB open failed, using in-memory fallback: $e\n$st');
     db = AppDatabase(NativeDatabase.memory());
     settings = await db.getOrCreateSettings();
+    storageIsEphemeral = true;
   }
   // Boot into onboarding until at least one source is connected.
   final hasSource = await db.hasAnySource();
@@ -37,6 +43,7 @@ Future<void> main() async {
     overrides: [
       appDatabaseProvider.overrideWithValue(db),
       initialSettingsProvider.overrideWithValue(settings),
+      ephemeralStorageProvider.overrideWithValue(storageIsEphemeral),
       initialLocationProvider
           .overrideWithValue(hasSource ? '/' : '/onboarding'),
     ],

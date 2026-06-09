@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' show OpenMode, sqlite3;
 import 'package:uuid/uuid.dart';
 
 import 'tables/app_settings.dart';
@@ -78,17 +80,22 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _open());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => _kSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        // Single baseline schema. The accumulated migration chain is collapsed
-        // into this baseline during alpha (there are no released users to
-        // migrate), so createAll builds every table plus the generated indexes
-        // at the current shape and there is no upgrade chain. `auto_advance`
-        // (the former v2 step) is now part of the baseline. A device carrying an
-        // older pre-collapse DB (user_version > 1) is not migrated: open will
-        // fail until its data is cleared (acceptable in alpha).
+        // The accumulated alpha migration chain (versions 1..15) was collapsed
+        // into a single baseline, so createAll builds every table and index at
+        // the current shape. The baseline is anchored at [_kBaselineVersion] =
+        // 16, deliberately ABOVE every version a pre-collapse build ever shipped
+        // (max 15), so those burned numbers can never collide with a future
+        // migration. Pre-collapse databases (user_version < 16) are not migrated
+        // here: [openOrResetDatabase] discards them before drift opens the file.
+        //
+        // Adding migrations from now on is normal: bump [_kSchemaVersion] to 17,
+        // 18, ... and add an `onUpgrade` step below. Devices already on the
+        // baseline (16+) upgrade incrementally; [openOrResetDatabase] keeps
+        // resetting only the pre-baseline and downgrade cases.
         onCreate: (m) => m.createAll(),
       );
 
@@ -952,8 +959,69 @@ class AppDatabase extends _$AppDatabase {
       });
 }
 
+/// The version at which the collapsed single-baseline schema was introduced,
+/// anchored one above the highest pre-collapse version that ever shipped (15).
+/// Any on-disk database below this came from a pre-collapse build with an
+/// incompatible shape and is reset rather than migrated, so the burned 1..15
+/// numbers can never collide with a future migration.
+const int _kBaselineVersion = 16;
+
+/// The current schema version. Equal to [_kBaselineVersion] today; raise it
+/// (17, 18, ...) and add an `onUpgrade` step in [AppDatabase.migration] for each
+/// new incremental migration. Databases in `[_kBaselineVersion, _kSchemaVersion]`
+/// migrate normally; everything else is reset by [openOrResetDatabase].
+const int _kSchemaVersion = _kBaselineVersion;
+
 LazyDatabase _open() => LazyDatabase(() async {
       final dir = await getApplicationSupportDirectory();
-      final file = File(p.join(dir.path, 'mylarium.sqlite'));
-      return NativeDatabase.createInBackground(file);
+      return openOrResetDatabase(File(p.join(dir.path, 'mylarium.sqlite')));
     });
+
+/// Opens the database at [file], first discarding any database this build cannot
+/// open incrementally: a pre-collapse database (`user_version < _kBaselineVersion`),
+/// one from a newer build (`user_version > _kSchemaVersion`, a downgrade drift
+/// cannot perform), or an unreadable/corrupt file.
+///
+/// Without this, drift throws on such a file and main() silently falls back to
+/// an in-memory database, so the connected source is lost on every launch and
+/// the app re-prompts for credentials forever. Resetting recreates the database
+/// at the baseline (a one-time reset, with credentials preserved in secure
+/// storage) and keeps the source persistent from then on. Databases already in
+/// the migratable range `[_kBaselineVersion, _kSchemaVersion]` are left for
+/// drift's normal `onUpgrade` chain.
+///
+/// Exposed for testing; production callers go through [_open].
+@visibleForTesting
+Future<QueryExecutor> openOrResetDatabase(File file) async {
+  if (await file.exists() && _isIncompatibleDatabase(file)) {
+    await _deleteDatabaseFiles(file);
+  }
+  return NativeDatabase.createInBackground(file);
+}
+
+/// True when [file] carries a schema this build cannot open incrementally: a
+/// `user_version` below the baseline (pre-collapse) or above the current schema
+/// (a downgrade), or an unreadable/corrupt file (also reset, rather than
+/// crashing the splash).
+bool _isIncompatibleDatabase(File file) {
+  try {
+    final db = sqlite3.open(file.path, mode: OpenMode.readOnly);
+    try {
+      final v = db.userVersion;
+      return v < _kBaselineVersion || v > _kSchemaVersion;
+    } finally {
+      db.dispose();
+    }
+  } catch (_) {
+    return true;
+  }
+}
+
+/// Removes the SQLite database and its WAL/SHM/journal sidecars so the next open
+/// starts from a clean baseline.
+Future<void> _deleteDatabaseFiles(File file) async {
+  for (final suffix in const ['', '-wal', '-shm', '-journal']) {
+    final sidecar = File('${file.path}$suffix');
+    if (await sidecar.exists()) await sidecar.delete();
+  }
+}

@@ -7,7 +7,7 @@ part of 'kavita_connect_controller.dart';
 // **************************************************************************
 
 String _$kavitaConnectControllerHash() =>
-    r'a0d775a444b22a96623862d58e436a097501329f';
+    r'5c2b86c18dc2cadf8aa4048bd95b0d12854edff8';
 
 /// Drives the Kavita connect screen. State is the latest [ConnectionResult]
 /// (null before the first attempt); [AsyncLoading] while a connection is in

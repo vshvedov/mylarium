@@ -46,6 +46,31 @@ final initialSettingsProvider = Provider<AppSetting>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef InitialSettingsRef = ProviderRef<AppSetting>;
+String _$ephemeralStorageHash() => r'a4c74d8358564f5d19d0d749999a02fdb83375e3';
+
+/// True when the on-disk database could not be opened at boot and main() fell
+/// back to an in-memory database. In that state nothing the user connects or
+/// reads survives a restart, which previously looked like an endless
+/// re-onboarding loop (see the schemaVersion-downgrade bug). Surfaced
+/// non-blocking (a banner / settings row) so a genuinely broken-storage device
+/// is distinguishable from a fresh first run, with no telemetry. Defaults to
+/// false (healthy); main() overrides it with the real outcome.
+///
+/// Copied from [ephemeralStorage].
+@ProviderFor(ephemeralStorage)
+final ephemeralStorageProvider = Provider<bool>.internal(
+  ephemeralStorage,
+  name: r'ephemeralStorageProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$ephemeralStorageHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef EphemeralStorageRef = ProviderRef<bool>;
 String _$themeControllerHash() => r'c43afb5ccd2c8d60f2e4fbaeeb141854b7f343ed';
 
 /// See also [ThemeController].

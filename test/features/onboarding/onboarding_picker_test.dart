@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
@@ -22,7 +23,11 @@ Widget _harness() {
       ),
     ],
   );
-  return MaterialApp.router(theme: lightTheme, routerConfig: router);
+  // The real app always mounts onboarding under the root ProviderScope (the
+  // ephemeral-storage banner reads a provider); mirror that here.
+  return ProviderScope(
+    child: MaterialApp.router(theme: lightTheme, routerConfig: router),
+  );
 }
 
 void main() {

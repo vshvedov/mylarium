@@ -34,6 +34,16 @@ AppDatabase appDatabase(Ref ref) =>
 AppSetting initialSettings(Ref ref) =>
     throw UnimplementedError('override initialSettingsProvider in main');
 
+/// True when the on-disk database could not be opened at boot and main() fell
+/// back to an in-memory database. In that state nothing the user connects or
+/// reads survives a restart, which previously looked like an endless
+/// re-onboarding loop (see the schemaVersion-downgrade bug). Surfaced
+/// non-blocking (a banner / settings row) so a genuinely broken-storage device
+/// is distinguishable from a fresh first run, with no telemetry. Defaults to
+/// false (healthy); main() overrides it with the real outcome.
+@Riverpod(keepAlive: true)
+bool ephemeralStorage(Ref ref) => false;
+
 @riverpod
 class ThemeController extends _$ThemeController {
   @override

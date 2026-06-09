@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/widgets/ephemeral_storage_banner.dart';
 import 'widgets/brand_mark.dart';
 import 'widgets/source_option_card.dart';
 
@@ -39,6 +40,12 @@ class OnboardingScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
               children: [
+                // Tells testers/users this run is non-persistent, so an in-memory
+                // fallback is not mistaken for a normal first run. Self-hides when
+                // storage is healthy.
+                const EphemeralStorageBanner(
+                  margin: EdgeInsets.only(bottom: 24),
+                ),
                 const Center(child: BrandMark(size: 76)),
                 const SizedBox(height: 20),
                 Text(

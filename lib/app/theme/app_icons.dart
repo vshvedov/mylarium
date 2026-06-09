@@ -27,6 +27,8 @@ abstract final class AppIcons {
       IconData(0xe272, fontFamily: _family, fontPackage: _package); // gearSix
   static const info =
       IconData(0xe2ce, fontFamily: _family, fontPackage: _package); // info
+  static const warning = IconData(0xe4e0,
+      fontFamily: _family, fontPackage: _package); // warning
 
   // Source kinds (onboarding picker)
   static const sourceKomga =

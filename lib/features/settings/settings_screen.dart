@@ -6,6 +6,7 @@ import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_list_row.dart';
+import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../home/home_layout.dart';
 import '../home/home_layout_controller.dart';
 import 'settings_providers.dart';
@@ -34,6 +35,9 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Persistent place to confirm whether the app is running without
+              // on-disk storage; self-hides when storage is healthy.
+              const EphemeralStorageBanner(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
                 child:
