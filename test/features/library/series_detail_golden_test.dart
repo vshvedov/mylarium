@@ -8,6 +8,7 @@ import 'package:mylarium/features/integrations/comic_vine/comic_vine_providers.d
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/pin_controllers.dart';
 import 'package:mylarium/features/library/series_detail.dart';
+import 'package:mylarium/features/offline/download_manager.dart';
 import 'package:mylarium/features/offline/offline_providers.dart';
 
 import '../../support/test_scope.dart';
@@ -75,6 +76,14 @@ Future<void> _pump(WidgetTester tester, ThemeData theme) async {
         for (var i = 0; i < 4; i++)
           cachedAssetProvider('s1', 'bk$i')
               .overrideWith((ref) => Stream.value(null)),
+        // DownloadBadge watches download progress; stub it so no live db stream
+        // (and pending timer) outlives the golden.
+        for (var i = 0; i < 4; i++)
+          downloadProgressProvider('s1', 'bk$i').overrideWith(
+            (ref) => Stream.value(
+              const DownloadProgress(state: 'none', bytesDownloaded: 0),
+            ),
+          ),
       ],
       child: MaterialApp(
         theme: theme,
