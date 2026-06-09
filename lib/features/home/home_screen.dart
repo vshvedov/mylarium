@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/theme_controller.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
+import '../../app/widgets/brand_mark.dart';
 import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
@@ -142,7 +143,9 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mylarium'),
+        // Collapses the wordmark to the brand monogram when the action icons
+        // leave too little width for the text (narrow phones).
+        title: const BrandTitle(),
         actions: [
           if (sourceId != null) SourceStatusButton(sourceId: sourceId),
           IconButton(
@@ -209,99 +212,107 @@ class HomeScreen extends ConsumerWidget {
   void _openSettings(BuildContext context, WidgetRef ref) {
     AppBottomSheet.show<void>(
       context,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Appearance',
-                style: Theme.of(sheetContext).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Consumer(
-              builder: (context, ref, _) {
-                final mode = ref.watch(themeControllerProvider);
-                return AppSegmentedToggle<AppThemeMode>(
-                  segments: const [
-                    AppSegment(AppThemeMode.light, 'Light'),
-                    AppSegment(AppThemeMode.dark, 'Dark'),
-                    AppSegment(AppThemeMode.system, 'Auto'),
-                    AppSegment(AppThemeMode.eink, 'E-ink'),
-                  ],
-                  selected: mode,
-                  onChanged: (m) =>
-                      ref.read(themeControllerProvider.notifier).set(m),
-                );
-              },
+      // Scrollable so the sheet never overflows on short phone screens (the
+      // sheet caps at roughly half the screen height; the row list can exceed
+      // that on small phones and in landscape).
+      builder: (sheetContext) => SingleChildScrollView(
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Appearance',
+                    style: Theme.of(sheetContext).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final mode = ref.watch(themeControllerProvider);
+                    return AppSegmentedToggle<AppThemeMode>(
+                      segments: const [
+                        AppSegment(AppThemeMode.light, 'Light'),
+                        AppSegment(AppThemeMode.dark, 'Dark'),
+                        AppSegment(AppThemeMode.system, 'Auto'),
+                        AppSegment(AppThemeMode.eink, 'E-ink'),
+                      ],
+                      selected: mode,
+                      onChanged: (m) =>
+                          ref.read(themeControllerProvider.notifier).set(m),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                AppListRow(
+                  icon: AppIcons.options,
+                  title: 'Settings',
+                  subtitle: 'Home rows and more',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.push('/settings');
+                  },
+                ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final sourceId =
+                        ref.watch(activeSourceIdProvider).valueOrNull;
+                    return Column(
+                      children: [
+                        AppListRow(
+                          icon: AppIcons.libraries,
+                          title: 'Libraries',
+                          enabled: sourceId != null,
+                          onTap: sourceId == null
+                              ? null
+                              : () {
+                                  Navigator.of(sheetContext).pop();
+                                  context.push('/libraries/$sourceId');
+                                },
+                        ),
+                        AppListRow(
+                          icon: AppIcons.collections,
+                          title: 'Collections & read lists',
+                          enabled: sourceId != null,
+                          onTap: sourceId == null
+                              ? null
+                              : () {
+                                  Navigator.of(sheetContext).pop();
+                                  context.push('/collections/$sourceId');
+                                },
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                AppListRow(
+                  icon: AppIcons.storage,
+                  title: 'Storage',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.push('/settings/storage');
+                  },
+                ),
+                AppListRow(
+                  icon: AppIcons.sources,
+                  title: 'Comic Vine',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    context.push('/settings/comic-vine');
+                  },
+                ),
+                AppListRow(
+                  icon: AppIcons.sources,
+                  title: 'Sources',
+                  subtitle: 'Switch, add, or remove servers',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    showSourcesSheet(context);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            AppListRow(
-              icon: AppIcons.options,
-              title: 'Settings',
-              subtitle: 'Home rows and more',
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                context.push('/settings');
-              },
-            ),
-            Consumer(
-              builder: (context, ref, _) {
-                final sourceId =
-                    ref.watch(activeSourceIdProvider).valueOrNull;
-                return Column(
-                  children: [
-                    AppListRow(
-                      icon: AppIcons.libraries,
-                      title: 'Libraries',
-                      enabled: sourceId != null,
-                      onTap: sourceId == null
-                          ? null
-                          : () {
-                              Navigator.of(sheetContext).pop();
-                              context.push('/libraries/$sourceId');
-                            },
-                    ),
-                    AppListRow(
-                      icon: AppIcons.collections,
-                      title: 'Collections & read lists',
-                      enabled: sourceId != null,
-                      onTap: sourceId == null
-                          ? null
-                          : () {
-                              Navigator.of(sheetContext).pop();
-                              context.push('/collections/$sourceId');
-                            },
-                    ),
-                  ],
-                );
-              },
-            ),
-            AppListRow(
-              icon: AppIcons.storage,
-              title: 'Storage',
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                context.push('/settings/storage');
-              },
-            ),
-            AppListRow(
-              icon: AppIcons.sources,
-              title: 'Comic Vine',
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                context.push('/settings/comic-vine');
-              },
-            ),
-            AppListRow(
-              icon: AppIcons.sources,
-              title: 'Sources',
-              subtitle: 'Switch, add, or remove servers',
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                showSourcesSheet(context);
-              },
-            ),
-          ],
+          ),
         ),
       ),
     );

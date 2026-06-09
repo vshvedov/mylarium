@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/ephemeral_storage_banner.dart';
-import 'widgets/brand_mark.dart';
+import '../../app/widgets/brand_mark.dart';
 import 'widgets/source_option_card.dart';
 
 /// First-run welcome and source picker. The brand mark and wordmark continue

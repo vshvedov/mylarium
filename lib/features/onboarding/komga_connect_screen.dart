@@ -8,7 +8,7 @@ import '../../app/widgets/app_segmented_toggle.dart';
 import '../../app/widgets/app_text_field.dart';
 import 'connection_result.dart';
 import 'onboarding_controller.dart';
-import 'widgets/brand_mark.dart';
+import '../../app/widgets/brand_mark.dart';
 
 /// Enter a Komga server URL and credentials, validate, and persist the
 /// connection. Reached from the onboarding picker, or deep-linked for re-auth

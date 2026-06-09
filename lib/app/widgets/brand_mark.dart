@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/app_theme.dart' show kSeed;
-import '../../../app/theme/design_tokens.dart';
+import '../theme/app_theme.dart' show kSeed;
+import '../theme/design_tokens.dart';
 
 /// The Mylarium "M" monogram, drawn with the same polyline as the launcher icon
 /// (`branding/icon-fg.svg`) so onboarding reads as a continuation of the app
@@ -101,4 +101,47 @@ class _MonogramPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MonogramPainter oldDelegate) => oldDelegate.eink != eink;
+}
+
+/// The app-bar brand: the "Mylarium" wordmark when it fits the space the app
+/// bar gives the title, collapsing to the [BrandMark] monogram on narrow
+/// phones where the action icons leave no room for the text. Measures the
+/// wordmark at the effective title style (honoring the user's text scale) so
+/// the swap happens exactly when the text would no longer fit.
+class BrandTitle extends StatelessWidget {
+  const BrandTitle({super.key});
+
+  static const _wordmark = 'Mylarium';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style =
+        theme.appBarTheme.titleTextStyle ?? theme.textTheme.titleLarge;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: _wordmark, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final fits = painter.width <= constraints.maxWidth;
+        painter.dispose();
+        if (fits) return const Text(_wordmark);
+        // scaleDown keeps the monogram intact even when the actions squeeze
+        // the title to less than the mark's own size.
+        return const Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SizedBox(
+            height: 36,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: BrandMark(size: 32),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

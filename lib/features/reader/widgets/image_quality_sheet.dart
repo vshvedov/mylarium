@@ -16,56 +16,63 @@ class ImageQualitySheet extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final maxLevel = kManualDecodeCeilings.length - 1;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Image quality', style: text.titleMedium),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Smart'),
-            subtitle: const Text(
-                'Mylarium picks the sharpest quality your device can handle'),
-            value: quality.smart,
-            onChanged: controller.setSmart,
-          ),
-          // Manual control: only meaningful when Smart is off. Disabled (greyed)
-          // while Smart is on so the relationship stays clear.
-          AnimatedOpacity(
-            opacity: quality.smart ? 0.4 : 1,
-            duration: const Duration(milliseconds: 150),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    // Scrollable so the sheet never overflows on short phone screens or in
+    // landscape (the sheet caps at roughly half the screen height).
+    return SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Image quality', style: text.titleMedium),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Smart'),
+                subtitle: const Text(
+                    'Mylarium picks the sharpest quality your device can handle'),
+                value: quality.smart,
+                onChanged: controller.setSmart,
+              ),
+              // Manual control: only meaningful when Smart is off. Disabled (greyed)
+              // while Smart is on so the relationship stays clear.
+              AnimatedOpacity(
+                opacity: quality.smart ? 0.4 : 1,
+                duration: const Duration(milliseconds: 150),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Smoother', style: text.labelMedium),
-                    Expanded(
-                      child: Slider(
-                        min: 0,
-                        max: maxLevel.toDouble(),
-                        divisions: maxLevel,
-                        value: quality.manualLevel.clamp(0, maxLevel).toDouble(),
-                        onChanged: quality.smart
-                            ? null
-                            : (v) => controller.setManualLevel(v.round()),
-                      ),
+                    Row(
+                      children: [
+                        Text('Smoother', style: text.labelMedium),
+                        Expanded(
+                          child: Slider(
+                            min: 0,
+                            max: maxLevel.toDouble(),
+                            divisions: maxLevel,
+                            value: quality.manualLevel.clamp(0, maxLevel).toDouble(),
+                            onChanged: quality.smart
+                                ? null
+                                : (v) => controller.setManualLevel(v.round()),
+                          ),
+                        ),
+                        Text('Sharper', style: text.labelMedium),
+                      ],
                     ),
-                    Text('Sharper', style: text.labelMedium),
+                    Text(
+                      'Sharper looks crisper but uses more memory.',
+                      style: text.bodySmall
+                          ?.copyWith(color: Theme.of(context).hintColor),
+                    ),
                   ],
                 ),
-                Text(
-                  'Sharper looks crisper but uses more memory.',
-                  style: text.bodySmall
-                      ?.copyWith(color: Theme.of(context).hintColor),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

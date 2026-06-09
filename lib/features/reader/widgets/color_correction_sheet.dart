@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../app/widgets/app_loading.dart';
+import '../../../app/widgets/app_segmented_toggle.dart';
 import '../color/color_settings.dart';
 import '../color/color_settings_controller.dart';
 
@@ -47,18 +48,26 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final async = ref.watch(_provider);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: async.when(
-        loading: () => const Padding(
-          padding: EdgeInsets.all(24),
-          child: AppLoadingIndicator(),
+    // Scrollable so the full control stack stays reachable on short phone
+    // screens (the sheet caps at roughly half the screen height).
+    return SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: async.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: AppLoadingIndicator(),
+            ),
+            error: (_, _) => Padding(
+              padding: const EdgeInsets.all(24),
+              child:
+                  Text('Color correction unavailable', style: text.bodyMedium),
+            ),
+            data: (s) => _body(context, s),
+          ),
         ),
-        error: (_, _) => Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Color correction unavailable', style: text.bodyMedium),
-        ),
-        data: (s) => _body(context, s),
       ),
     );
   }
@@ -146,15 +155,24 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                 _modeSelector(editing),
                 const SizedBox(height: 12),
                 Row(
+                  // No Spacer: the chip is the only flex child, so it keeps
+                  // its intrinsic width when it fits and ellipsizes on narrow
+                  // phones instead of overflowing.
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    FilterChip(
-                      avatar: const Icon(AppIcons.colorCorrection, size: 18),
-                      label: const Text('Auto (white point)'),
-                      selected: editing.autoLevels,
-                      onSelected: (v) =>
-                          _controller.commit(editing.copyWith(autoLevels: v)),
+                    Flexible(
+                      child: FilterChip(
+                        avatar: const Icon(AppIcons.colorCorrection, size: 18),
+                        label: const Text(
+                          'Auto (white point)',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        selected: editing.autoLevels,
+                        onSelected: (v) =>
+                            _controller.commit(editing.copyWith(autoLevels: v)),
+                      ),
                     ),
-                    const Spacer(),
                     TextButton.icon(
                       onPressed: _controller.reset,
                       icon: const Icon(AppIcons.refresh, size: 18),
@@ -170,42 +188,32 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
     );
   }
 
+  // Both selectors use the app's pill toggle: segments share the width
+  // equally and ellipsize, so the row can never overflow on narrow phones
+  // (Material's SegmentedButton keeps its intrinsic width and overflows).
   Widget _scopeSelector(ColorState s) {
     final hasSeries = widget.seriesId.isNotEmpty;
-    return SegmentedButton<ColorScopeKind>(
+    return AppSegmentedToggle<ColorScopeKind>(
       segments: [
-        const ButtonSegment(
-          value: ColorScopeKind.book,
-          label: Text('Chapter'),
-        ),
-        if (hasSeries)
-          const ButtonSegment(
-            value: ColorScopeKind.series,
-            label: Text('Series'),
-          ),
-        const ButtonSegment(
-          value: ColorScopeKind.global,
-          label: Text('Global'),
-        ),
+        const AppSegment(ColorScopeKind.book, 'Chapter'),
+        if (hasSeries) const AppSegment(ColorScopeKind.series, 'Series'),
+        const AppSegment(ColorScopeKind.global, 'Global'),
       ],
-      selected: {s.editingScope},
-      showSelectedIcon: false,
-      onSelectionChanged: (sel) => _controller.setScope(sel.first),
+      selected: s.editingScope,
+      onChanged: _controller.setScope,
     );
   }
 
   Widget _modeSelector(ColorAdjustments editing) {
-    return SegmentedButton<ColorMode>(
+    return AppSegmentedToggle<ColorMode>(
       segments: const [
-        ButtonSegment(value: ColorMode.none, label: Text('None')),
-        ButtonSegment(value: ColorMode.grayscale, label: Text('Gray')),
-        ButtonSegment(value: ColorMode.sepia, label: Text('Sepia')),
-        ButtonSegment(value: ColorMode.invert, label: Text('Invert')),
+        AppSegment(ColorMode.none, 'None'),
+        AppSegment(ColorMode.grayscale, 'Gray'),
+        AppSegment(ColorMode.sepia, 'Sepia'),
+        AppSegment(ColorMode.invert, 'Invert'),
       ],
-      selected: {editing.mode},
-      showSelectedIcon: false,
-      onSelectionChanged: (sel) =>
-          _controller.commit(editing.copyWith(mode: sel.first)),
+      selected: editing.mode,
+      onChanged: (m) => _controller.commit(editing.copyWith(mode: m)),
     );
   }
 

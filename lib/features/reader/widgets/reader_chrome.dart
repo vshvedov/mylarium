@@ -353,6 +353,12 @@ class _TopBar extends StatelessWidget {
   final VoidCallback? onNudge;
   final bool nudged;
 
+  /// Below this bar width the capture / direction / nudge icon buttons fold
+  /// into the options menu, leaving the title and the three menus room on
+  /// narrow phones (the full row of icons would otherwise crush the title and
+  /// overflow under ~370px).
+  static const double _kCompactBarWidth = 480;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -361,110 +367,140 @@ class _TopBar extends StatelessWidget {
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(AppIcons.back),
-                onPressed: onClose,
-              ),
-              Icon(
-                offline ? AppIcons.offline : AppIcons.streaming,
-                size: 18,
-                semanticLabel: offline ? 'Reading offline' : 'Streaming',
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(AppIcons.capture),
-                tooltip: 'Capture page',
-                onPressed: onCapture,
-              ),
-              if (onToggleDirection != null)
-                IconButton(
-                  icon: const Icon(AppIcons.readingDirection),
-                  tooltip: rtl ? 'Right to left' : 'Left to right',
-                  isSelected: rtl,
-                  onPressed: onToggleDirection,
-                ),
-              if (onNudge != null)
-                IconButton(
-                  icon: const Icon(AppIcons.nudge),
-                  tooltip: 'Nudge spread',
-                  isSelected: nudged,
-                  onPressed: onNudge,
-                ),
-              PopupMenuButton<ReadingMode>(
-                icon: const Icon(AppIcons.readingMode),
-                initialValue: settings.mode,
-                onSelected: (m) => onSettings(settings.copyWith(mode: m)),
-                itemBuilder: (_) => [
-                  for (final m in ReadingMode.values)
-                    PopupMenuItem(value: m, child: Text(_modeLabel(m))),
-                ],
-              ),
-              PopupMenuButton<FitMode>(
-                icon: const Icon(AppIcons.fit),
-                initialValue: settings.fit,
-                onSelected: (f) => onSettings(settings.copyWith(fit: f)),
-                itemBuilder: (_) => [
-                  for (final f in FitMode.values)
-                    PopupMenuItem(value: f, child: Text(_fitLabel(f))),
-                ],
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(AppIcons.options),
-                onSelected: (key) {
-                  switch (key) {
-                    case 'invert':
-                      onSettings(
-                          settings.copyWith(invertTaps: !settings.invertTaps));
-                    case 'doubleTap':
-                      onSettings(settings.copyWith(
-                          doubleTapZoom: !settings.doubleTapZoom));
-                    case 'animate':
-                      onSettings(settings.copyWith(
-                          animatePageTurn: !settings.animatePageTurn));
-                    case 'quality':
-                      onImageQuality();
-                    case 'color':
-                      onColorCorrection();
-                  }
-                },
-                itemBuilder: (_) => [
-                  _check('invert', 'Invert taps', settings.invertTaps),
-                  _check('doubleTap', 'Double-tap zoom', settings.doubleTapZoom),
-                  _check('animate', 'Animate page turn',
-                      settings.animatePageTurn),
-                  const PopupMenuItem<String>(
-                    value: 'quality',
-                    child: Row(
-                      children: [
-                        Icon(AppIcons.options, size: 18),
-                        SizedBox(width: 8),
-                        Text('Image quality'),
-                      ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < _kCompactBarWidth;
+              return Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(AppIcons.back),
+                    onPressed: onClose,
+                  ),
+                  Icon(
+                    offline ? AppIcons.offline : AppIcons.streaming,
+                    size: 18,
+                    semanticLabel: offline ? 'Reading offline' : 'Streaming',
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
-                  const PopupMenuItem<String>(
-                    value: 'color',
-                    child: Row(
-                      children: [
-                        Icon(AppIcons.colorCorrection, size: 18),
-                        SizedBox(width: 8),
-                        Text('Color correction'),
-                      ],
+                  if (!compact)
+                    IconButton(
+                      icon: const Icon(AppIcons.capture),
+                      tooltip: 'Capture page',
+                      onPressed: onCapture,
                     ),
+                  if (!compact && onToggleDirection != null)
+                    IconButton(
+                      icon: const Icon(AppIcons.readingDirection),
+                      tooltip: rtl ? 'Right to left' : 'Left to right',
+                      isSelected: rtl,
+                      onPressed: onToggleDirection,
+                    ),
+                  if (!compact && onNudge != null)
+                    IconButton(
+                      icon: const Icon(AppIcons.nudge),
+                      tooltip: 'Nudge spread',
+                      isSelected: nudged,
+                      onPressed: onNudge,
+                    ),
+                  PopupMenuButton<ReadingMode>(
+                    icon: const Icon(AppIcons.readingMode),
+                    initialValue: settings.mode,
+                    onSelected: (m) => onSettings(settings.copyWith(mode: m)),
+                    itemBuilder: (_) => [
+                      for (final m in ReadingMode.values)
+                        PopupMenuItem(value: m, child: Text(_modeLabel(m))),
+                    ],
+                  ),
+                  PopupMenuButton<FitMode>(
+                    icon: const Icon(AppIcons.fit),
+                    initialValue: settings.fit,
+                    onSelected: (f) => onSettings(settings.copyWith(fit: f)),
+                    itemBuilder: (_) => [
+                      for (final f in FitMode.values)
+                        PopupMenuItem(value: f, child: Text(_fitLabel(f))),
+                    ],
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(AppIcons.options),
+                    onSelected: (key) {
+                      switch (key) {
+                        case 'invert':
+                          onSettings(settings.copyWith(
+                              invertTaps: !settings.invertTaps));
+                        case 'doubleTap':
+                          onSettings(settings.copyWith(
+                              doubleTapZoom: !settings.doubleTapZoom));
+                        case 'animate':
+                          onSettings(settings.copyWith(
+                              animatePageTurn: !settings.animatePageTurn));
+                        case 'quality':
+                          onImageQuality();
+                        case 'color':
+                          onColorCorrection();
+                        case 'capture':
+                          onCapture();
+                        case 'direction':
+                          onToggleDirection?.call();
+                        case 'nudge':
+                          onNudge?.call();
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      // The actions hidden from the bar in compact mode stay
+                      // reachable here.
+                      if (compact)
+                        const PopupMenuItem<String>(
+                          value: 'capture',
+                          child: Row(
+                            children: [
+                              Icon(AppIcons.capture, size: 18),
+                              SizedBox(width: 8),
+                              Text('Capture page'),
+                            ],
+                          ),
+                        ),
+                      if (compact && onToggleDirection != null)
+                        _check('direction', 'Right to left', rtl),
+                      if (compact && onNudge != null)
+                        _check('nudge', 'Nudge spread', nudged),
+                      _check('invert', 'Invert taps', settings.invertTaps),
+                      _check('doubleTap', 'Double-tap zoom',
+                          settings.doubleTapZoom),
+                      _check('animate', 'Animate page turn',
+                          settings.animatePageTurn),
+                      const PopupMenuItem<String>(
+                        value: 'quality',
+                        child: Row(
+                          children: [
+                            Icon(AppIcons.options, size: 18),
+                            SizedBox(width: 8),
+                            Text('Image quality'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'color',
+                        child: Row(
+                          children: [
+                            Icon(AppIcons.colorCorrection, size: 18),
+                            SizedBox(width: 8),
+                            Text('Color correction'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

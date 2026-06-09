@@ -7,7 +7,7 @@ import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_text_field.dart';
 import 'connection_result.dart';
 import 'kavita_connect_controller.dart';
-import 'widgets/brand_mark.dart';
+import '../../app/widgets/brand_mark.dart';
 
 /// Enter a Kavita server URL and API key, validate against the live server, and
 /// persist the connection. Reached from the onboarding picker, or deep-linked
