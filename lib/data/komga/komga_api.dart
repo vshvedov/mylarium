@@ -92,7 +92,8 @@ class KomgaApi implements ContentApi {
   /// in [bestEffort] so a disabled actuator or non-admin user just omits a row.
   @override
   Future<ServerFacts> fetchServerFacts() async {
-    final libraries = await listLibraries(); // throws if down/unauthorized
+    final libraries =
+        await serverFactsAnchor(listLibraries); // throws ContentException only
     final versionF = bestEffort(fetchVersion);
     final accountF = bestEffort(_fetchAccount);
     final seriesF =
