@@ -27,6 +27,10 @@ class AppPaths {
   /// User page-captures (permanent, user-managed) root.
   static const capturesDir = 'media/captures';
 
+  /// Imported local comics (permanent, user-managed) root. Copies made by the
+  /// Local files source live here; never LRU-evicted.
+  static const localDir = 'media/local';
+
   /// Test seam: when set, [resolve] joins against this root instead of the
   /// platform applicationSupport directory (lets tests simulate the cross-install
   /// container-path change that the relative-path promise guards).
@@ -49,6 +53,11 @@ class AppPaths {
   /// Relative path for a manually-downloaded archive (separate from the cache).
   static String downloadRelativePath(String sourceId, String bookId) =>
       p.join(downloadsDir, _safe(sourceId), '${_safe(bookId)}.archive');
+
+  /// Relative path for an imported local comic archive. The [comicId] (uuid)
+  /// keys the file; the extension is irrelevant (decode sniffs magic bytes).
+  static String localRelativePath(String sourceId, String comicId) =>
+      p.join(localDir, _safe(sourceId), '${_safe(comicId)}.archive');
 
   /// Relative path for a saved page capture. The [id] (uuid) keys the file so a
   /// book can hold many captures. Ids are sanitized so a hostile id cannot

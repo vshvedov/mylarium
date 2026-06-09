@@ -45,6 +45,16 @@ typedef PinnedRaw = ({
   bool resolved,
 });
 
+/// One grouped row of the local series grid: the series display name, its sort
+/// key, the number of local books in it, and the id of its first book (by
+/// numberSort) whose thumbnail serves as the series cover.
+typedef LocalSeriesRaw = ({
+  String series,
+  String seriesSort,
+  int booksCount,
+  String coverComicId,
+});
+
 /// A resolved home-rail snapshot row: a pointer joined to its owner (series or
 /// book) for display + the owner's library id (used to hide a locked library's
 /// item). [title] is null when the owner row is not cached, in which case the
@@ -661,6 +671,68 @@ class AppDatabase extends _$AppDatabase {
 
   Future<LocalComic?> getLocalComic(String id) =>
       (select(localComics)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  /// Duplicate-import probe (PRD OQ3): a row on [sourceId] with the same byte
+  /// size and sha256 is the same file. Returns the existing row or null.
+  Future<LocalComic?> findLocalComicByHash(
+    String sourceId,
+    int sizeBytes,
+    String contentHash,
+  ) =>
+      (select(localComics)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.sizeBytes.equals(sizeBytes) &
+                t.contentHash.equals(contentHash))
+            ..limit(1))
+          .getSingleOrNull();
+
+  /// The local series grid: one row per distinct series on [sourceId], ordered
+  /// by sort key, with the book count and the id of the first book (by
+  /// numberSort, then title) for the cover thumbnail.
+  Stream<List<LocalSeriesRaw>> watchLocalSeries(String sourceId) =>
+      customSelect(
+        'SELECT series, series_sort, COUNT(*) AS books_count, '
+        '(SELECT c2.id FROM local_comics c2 '
+        'WHERE c2.source_id = ?1 AND c2.series = local_comics.series '
+        'ORDER BY c2.number_sort IS NULL, c2.number_sort, c2.title LIMIT 1) '
+        'AS cover_comic_id '
+        'FROM local_comics WHERE source_id = ?1 '
+        'GROUP BY series, series_sort ORDER BY series_sort',
+        variables: [Variable.withString(sourceId)],
+        readsFrom: {localComics},
+      ).watch().map(
+            (rows) => [
+              for (final r in rows)
+                (
+                  series: r.read<String>('series'),
+                  seriesSort: r.read<String>('series_sort'),
+                  booksCount: r.read<int>('books_count'),
+                  coverComicId: r.read<String>('cover_comic_id'),
+                ),
+            ],
+          );
+
+  /// Books of one local series, ordered like the server-source series detail
+  /// (numberSort, then title), with unnumbered specials (NULL numberSort)
+  /// LAST rather than SQLite's default NULL-first.
+  Stream<List<LocalComic>> watchLocalBooks(String sourceId, String series) =>
+      (select(localComics)
+            ..where(
+                (t) => t.sourceId.equals(sourceId) & t.series.equals(series))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.numberSort.isNull()),
+              (t) => OrderingTerm(expression: t.numberSort),
+              (t) => OrderingTerm(expression: t.title),
+            ]))
+          .watch();
+
+  /// The device's single "Local files" source row, or null before the first
+  /// import. 'local' is `SourceKind.local.name` (core/db does not import the
+  /// data layer, so the name string is used directly, like 'completed' above).
+  Future<Source?> localFilesSource() =>
+      (select(sources)..where((t) => t.kind.equals('local')))
+          .getSingleOrNull();
 
   // --- Captures (page-capture gallery) -------------------------------------
 

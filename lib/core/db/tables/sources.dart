@@ -1,7 +1,8 @@
 import 'package:drift/drift.dart';
 
-/// One row per connected content source (a Komga server today; local sources
-/// land in T7). [id] is an app-generated identifier (uuid), never the server's.
+/// One row per connected content source (a Komga or Kavita server, the Local
+/// files source, or an Android folder library). [id] is an app-generated
+/// identifier (uuid), never the server's.
 ///
 /// [kind] and [authKind] store enum NAME strings (not indexes) so that adding
 /// new [SourceKind] variants later cannot shift the meaning of existing rows.
