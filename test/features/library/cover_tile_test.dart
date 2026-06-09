@@ -106,6 +106,53 @@ void main() {
     expect(find.byKey(const ValueKey('coverShadow')), findsOneWidget);
   });
 
+  testWidgets('a stacked tile keeps the same cover size as a flat tile (the '
+      'deck overhangs to the right instead of cropping the cover)', (
+    tester,
+  ) async {
+    final scope = await TestScope.create();
+    addTearDown(scope.db.close);
+
+    Future<Size> coverSizeFor({required bool stacked}) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            ...scope.overrides,
+            coverImageProvider('s', 'series', 'x')
+                .overrideWith((ref) async => null),
+          ],
+          child: MaterialApp(
+            theme: darkTheme,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 200,
+                  child: CoverTile(
+                    sourceId: 's',
+                    ownerType: 'series',
+                    ownerId: 'x',
+                    title: 'Title',
+                    stacked: stacked,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      return tester.getSize(find.byKey(const ValueKey('coverShadow')));
+    }
+
+    final flat = await coverSizeFor(stacked: false);
+    final stacked = await coverSizeFor(stacked: true);
+    // The series deck must not steal width from the cover: its front cover is
+    // exactly the size a chapter's flat cover would be, so the thumbnail is the
+    // same (the deck "pages" peek past the right edge, widening the tile).
+    expect(stacked, flat);
+  });
+
   testWidgets('ReadCorner paints a fold (with its checkmark)', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

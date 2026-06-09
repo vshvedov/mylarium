@@ -48,6 +48,21 @@ class CoverImage extends ConsumerWidget {
       duration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 200),
+      // Force children to fill the box. The default switcher layout uses a
+      // loose Stack, under which an unsized Image (fit: cover) shrinks to its
+      // intrinsic aspect and centres, leaving a gap when the box aspect differs
+      // from the cover's. That gap is invisible on flat tiles (box aspect ~=
+      // cover aspect) but shows the deck card through the top/bottom of a
+      // narrower stacked-series cover. StackFit.expand ties the image to the
+      // box so the ClipRRect rounds the real image edges, matching flat tiles.
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
+        children: [
+          ...previousChildren,
+          ?currentChild,
+        ],
+      ),
       child: child,
     );
   }

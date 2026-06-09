@@ -15,10 +15,6 @@ const double _deckStep = 5;
 /// Vertical inset of each back card, so deeper cards read as shorter "pages".
 const double _deckVStep = 4;
 
-/// Width reserved on the right of a stacked cover for the deck to peek into, so
-/// the whole stack still fits the tile's existing footprint.
-const double _deckExtent = 2 * _deckStep;
-
 /// A cover tile: rounded cover image with a title/subtitle beneath. Used in
 /// grids and horizontal rails. The cover keeps a 0.7 aspect (comic portrait),
 /// sits on a subtle elevation, and scales briefly on press (with a light
@@ -138,10 +134,15 @@ class CoverTile extends StatelessWidget {
   }
 }
 
-/// The layered "stack of books" treatment: two neutral cards stepping out along
-/// the right edge, with [cover] painted on top. The cover is inset by
-/// [_deckExtent] on the right so the whole deck still fits the tile footprint;
-/// the back cards sit OUTSIDE the cover's own clip so their shadows render.
+/// The layered "stack of books" treatment: [cover] fills the tile at the same
+/// size a flat (chapter) tile uses, with two neutral cards stepping out PAST its
+/// right edge so a multi-book series reads as a small deck. The cards overhang
+/// the cover's footprint (the Stack does not clip), widening the painted tile by
+/// up to `2 * _deckStep`; that overhang lands in the rail separator / grid
+/// spacing (both wider than it), so it never collides with a neighbour, and the
+/// cover keeps the full thumbnail instead of being cropped narrower than a
+/// chapter. The back cards sit OUTSIDE the cover's own clip so their shadows
+/// render.
 class _Deck extends StatelessWidget {
   const _Deck({required this.cover});
 
@@ -153,22 +154,18 @@ class _Deck extends StatelessWidget {
       key: const ValueKey('coverDeck'),
       clipBehavior: Clip.none,
       children: [
-        // Deepest card first so the front cover paints last (on top).
+        // Deepest card first so the front cover paints last (on top). Each card
+        // steps further past the right edge (and is inset top/bottom) so deeper
+        // cards read as shorter "pages" peeking from behind the cover.
         for (final j in const [2, 1])
           Positioned(
             left: 0,
-            right: _deckExtent - j * _deckStep,
+            right: -j * _deckStep,
             top: j * _deckVStep,
             bottom: j * _deckVStep,
             child: const _DeckCard(),
           ),
-        Positioned(
-          left: 0,
-          top: 0,
-          bottom: 0,
-          right: _deckExtent,
-          child: cover,
-        ),
+        Positioned.fill(child: cover),
       ],
     );
   }
