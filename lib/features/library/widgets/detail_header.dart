@@ -291,12 +291,17 @@ class HeroAction extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: fg),
         const SizedBox(width: 9),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: fg,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.3,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
           ),
         ),
       ],

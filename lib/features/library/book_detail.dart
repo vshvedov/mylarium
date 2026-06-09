@@ -79,11 +79,33 @@ class BookDetailScreen extends ConsumerWidget {
                       actions: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          HeroAction(
-                            label: inProgress ? 'Continue reading' : 'Read',
-                            icon: AppIcons.read,
-                            onPressed: () =>
-                                context.push('/reader/$sourceId/$bookId'),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: HeroAction(
+                                  label:
+                                      inProgress ? 'Continue reading' : 'Read',
+                                  icon: AppIcons.read,
+                                  onPressed: () => context
+                                      .push('/reader/$sourceId/$bookId'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Same non-committal peek as the long-press
+                              // Preview: opens the reader without reporting
+                              // progress or marking it "reading now".
+                              Expanded(
+                                flex: 1,
+                                child: HeroAction(
+                                  label: 'Preview',
+                                  icon: AppIcons.preview,
+                                  style: HeroActionStyle.ghost,
+                                  onPressed: () => context.push(
+                                      '/reader/$sourceId/$bookId?preview=true'),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 12),
                           _MarkReadControl(
