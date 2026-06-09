@@ -20,8 +20,9 @@ final _trailingNumber = RegExp(r'(?:#\s*|\s)(\d{1,4}(?:\.\d+)?)\s*$');
 /// without extension). Strategy: drop the extension and bracketed release
 /// junk, lift out a `v12`/`Vol. 2` volume token and a `c100`/`Chapter 7.5`/
 /// trailing-number chapter token, and treat what is left as the series. When
-/// nothing is left, the cleaned filename itself is the series and no tokens
-/// are claimed (a name like `c003.cbz` is a title, not chapter 3 of nothing).
+/// nothing is left, the cleaned filename itself becomes the series (a name like
+/// `c003.cbz` stays findable under its own name) while the extracted tokens
+/// are still recorded.
 FilenameMeta deriveFromFilename(String fileName) {
   var s = fileName;
   final dot = s.lastIndexOf('.');
@@ -51,8 +52,8 @@ FilenameMeta deriveFromFilename(String fileName) {
 
   final series = _tidy(s);
   if (series.isEmpty) {
-    // The name was nothing but tokens; treat it as an opaque title instead of
-    // claiming a series-less chapter.
+    // The name was nothing but tokens; keep the cleaned filename as the series
+    // so the book stays findable, alongside whatever tokens were extracted.
     return FilenameMeta(series: cleanedName, number: number, volume: volume);
   }
   return FilenameMeta(series: series, number: number, volume: volume);

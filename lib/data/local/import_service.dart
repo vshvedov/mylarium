@@ -77,17 +77,17 @@ class ImportService {
   /// Returns the id of the device's single "Local files" source, creating its
   /// Sources row on first use. Callers that add the row must invalidate the
   /// active-source provider (a T2 concern; see the keepAlive gotcha).
-  Future<String> ensureLocalSource() async {
-    final existing = await _db.localFilesSource();
-    if (existing != null) return existing.id;
-    final id = _newId();
-    await _db.upsertSource(SourcesCompanion.insert(
-      id: id,
-      kind: SourceKind.local.name,
-      label: 'Local files',
-    ));
-    return id;
-  }
+  Future<String> ensureLocalSource() => _db.transaction(() async {
+        final existing = await _db.localFilesSource();
+        if (existing != null) return existing.id;
+        final id = _newId();
+        await _db.upsertSource(SourcesCompanion.insert(
+          id: id,
+          kind: SourceKind.local.name,
+          label: 'Local files',
+        ));
+        return id;
+      });
 
   /// Imports [files] one at a time (archive decode is IO-bound and the UI
   /// wants ordered per-file progress); a failure in one file never aborts the
@@ -144,7 +144,13 @@ class ImportService {
 
       // 4. Metadata: ComicInfo.xml inside the archive wins; the filename
       // fills the gaps.
-      final infoBytes = await _extractor.tryReadEntry(f.path, 'ComicInfo.xml');
+      Uint8List? infoBytes;
+      try {
+        infoBytes = await _extractor.tryReadEntry(f.path, 'ComicInfo.xml');
+      } on ArchiveException {
+        // An unreadable ComicInfo entry degrades to filename heuristics; it
+        // must not fail an import whose pages decoded fine.
+      }
       final info = infoBytes == null ? null : parseComicInfo(infoBytes);
       final fromName = deriveFromFilename(f.name);
       final series = info?.series ?? fromName.series;

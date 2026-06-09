@@ -100,4 +100,19 @@ void main() {
       rethrow;
     }
   });
+
+  test('CBR: tryReadEntry path runs (skipped without native lib)', () async {
+    const fixture = 'test/core/archive/fixtures/test.rar';
+    try {
+      final bytes = await extractor.tryReadEntry(fixture, 'ComicInfo.xml');
+      // The fixture has no ComicInfo.xml; a working decode returns null.
+      expect(bytes, isNull);
+    } on Object catch (e) {
+      if (e.toString().toLowerCase().contains('native library')) {
+        markTestSkipped('unrar native lib not built under flutter test');
+        return;
+      }
+      rethrow;
+    }
+  });
 }

@@ -37,4 +37,20 @@ Future<void> main(List<String> args) async {
   } on ArchiveException catch (e) {
     stdout.writeln('ArchiveExtractor: ${e.message} (decode path ran OK)');
   }
+
+  // tryReadEntry against the fixture (exercises the RAR branch of
+  // _tryReadEntrySync). The bundled fixture has .txt entries, not ComicInfo.xml,
+  // so null is the expected result; a working decode returns without throwing.
+  try {
+    final infoBytes =
+        await const ArchiveExtractor().tryReadEntry(path, 'ComicInfo.xml');
+    if (infoBytes == null) {
+      stdout.writeln('tryReadEntry(ComicInfo.xml): null (no such entry - OK)');
+    } else {
+      stdout.writeln(
+          'tryReadEntry(ComicInfo.xml): found ${infoBytes.length} bytes');
+    }
+  } on ArchiveException catch (e) {
+    stdout.writeln('tryReadEntry: ${e.message} (RAR branch ran OK)');
+  }
 }
