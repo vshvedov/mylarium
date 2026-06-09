@@ -129,7 +129,8 @@ class KavitaApi implements ContentApi {
 
   @override
   Future<ServerFacts> fetchServerFacts() async {
-    final libraries = await listLibraries(); // authoritative online/auth probe
+    final libraries = await serverFactsAnchor(
+        listLibraries); // authoritative probe; throws ContentException only
     final versionF = bestEffort(fetchVersion);
     final accountF = bestEffort(_fetchAccount);
     final seriesF = bestEffort(

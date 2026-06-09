@@ -1,3 +1,4 @@
+import '../../../core/network/content_exception.dart';
 import '../content_source.dart' show SourceKind;
 
 /// One labelled row of source-specific detail (disk, OS, install id, health,
@@ -58,5 +59,25 @@ Future<T?> bestEffort<T>(Future<T> Function() task) async {
     return await task();
   } catch (_) {
     return null;
+  }
+}
+
+/// Runs [probe], the authoritative online/auth probe for `fetchServerFacts`,
+/// guaranteeing it throws only [ContentException]. A non-[ContentException]
+/// leaking out (e.g. a `TypeError` when a reverse proxy answers 200 with a
+/// non-JSON login page, so a `res.data as List` cast fails before `_guard` can
+/// map it) is remapped to [ContentErrorKind.unreachable]. This keeps
+/// `fetchServerFacts` to its documented "throws ContentException only" contract
+/// so the details popup renders its offline state instead of a generic error.
+Future<T> serverFactsAnchor<T>(Future<T> Function() probe) async {
+  try {
+    return await probe();
+  } on ContentException {
+    rethrow;
+  } catch (_) {
+    throw const ContentException(
+      ContentErrorKind.unreachable,
+      'Could not reach the server.',
+    );
   }
 }

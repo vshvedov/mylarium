@@ -90,4 +90,15 @@ void main() {
     adapter.onGet('/api/v1/libraries', (s) => s.reply(503, {}));
     await expectLater(api.fetchServerFacts(), throwsA(isA<ContentException>()));
   });
+
+  test('throws ContentException when libraries returns a non-JSON 200 body',
+      () async {
+    // A reverse proxy can answer 200 OK with an HTML login page instead of
+    // JSON; Dio yields a String, so `res.data as List` throws a TypeError, not
+    // a DioException. fetchServerFacts must still surface a ContentException so
+    // the details popup renders its offline state, not a generic error.
+    adapter.onGet('/api/v1/libraries',
+        (s) => s.reply(200, '<!DOCTYPE html><html>login</html>'));
+    await expectLater(api.fetchServerFacts(), throwsA(isA<ContentException>()));
+  });
 }
