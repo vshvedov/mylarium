@@ -10,8 +10,8 @@ class FilenameMeta {
 }
 
 final _bracketGroups = RegExp(r'[\[({][^\])}]*[\])}]');
-final _volumeToken =
-    RegExp(r'\bv(?:ol(?:ume)?)?\.?\s*(\d+)\b', caseSensitive: false);
+final _volumeToken = RegExp(r'\bv(?:ol(?:ume)?)?\.?\s*(\d+)(?:\s*-\s*\d+)?\b',
+    caseSensitive: false);
 final _chapterToken = RegExp(r'\bc(?:h(?:apter)?)?\.?\s*(\d+(?:\.\d+)?)\b',
     caseSensitive: false);
 final _trailingNumber = RegExp(r'(?:#\s*|\s)(\d{1,4}(?:\.\d+)?)\s*$');
@@ -66,8 +66,11 @@ String sortKey(String value) {
   return s.replaceAll(RegExp(r'\s+'), ' ');
 }
 
-String _tidy(String s) =>
-    s.replaceAll(RegExp(r'\s+'), ' ').replaceAll(RegExp(r'[\s\-]+$'), '').trim();
+String _tidy(String s) => s
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .replaceFirst(RegExp(r'^[\s\-]+'), '')
+    .replaceAll(RegExp(r'[\s\-]+$'), '')
+    .trim();
 
 String _stripZeros(String n) {
   final stripped = n.replaceFirst(RegExp(r'^0+(?=\d)'), '');

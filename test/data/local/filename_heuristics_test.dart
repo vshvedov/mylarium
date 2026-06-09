@@ -48,6 +48,18 @@ void main() {
     expect(m.number, '3');
   });
 
+  test('volume range leaves no debris in the series', () {
+    final m = deriveFromFilename('Berserk v01-03 (1989-1990).cbz');
+    expect(m.series, 'Berserk');
+    expect(m.volume, 1);
+  });
+
+  test('leading separators are stripped from the series', () {
+    final m = deriveFromFilename('c001 - Series Name.cbz');
+    expect(m.series, 'Series Name');
+    expect(m.number, '1');
+  });
+
   test('sortKey lowercases and strips leading articles', () {
     expect(sortKey('The Walking Dead'), 'walking dead');
     expect(sortKey('A Bride\'s Story'), 'bride\'s story');
