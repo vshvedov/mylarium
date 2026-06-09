@@ -3,9 +3,14 @@ import 'content_api.dart';
 
 /// The kind of a content source. Persisted as the enum NAME string (never the
 /// index), so adding variants later cannot reinterpret existing rows.
+///
+/// [local] is the device's single "Local files" source (copy-on-import);
+/// [safTree] is one Android folder library (T4). The remaining values are
+/// per-comic provenance kinds stored on `LocalComics.kind`, not source kinds.
 enum SourceKind {
   komga,
   kavita,
+  local,
   localCopy,
   safTree,
   iosBookmark,
