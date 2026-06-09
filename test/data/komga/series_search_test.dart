@@ -2,22 +2,62 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/data/source/models/series_search.dart';
 
 void main() {
-  test('full text goes into the body as fullTextSearch', () {
+  test('full text is expanded to a fuzzy query in the body', () {
     const search = SeriesSearch(fullText: 'batman');
-    expect(search.toRequestBody(), {'fullTextSearch': 'batman'});
+    expect(search.toRequestBody(), {'fullTextSearch': '(batman* OR batman~)'});
   });
 
   test('empty full text is omitted from the body', () {
     expect(const SeriesSearch(fullText: '').fullTextSearch, isNull);
     expect(const SeriesSearch(fullText: '').toRequestBody(), isEmpty);
+    expect(const SeriesSearch(fullText: '   ').toRequestBody(), isEmpty);
     expect(const SeriesSearch().toRequestBody(), isEmpty);
   });
 
   test('full text and filters combine in one body', () {
     const search = SeriesSearch(fullText: 'batman', readStatus: ['UNREAD']);
     final body = search.toRequestBody();
-    expect(body['fullTextSearch'], 'batman');
+    expect(body['fullTextSearch'], '(batman* OR batman~)');
     expect(body['condition'], isNotNull);
+  });
+
+  group('buildFuzzyFullText', () {
+    test('null and blank yield null', () {
+      expect(buildFuzzyFullText(null), isNull);
+      expect(buildFuzzyFullText(''), isNull);
+      expect(buildFuzzyFullText('   '), isNull);
+    });
+
+    test('a word becomes a prefix-or-fuzzy clause', () {
+      expect(buildFuzzyFullText('spider'), '(spider* OR spider~)');
+    });
+
+    test('multiple words each get their own clause', () {
+      expect(
+        buildFuzzyFullText('spider man'),
+        '(spider* OR spider~) (man* OR man~)',
+      );
+    });
+
+    test('extra whitespace is collapsed', () {
+      expect(buildFuzzyFullText('  spider   man  '),
+          '(spider* OR spider~) (man* OR man~)');
+    });
+
+    test('short (1-2 char) tokens get a prefix only, no noisy fuzzy', () {
+      expect(buildFuzzyFullText('x'), 'x*');
+      expect(buildFuzzyFullText('dc'), 'dc*');
+    });
+
+    test('tokens with Lucene specials pass through verbatim', () {
+      // A trailing ~ on a hyphenated compound matches nothing on Komga.
+      expect(buildFuzzyFullText('spider-man'), 'spider-man');
+    });
+
+    test('punctuation-only tokens are dropped', () {
+      expect(buildFuzzyFullText('-'), isNull);
+      expect(buildFuzzyFullText('spider -'), '(spider* OR spider~)');
+    });
   });
 
   test('filters serialize into an allOf of anyOf condition groups', () {

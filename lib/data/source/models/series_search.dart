@@ -64,10 +64,54 @@ class SeriesSearch {
     }
 
     final body = <String, Object?>{};
-    if (fullTextSearch != null) body['fullTextSearch'] = fullTextSearch;
+    final fuzzy = buildFuzzyFullText(fullText);
+    if (fuzzy != null) body['fullTextSearch'] = fuzzy;
     if (groups.isNotEmpty) {
       body['condition'] = {'allOf': groups};
     }
     return body;
   }
+}
+
+/// Lucene specials that, inside a word token, mean we must not append fuzzy or
+/// wildcard operators to it: a trailing `~` on a hyphenated compound (e.g.
+/// `spider-man~`) matches nothing on Komga, so such tokens are passed through
+/// verbatim instead.
+const _luceneSpecials = r'+-&|!(){}[]^"~*?:\/';
+
+/// Builds a typo-tolerant Komga/Lucene `fullTextSearch` string from raw user
+/// input, or null when there is no usable query.
+///
+/// Komga full-text search is exact-token by default: a plain misspelling
+/// returns zero results. So each clean word token is expanded to
+/// `(token* OR token~)`: the trailing `*` gives instant prefix matching while
+/// the user is still typing, and the trailing `~` (fuzzy, edit distance ~2)
+/// rescues transposed or wrong letters that a prefix cannot. Tokens that carry
+/// Lucene specials (notably hyphenated compounds) are passed through verbatim
+/// because operators would break them, and the noisy `~` is skipped on very
+/// short (1-2 char) tokens where a prefix alone suffices.
+String? buildFuzzyFullText(String? raw) {
+  if (raw == null) return null;
+  final tokens = raw
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
+  if (tokens.isEmpty) return null;
+
+  final clauses = <String>[];
+  for (final t in tokens) {
+    // Drop punctuation-only tokens; a lone operator would zero the query.
+    if (!t.contains(RegExp(r'[A-Za-z0-9]'))) continue;
+    final hasSpecial = t.split('').any(_luceneSpecials.contains);
+    if (hasSpecial) {
+      clauses.add(t);
+    } else if (t.length <= 2) {
+      clauses.add('$t*');
+    } else {
+      clauses.add('($t* OR $t~)');
+    }
+  }
+  if (clauses.isEmpty) return null;
+  return clauses.join(' ');
 }

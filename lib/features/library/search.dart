@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_loading.dart';
@@ -10,6 +12,7 @@ import '../../data/source/models/series_dto.dart';
 import '../../data/source/models/series_search.dart';
 import '../../data/source/source_providers.dart';
 import 'library_browse_controllers.dart';
+import 'widgets/item_context_menu.dart';
 import 'widgets/library_tiles.dart';
 
 /// Sort options for series search.
@@ -62,19 +65,58 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   AsyncValue<List<SeriesDto>> _results = const AsyncData([]);
 
+  /// Debounce for live, as-you-type querying: each keystroke reschedules the
+  /// run so we only hit the server once typing settles.
+  static const _debounceDelay = Duration(milliseconds: 300);
+  Timer? _debounce;
+
+  /// Monotonic id of the latest requested search. A slow earlier request whose
+  /// id no longer matches is discarded so out-of-order responses cannot clobber
+  /// the results of a newer query.
+  int _searchSeq = 0;
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
+  /// Reschedules a debounced live search as the user types.
+  void _onQueryChanged(String v) {
+    _query = v;
+    _debounce?.cancel();
+    _debounce = Timer(_debounceDelay, _run);
+  }
+
+  /// True when at least one filter chip is active. A filter-only selection
+  /// (no text) is still a real query worth running.
+  bool get _hasFilters =>
+      _libraryIds.isNotEmpty ||
+      _status.isNotEmpty ||
+      _readStatus.isNotEmpty ||
+      _genres.isNotEmpty ||
+      _tags.isNotEmpty ||
+      _publishers.isNotEmpty ||
+      _ageRatings.isNotEmpty;
+
   Future<void> _run() async {
+    _debounce?.cancel();
+    final seq = ++_searchSeq;
+    // With nothing typed and no filter active, stay idle rather than listing
+    // the whole library.
+    if (_query.trim().isEmpty && !_hasFilters) {
+      setState(() => _results = const AsyncData([]));
+      return;
+    }
     final repo = await ref.read(searchRepositoryProvider.future);
+    if (seq != _searchSeq) return;
     if (repo == null) {
       setState(() => _results = const AsyncData([]));
       return;
     }
     final lock = await ref.read(appLockProvider.future);
+    if (seq != _searchSeq) return;
     setState(() => _results = const AsyncLoading());
     try {
       final search = SeriesSearch(
@@ -94,12 +136,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       );
       // Series in a locked library are never surfaced in search; revealing them
       // requires unlocking the library.
+      if (seq != _searchSeq) return;
       final results = [
         for (final s in page.content)
           if (!lock.isLocked(s.libraryId)) s,
       ];
       if (mounted) setState(() => _results = AsyncData(results));
     } catch (e, st) {
+      if (seq != _searchSeq) return;
       if (mounted) setState(() => _results = AsyncError(e, st));
     }
   }
@@ -117,7 +161,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           hint: 'Search series',
           prefixIcon: AppIcons.search,
           textInputAction: TextInputAction.search,
-          onChanged: (v) => _query = v,
+          onChanged: _onQueryChanged,
           onSubmitted: (_) => _run(),
         ),
         actions: [
@@ -180,7 +224,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   const AppLoadingIndicator(),
               error: (e, _) => Center(child: Text('Search failed: $e')),
               data: (series) => series.isEmpty
-                  ? const Center(child: Text('No results.'))
+                  ? Center(
+                      child: Text(
+                        _query.trim().isEmpty && !_hasFilters
+                            ? 'Search series by title.'
+                            : 'No results.',
+                      ),
+                    )
                   : GridView.builder(
                       padding: const EdgeInsets.all(12),
                       gridDelegate:
@@ -200,6 +250,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           title: s.title,
                           stacked: s.booksCount > 1,
                           onTap: () => _openSeries(context, s),
+                          onLongPress: () => showItemContextMenu(
+                            context,
+                            sourceId: sourceId,
+                            ownerType: 'series',
+                            ownerId: s.id,
+                            title: s.title,
+                          ),
                         );
                       },
                     ),
