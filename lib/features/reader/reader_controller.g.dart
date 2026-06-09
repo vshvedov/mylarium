@@ -45,8 +45,9 @@ abstract class _$ReaderController
 /// Loads a book for reading, offline-first: a cached archive is read from disk
 /// (no network); otherwise pages stream online (per-page, through the byte
 /// cache). The full-chapter offline backfill is NOT started here: the reader
-/// defers it to close/background so it never competes with foreground page
-/// fetches. Throws only when neither a cache nor a reachable source exists.
+/// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+/// so it never competes with the opening page fetches. Throws only when neither a
+/// cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 @ProviderFor(ReaderController)
@@ -55,16 +56,18 @@ const readerControllerProvider = ReaderControllerFamily();
 /// Loads a book for reading, offline-first: a cached archive is read from disk
 /// (no network); otherwise pages stream online (per-page, through the byte
 /// cache). The full-chapter offline backfill is NOT started here: the reader
-/// defers it to close/background so it never competes with foreground page
-/// fetches. Throws only when neither a cache nor a reachable source exists.
+/// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+/// so it never competes with the opening page fetches. Throws only when neither a
+/// cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
   /// Loads a book for reading, offline-first: a cached archive is read from disk
   /// (no network); otherwise pages stream online (per-page, through the byte
   /// cache). The full-chapter offline backfill is NOT started here: the reader
-  /// defers it to close/background so it never competes with foreground page
-  /// fetches. Throws only when neither a cache nor a reachable source exists.
+  /// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+  /// so it never competes with the opening page fetches. Throws only when neither a
+  /// cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   const ReaderControllerFamily();
@@ -72,8 +75,9 @@ class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
   /// Loads a book for reading, offline-first: a cached archive is read from disk
   /// (no network); otherwise pages stream online (per-page, through the byte
   /// cache). The full-chapter offline backfill is NOT started here: the reader
-  /// defers it to close/background so it never competes with foreground page
-  /// fetches. Throws only when neither a cache nor a reachable source exists.
+  /// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+  /// so it never competes with the opening page fetches. Throws only when neither a
+  /// cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider call(
@@ -109,8 +113,9 @@ class ReaderControllerFamily extends Family<AsyncValue<ReaderData>> {
 /// Loads a book for reading, offline-first: a cached archive is read from disk
 /// (no network); otherwise pages stream online (per-page, through the byte
 /// cache). The full-chapter offline backfill is NOT started here: the reader
-/// defers it to close/background so it never competes with foreground page
-/// fetches. Throws only when neither a cache nor a reachable source exists.
+/// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+/// so it never competes with the opening page fetches. Throws only when neither a
+/// cache nor a reachable source exists.
 ///
 /// Copied from [ReaderController].
 class ReaderControllerProvider
@@ -118,8 +123,9 @@ class ReaderControllerProvider
   /// Loads a book for reading, offline-first: a cached archive is read from disk
   /// (no network); otherwise pages stream online (per-page, through the byte
   /// cache). The full-chapter offline backfill is NOT started here: the reader
-  /// defers it to close/background so it never competes with foreground page
-  /// fetches. Throws only when neither a cache nor a reachable source exists.
+  /// starts it a few seconds after open (gated by the auto-cache + Wi-Fi settings)
+  /// so it never competes with the opening page fetches. Throws only when neither a
+  /// cache nor a reachable source exists.
   ///
   /// Copied from [ReaderController].
   ReaderControllerProvider(

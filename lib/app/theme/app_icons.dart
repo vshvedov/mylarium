@@ -171,6 +171,8 @@ abstract final class AppIcons {
       IconData(0xe19a, fontFamily: _family, fontPackage: _package); // clock
   static const share = IconData(0xe408,
       fontFamily: _family, fontPackage: _package); // shareNetwork
+  static const export = IconData(0xeaf0,
+      fontFamily: _family, fontPackage: _package); // export
 
   // Badges (milestones)
   static const badge =

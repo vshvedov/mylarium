@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_loading.dart';
+import 'capture_export.dart';
 import 'capture_models.dart';
 import 'gallery_controller.dart';
 
@@ -31,6 +32,7 @@ class CaptureViewerScreen extends ConsumerWidget {
         backgroundColor: tokens.readerBackground,
         title: capture == null ? null : Text(_caption(capture)),
         actions: [
+          if (capture != null) _ExportButton(capture: capture),
           if (capture != null)
             IconButton(
               icon: const Icon(AppIcons.delete),
@@ -74,9 +76,52 @@ class CaptureViewerScreen extends ConsumerWidget {
   }
 }
 
-String _caption(Capture c) {
-  final series = c.seriesTitle ?? 'Unknown series';
-  return '$series · ${c.bookTitle ?? 'Untitled'} · p.${c.pageNumber + 1}';
+/// Header caption for a viewed capture: the chapter (book) title alone. The
+/// series and page number are intentionally omitted so the long chapter name
+/// gets the full width before truncating.
+String _caption(Capture c) => c.bookTitle ?? 'Untitled';
+
+/// Header action that exports the capture (Photos on mobile, a save dialog on
+/// desktop) and reports the outcome via a snackbar. Owns an in-flight flag so a
+/// second tap cannot start an overlapping export.
+class _ExportButton extends ConsumerStatefulWidget {
+  const _ExportButton({required this.capture});
+
+  final Capture capture;
+
+  @override
+  ConsumerState<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends ConsumerState<_ExportButton> {
+  bool _exporting = false;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        icon: const Icon(AppIcons.export),
+        tooltip: 'Export',
+        onPressed: _exporting ? null : _run,
+      );
+
+  Future<void> _run() async {
+    setState(() => _exporting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final result =
+        await ref.read(captureExporterProvider).export(widget.capture);
+    if (!mounted) return;
+    setState(() => _exporting = false);
+    final message = switch (result) {
+      CaptureExportResult.savedToPhotos => 'Saved to Photos',
+      CaptureExportResult.savedToFile => 'Saved',
+      CaptureExportResult.permissionDenied =>
+        'Photos access denied. Enable it in Settings.',
+      CaptureExportResult.failed => 'Could not export capture.',
+      CaptureExportResult.cancelled => null,
+    };
+    if (message != null) {
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 }
 
 class _Viewer extends StatelessWidget {
