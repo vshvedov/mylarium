@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// Kavita third-party auth. Kavita does not accept the API key directly on
 /// resource calls: a client exchanges the key for a short-lived JWT via
@@ -65,6 +66,16 @@ class KavitaAuth {
     return token;
   }
 
+  /// Pre-seeds the cached token so [token] resolves immediately with no network
+  /// handshake. Only for unit tests - does not change production behavior.
+  @visibleForTesting
+  KavitaAuth.forTest(String preSeededToken)
+      : baseUrl = '',
+        apiKey = '',
+        _handshake = Dio() {
+    _token = preSeededToken;
+  }
+
   /// Decodes the roles from a Kavita JWT `role` claim. Returns an empty set when
   /// the token is malformed.
   static Set<String> rolesFromJwt(String token) {
@@ -83,6 +94,28 @@ class KavitaAuth {
       // Malformed token: no roles.
     }
     return const {};
+  }
+
+  /// Best-effort username from a Kavita JWT. Tries the common claim keys; null
+  /// when the token is malformed or carries no name claim.
+  static String? usernameFromJwt(String token) {
+    final parts = token.split('.');
+    if (parts.length < 2) return null;
+    var payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    payload =
+        payload.padRight(payload.length + (4 - payload.length % 4) % 4, '=');
+    try {
+      final decoded = jsonDecode(utf8.decode(base64.decode(payload)));
+      if (decoded is Map) {
+        for (final key in const ['name', 'unique_name', 'nameid', 'sub']) {
+          final v = decoded[key];
+          if (v is String && v.isNotEmpty) return v;
+        }
+      }
+    } catch (_) {
+      // Malformed token: no username.
+    }
+    return null;
   }
 }
 

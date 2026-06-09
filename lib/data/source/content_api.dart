@@ -9,6 +9,7 @@ import '../source/models/page_dto.dart';
 import '../source/models/readlist_dto.dart';
 import '../source/models/series_dto.dart';
 import '../source/models/series_search.dart';
+import '../source/models/server_details.dart';
 import '../source/models/server_info.dart';
 
 /// Transport-agnostic content backend. Both `KomgaApi` and `KavitaApi` implement
@@ -139,6 +140,12 @@ abstract class ContentApi {
   Future<List<String>> listPublishers();
 
   Future<List<int>> listAgeRatings();
+
+  /// Source-specific facts for the details popup (version, account, roles,
+  /// libraries, counts, extras). Best-effort: a backend gathers what it can and
+  /// throws [ContentException] only when the server is unreachable or auth
+  /// failed. The default returns empty facts (backends without a remote server).
+  Future<ServerFacts> fetchServerFacts() async => ServerFacts.empty;
 
   /// A live stream of server-pushed updates (T1), for steady-state freshness on
   /// top of the launch reconcile. A backend without live updates (or that is

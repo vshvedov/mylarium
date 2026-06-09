@@ -14,6 +14,7 @@ import '../source/models/page_dto.dart';
 import '../source/models/readlist_dto.dart';
 import '../source/models/series_dto.dart';
 import '../source/models/series_search.dart';
+import '../source/models/server_details.dart';
 import '../source/models/server_info.dart';
 
 /// Typed client for one Komga server. [_dio] is configured by `buildKomgaDio`
@@ -84,6 +85,88 @@ class KomgaApi implements ContentApi {
             .toSet();
         return ServerInfo(version: version, roles: roles);
       });
+
+  /// Best-effort server facts for the details popup. [listLibraries] is the
+  /// authoritative online/auth probe (it throws [ContentException] when the
+  /// server is unreachable or the session expired); every other piece is wrapped
+  /// in [bestEffort] so a disabled actuator or non-admin user just omits a row.
+  @override
+  Future<ServerFacts> fetchServerFacts() async {
+    final libraries = await listLibraries(); // throws if down/unauthorized
+    final versionF = bestEffort(fetchVersion);
+    final accountF = bestEffort(_fetchAccount);
+    final seriesF =
+        bestEffort(() async => (await listSeries(page: 0, size: 1)).totalElements);
+    final booksF =
+        bestEffort(() async => (await listBooks(page: 0, size: 1)).totalElements);
+    final healthF = bestEffort(_fetchHealthRows);
+
+    final account = await accountF;
+    final extra = <ServerDetailRow>[
+      ...?(await healthF),
+      ...?account?.rows,
+    ];
+    return ServerFacts(
+      version: await versionF,
+      account: account?.account,
+      roles: account?.roles ?? const {},
+      libraryNames: libraries.map((l) => l.name).toList(growable: false),
+      totalSeries: await seriesF,
+      totalBooks: await booksF,
+      extra: extra,
+    );
+  }
+
+  Future<({String? account, Set<String> roles, List<ServerDetailRow> rows})>
+      _fetchAccount() async {
+    final me = await _dio.get<Object?>('$_v2/users/me');
+    final d = me.data;
+    if (d is! Map) {
+      return (account: null, roles: <String>{}, rows: <ServerDetailRow>[]);
+    }
+    final roles = ((d['roles'] as List?) ?? const [])
+        .map((e) => e as String)
+        .toSet();
+    final rows = <ServerDetailRow>[];
+    final age = d['ageRestriction'];
+    if (age is Map && age['age'] != null) {
+      rows.add((label: 'Age restriction', value: '${age['restriction']} ${age['age']}'));
+    }
+    if (d['sharedAllLibraries'] == true) {
+      rows.add((label: 'Library access', value: 'All libraries'));
+    } else if (d['sharedLibrariesIds'] is List) {
+      rows.add((
+        label: 'Library access',
+        value: '${(d['sharedLibrariesIds'] as List).length} libraries'
+      ));
+    }
+    return (account: d['email'] as String?, roles: roles, rows: rows);
+  }
+
+  Future<List<ServerDetailRow>> _fetchHealthRows() async {
+    final res = await _dio.get<Object?>('$_v1/actuator/health');
+    final d = res.data;
+    final rows = <ServerDetailRow>[];
+    if (d is Map) {
+      if (d['status'] is String) {
+        rows.add((label: 'Health', value: d['status'] as String));
+      }
+      final disk = (d['components'] as Map?)?['diskSpace'];
+      final details = disk is Map ? disk['details'] : null;
+      if (details is Map && details['total'] is num && details['free'] is num) {
+        rows.add((
+          label: 'Disk',
+          value: '${_formatGb(details['free'])} free / ${_formatGb(details['total'])}'
+        ));
+      }
+    }
+    return rows;
+  }
+
+  static String _formatGb(Object? bytes) {
+    final gb = (bytes as num).toDouble() / (1024 * 1024 * 1024);
+    return '${gb.toStringAsFixed(gb >= 100 ? 0 : 1)} GB';
+  }
 
   /// Libraries are returned as a plain (unpaged) array by Komga.
   @override
