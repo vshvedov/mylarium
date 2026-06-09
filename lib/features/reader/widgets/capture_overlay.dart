@@ -210,20 +210,36 @@ class _ActionBar extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
                 onPressed: busy ? null : onCancel,
                 child: const Text('Cancel'),
               ),
-              const Spacer(),
-              TextButton(
-                onPressed: onWholePage,
-                child: const Text('Capture whole page'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: savable ? onSave : null,
-                child: const Text('Save'),
+              // The trailing pair is the only flex child, so the whole-page
+              // label keeps its intrinsic width when it fits and ellipsizes
+              // on narrow phones / large text instead of overflowing the bar.
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: TextButton(
+                        onPressed: onWholePage,
+                        child: const Text(
+                          'Whole page',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: savable ? onSave : null,
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

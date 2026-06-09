@@ -285,26 +285,56 @@ class HeroAction extends StatelessWidget {
             border: Border.all(color: scheme.onSurface.withValues(alpha: 0.16)),
           );
 
-    final content = Row(
-      mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 18, color: fg),
-        const SizedBox(width: 9),
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
+      color: fg,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.3,
+    );
+
+    // Collapse to the icon alone when the pill is too narrow for icon + full
+    // label (e.g. the Preview action beside Read on narrow phones); a label
+    // truncated mid-word reads worse than the icon. The tooltip and semantic
+    // label keep the action's name available.
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: label, style: labelStyle),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final fits = !constraints.maxWidth.isFinite ||
+            18 + 9 + painter.width <= constraints.maxWidth;
+        final labelHeight = painter.height;
+        painter.dispose();
+        return Row(
+          mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!fits)
+              // Keeps the pill the same height as its labeled siblings.
+              SizedBox(height: labelHeight),
+            Icon(
+              icon,
+              size: 18,
               color: fg,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.3,
+              semanticLabel: fits ? null : label,
             ),
-          ),
-        ),
-      ],
+            if (fits) ...[
+              const SizedBox(width: 9),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: labelStyle,
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
 
     return PressableScale(
