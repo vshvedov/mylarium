@@ -30,7 +30,7 @@ class ServerDetailsDialog extends ConsumerWidget {
               height: 160,
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (_, __) => _Frame(
+            error: (_, _) => _Frame(
               sourceId: sourceId,
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
