@@ -19,6 +19,7 @@ import 'tables/download_tasks.dart';
 import 'tables/home_rail_items.dart';
 import 'tables/libraries.dart';
 import 'tables/library_prefs.dart';
+import 'tables/local_comics.dart';
 import 'tables/pins.dart';
 import 'tables/reader_settings.dart';
 import 'tables/reading_sessions.dart';
@@ -67,6 +68,7 @@ typedef RailSnapshotRaw = ({
   CachedMetadata,
   Captures,
   LibraryPrefs,
+  LocalComics,
   ReaderSettings,
   CachedAssets,
   DownloadTasks,
@@ -107,6 +109,14 @@ class AppDatabase extends _$AppDatabase {
           if (from < 17) {
             await m.createTable(captures);
             await m.createIndex(idxCapturesCapturedAt);
+          }
+          // v17 -> v18: add the local-comics table (More Sources I, T1).
+          // Purely additive. `createTable` does not create table-scoped
+          // indexes, so both @TableIndex indexes are created explicitly.
+          if (from < 18) {
+            await m.createTable(localComics);
+            await m.createIndex(idxLocalComicsSeries);
+            await m.createIndex(idxLocalComicsBooks);
           }
         },
       );
@@ -644,6 +654,14 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertBookState(BookStateCompanion row) =>
       into(bookState).insertOnConflictUpdate(row);
 
+  // --- Local comics (Local files / folder sources, T1) ----------------------
+
+  Future<void> insertLocalComic(LocalComicsCompanion row) =>
+      into(localComics).insert(row);
+
+  Future<LocalComic?> getLocalComic(String id) =>
+      (select(localComics)..where((t) => t.id.equals(id))).getSingleOrNull();
+
   // --- Captures (page-capture gallery) -------------------------------------
 
   Future<void> insertCapture(CapturesCompanion row) =>
@@ -1039,7 +1057,8 @@ const int _kBaselineVersion = 16;
 /// reset by [openOrResetDatabase].
 ///
 /// v17: adds the `Captures` table (page-capture gallery).
-const int _kSchemaVersion = 17;
+/// v18: adds the `LocalComics` table (local files / folder sources, T1).
+const int _kSchemaVersion = 18;
 
 LazyDatabase _open() => LazyDatabase(() async {
       final dir = await getApplicationSupportDirectory();

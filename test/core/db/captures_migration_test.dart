@@ -1,9 +1,11 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift_dev/api/migrations_native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/core/db/database.dart';
 
 import '../../drift/generated/schema.dart';
 import '../../drift/generated/schema_v16.dart' as v16;
+import '../../drift/generated/schema_v17.dart' as v17;
 
 void main() {
   late SchemaVerifier verifier;
@@ -58,6 +60,54 @@ void main() {
     final caps = await db.watchCaptures().first;
     expect(caps, hasLength(1));
     expect(caps.single.pageNumber, 3);
+
+    await db.close();
+  });
+
+  test('migrates v17 -> v18 to the expected schema', () async {
+    final connection = await verifier.startAt(17);
+    final db = AppDatabase(connection);
+    // Validates that running AppDatabase.migration from 17 to 18 yields exactly
+    // the committed v18 snapshot (adds local_comics + its two indexes).
+    await verifier.migrateAndValidate(db, 18);
+    await db.close();
+  });
+
+  test('v17 -> v18 preserves existing rows and local_comics works', () async {
+    final schema = await verifier.schemaAt(17);
+
+    final old = v17.DatabaseAtV17(schema.newConnection());
+    await old.customStatement(
+      "INSERT INTO sources (id, kind, base_url, auth_kind, handle, label) "
+      "VALUES ('s1', 'komga', 'http://x', 'basic', 'h', 'Test')",
+    );
+    await old.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await db.customStatement('SELECT 1');
+
+    final survived = await db.customSelect('SELECT id FROM sources').get();
+    expect(survived, hasLength(1));
+    expect(survived.single.read<String>('id'), 's1');
+
+    await db.insertLocalComic(LocalComicsCompanion.insert(
+      id: 'lc1',
+      sourceId: 's1',
+      kind: 'localCopy',
+      managedPath: const Value('media/local/s1/lc1.archive'),
+      series: 'Berserk',
+      seriesSort: 'berserk',
+      number: '3',
+      numberSort: const Value(3.0),
+      title: 'Berserk 3',
+      pageOrder: '["p1.jpg","p2.jpg"]',
+      pagesCount: 2,
+      importedAt: 1700000000000,
+    ));
+    final row = await db.getLocalComic('lc1');
+    expect(row, isNotNull);
+    expect(row!.series, 'Berserk');
+    expect(row.readingDirection, 'ltr');
 
     await db.close();
   });

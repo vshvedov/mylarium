@@ -4637,6 +4637,1101 @@ class LibraryPrefsCompanion extends UpdateCompanion<LibraryPref> {
   }
 }
 
+class $LocalComicsTable extends LocalComics
+    with TableInfo<$LocalComicsTable, LocalComic> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalComicsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _managedPathMeta = const VerificationMeta(
+    'managedPath',
+  );
+  @override
+  late final GeneratedColumn<String> managedPath = GeneratedColumn<String>(
+    'managed_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _treeDocPathMeta = const VerificationMeta(
+    'treeDocPath',
+  );
+  @override
+  late final GeneratedColumn<String> treeDocPath = GeneratedColumn<String>(
+    'tree_doc_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _seriesMeta = const VerificationMeta('series');
+  @override
+  late final GeneratedColumn<String> series = GeneratedColumn<String>(
+    'series',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seriesSortMeta = const VerificationMeta(
+    'seriesSort',
+  );
+  @override
+  late final GeneratedColumn<String> seriesSort = GeneratedColumn<String>(
+    'series_sort',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numberSortMeta = const VerificationMeta(
+    'numberSort',
+  );
+  @override
+  late final GeneratedColumn<double> numberSort = GeneratedColumn<double>(
+    'number_sort',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _volumeMeta = const VerificationMeta('volume');
+  @override
+  late final GeneratedColumn<int> volume = GeneratedColumn<int>(
+    'volume',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ageRatingMeta = const VerificationMeta(
+    'ageRating',
+  );
+  @override
+  late final GeneratedColumn<int> ageRating = GeneratedColumn<int>(
+    'age_rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _readingDirectionMeta = const VerificationMeta(
+    'readingDirection',
+  );
+  @override
+  late final GeneratedColumn<String> readingDirection = GeneratedColumn<String>(
+    'reading_direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ltr'),
+  );
+  static const VerificationMeta _pageOrderMeta = const VerificationMeta(
+    'pageOrder',
+  );
+  @override
+  late final GeneratedColumn<String> pageOrder = GeneratedColumn<String>(
+    'page_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pagesCountMeta = const VerificationMeta(
+    'pagesCount',
+  );
+  @override
+  late final GeneratedColumn<int> pagesCount = GeneratedColumn<int>(
+    'pages_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _contentHashMeta = const VerificationMeta(
+    'contentHash',
+  );
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+    'content_hash',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastModifiedMeta = const VerificationMeta(
+    'lastModified',
+  );
+  @override
+  late final GeneratedColumn<int> lastModified = GeneratedColumn<int>(
+    'last_modified',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _importedAtMeta = const VerificationMeta(
+    'importedAt',
+  );
+  @override
+  late final GeneratedColumn<int> importedAt = GeneratedColumn<int>(
+    'imported_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sourceId,
+    kind,
+    managedPath,
+    treeDocPath,
+    series,
+    seriesSort,
+    number,
+    numberSort,
+    volume,
+    title,
+    ageRating,
+    readingDirection,
+    pageOrder,
+    pagesCount,
+    sizeBytes,
+    contentHash,
+    lastModified,
+    importedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_comics';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalComic> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('managed_path')) {
+      context.handle(
+        _managedPathMeta,
+        managedPath.isAcceptableOrUnknown(
+          data['managed_path']!,
+          _managedPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tree_doc_path')) {
+      context.handle(
+        _treeDocPathMeta,
+        treeDocPath.isAcceptableOrUnknown(
+          data['tree_doc_path']!,
+          _treeDocPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('series')) {
+      context.handle(
+        _seriesMeta,
+        series.isAcceptableOrUnknown(data['series']!, _seriesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesMeta);
+    }
+    if (data.containsKey('series_sort')) {
+      context.handle(
+        _seriesSortMeta,
+        seriesSort.isAcceptableOrUnknown(data['series_sort']!, _seriesSortMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesSortMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('number_sort')) {
+      context.handle(
+        _numberSortMeta,
+        numberSort.isAcceptableOrUnknown(data['number_sort']!, _numberSortMeta),
+      );
+    }
+    if (data.containsKey('volume')) {
+      context.handle(
+        _volumeMeta,
+        volume.isAcceptableOrUnknown(data['volume']!, _volumeMeta),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('age_rating')) {
+      context.handle(
+        _ageRatingMeta,
+        ageRating.isAcceptableOrUnknown(data['age_rating']!, _ageRatingMeta),
+      );
+    }
+    if (data.containsKey('reading_direction')) {
+      context.handle(
+        _readingDirectionMeta,
+        readingDirection.isAcceptableOrUnknown(
+          data['reading_direction']!,
+          _readingDirectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('page_order')) {
+      context.handle(
+        _pageOrderMeta,
+        pageOrder.isAcceptableOrUnknown(data['page_order']!, _pageOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pageOrderMeta);
+    }
+    if (data.containsKey('pages_count')) {
+      context.handle(
+        _pagesCountMeta,
+        pagesCount.isAcceptableOrUnknown(data['pages_count']!, _pagesCountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pagesCountMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    }
+    if (data.containsKey('content_hash')) {
+      context.handle(
+        _contentHashMeta,
+        contentHash.isAcceptableOrUnknown(
+          data['content_hash']!,
+          _contentHashMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_modified')) {
+      context.handle(
+        _lastModifiedMeta,
+        lastModified.isAcceptableOrUnknown(
+          data['last_modified']!,
+          _lastModifiedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('imported_at')) {
+      context.handle(
+        _importedAtMeta,
+        importedAt.isAcceptableOrUnknown(data['imported_at']!, _importedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_importedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalComic map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalComic(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      managedPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}managed_path'],
+      ),
+      treeDocPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tree_doc_path'],
+      ),
+      series: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series'],
+      )!,
+      seriesSort: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_sort'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      numberSort: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}number_sort'],
+      ),
+      volume: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}volume'],
+      ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      ageRating: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}age_rating'],
+      ),
+      readingDirection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reading_direction'],
+      )!,
+      pageOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}page_order'],
+      )!,
+      pagesCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pages_count'],
+      )!,
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      ),
+      contentHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_hash'],
+      ),
+      lastModified: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_modified'],
+      ),
+      importedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}imported_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalComicsTable createAlias(String alias) {
+    return $LocalComicsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalComic extends DataClass implements Insertable<LocalComic> {
+  /// App-generated comic id (uuid v4).
+  final String id;
+
+  /// FK to `Sources.id` (the Local files source or one folder source).
+  final String sourceId;
+
+  /// Provenance `SourceKind` name: `localCopy` | `urlDownload` | `safTree`.
+  final String kind;
+
+  /// Path RELATIVE to applicationSupport for copied imports; null for tree rows.
+  final String? managedPath;
+
+  /// Document path within the owning SAF tree (T4); null for copied imports.
+  final String? treeDocPath;
+  final String series;
+
+  /// Lowercased, article-stripped series sort key (groups the series grid).
+  final String seriesSort;
+
+  /// Issue/chapter number as a display string (e.g. "1", "7.5", "Special").
+  final String number;
+  final double? numberSort;
+  final int? volume;
+  final String title;
+
+  /// Minimum age in years from ComicInfo, or NULL when unrated (never coerced
+  /// to 0: age-gating distinguishes "unset" from a real rating of 0).
+  final int? ageRating;
+
+  /// `ltr` | `rtl` (from ComicInfo `Manga=YesAndRightToLeft`).
+  final String readingDirection;
+
+  /// JSON-encoded natural-sorted page entry names.
+  final String pageOrder;
+  final int pagesCount;
+  final int? sizeBytes;
+
+  /// sha256 hex of the archive bytes (duplicate detection).
+  final String? contentHash;
+
+  /// Source file mtime, epoch ms (T4 rescan reconcile); null for copies.
+  final int? lastModified;
+
+  /// Device clock, epoch ms.
+  final int importedAt;
+  const LocalComic({
+    required this.id,
+    required this.sourceId,
+    required this.kind,
+    this.managedPath,
+    this.treeDocPath,
+    required this.series,
+    required this.seriesSort,
+    required this.number,
+    this.numberSort,
+    this.volume,
+    required this.title,
+    this.ageRating,
+    required this.readingDirection,
+    required this.pageOrder,
+    required this.pagesCount,
+    this.sizeBytes,
+    this.contentHash,
+    this.lastModified,
+    required this.importedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['source_id'] = Variable<String>(sourceId);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || managedPath != null) {
+      map['managed_path'] = Variable<String>(managedPath);
+    }
+    if (!nullToAbsent || treeDocPath != null) {
+      map['tree_doc_path'] = Variable<String>(treeDocPath);
+    }
+    map['series'] = Variable<String>(series);
+    map['series_sort'] = Variable<String>(seriesSort);
+    map['number'] = Variable<String>(number);
+    if (!nullToAbsent || numberSort != null) {
+      map['number_sort'] = Variable<double>(numberSort);
+    }
+    if (!nullToAbsent || volume != null) {
+      map['volume'] = Variable<int>(volume);
+    }
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || ageRating != null) {
+      map['age_rating'] = Variable<int>(ageRating);
+    }
+    map['reading_direction'] = Variable<String>(readingDirection);
+    map['page_order'] = Variable<String>(pageOrder);
+    map['pages_count'] = Variable<int>(pagesCount);
+    if (!nullToAbsent || sizeBytes != null) {
+      map['size_bytes'] = Variable<int>(sizeBytes);
+    }
+    if (!nullToAbsent || contentHash != null) {
+      map['content_hash'] = Variable<String>(contentHash);
+    }
+    if (!nullToAbsent || lastModified != null) {
+      map['last_modified'] = Variable<int>(lastModified);
+    }
+    map['imported_at'] = Variable<int>(importedAt);
+    return map;
+  }
+
+  LocalComicsCompanion toCompanion(bool nullToAbsent) {
+    return LocalComicsCompanion(
+      id: Value(id),
+      sourceId: Value(sourceId),
+      kind: Value(kind),
+      managedPath: managedPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(managedPath),
+      treeDocPath: treeDocPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(treeDocPath),
+      series: Value(series),
+      seriesSort: Value(seriesSort),
+      number: Value(number),
+      numberSort: numberSort == null && nullToAbsent
+          ? const Value.absent()
+          : Value(numberSort),
+      volume: volume == null && nullToAbsent
+          ? const Value.absent()
+          : Value(volume),
+      title: Value(title),
+      ageRating: ageRating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ageRating),
+      readingDirection: Value(readingDirection),
+      pageOrder: Value(pageOrder),
+      pagesCount: Value(pagesCount),
+      sizeBytes: sizeBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sizeBytes),
+      contentHash: contentHash == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentHash),
+      lastModified: lastModified == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastModified),
+      importedAt: Value(importedAt),
+    );
+  }
+
+  factory LocalComic.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalComic(
+      id: serializer.fromJson<String>(json['id']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      managedPath: serializer.fromJson<String?>(json['managedPath']),
+      treeDocPath: serializer.fromJson<String?>(json['treeDocPath']),
+      series: serializer.fromJson<String>(json['series']),
+      seriesSort: serializer.fromJson<String>(json['seriesSort']),
+      number: serializer.fromJson<String>(json['number']),
+      numberSort: serializer.fromJson<double?>(json['numberSort']),
+      volume: serializer.fromJson<int?>(json['volume']),
+      title: serializer.fromJson<String>(json['title']),
+      ageRating: serializer.fromJson<int?>(json['ageRating']),
+      readingDirection: serializer.fromJson<String>(json['readingDirection']),
+      pageOrder: serializer.fromJson<String>(json['pageOrder']),
+      pagesCount: serializer.fromJson<int>(json['pagesCount']),
+      sizeBytes: serializer.fromJson<int?>(json['sizeBytes']),
+      contentHash: serializer.fromJson<String?>(json['contentHash']),
+      lastModified: serializer.fromJson<int?>(json['lastModified']),
+      importedAt: serializer.fromJson<int>(json['importedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'kind': serializer.toJson<String>(kind),
+      'managedPath': serializer.toJson<String?>(managedPath),
+      'treeDocPath': serializer.toJson<String?>(treeDocPath),
+      'series': serializer.toJson<String>(series),
+      'seriesSort': serializer.toJson<String>(seriesSort),
+      'number': serializer.toJson<String>(number),
+      'numberSort': serializer.toJson<double?>(numberSort),
+      'volume': serializer.toJson<int?>(volume),
+      'title': serializer.toJson<String>(title),
+      'ageRating': serializer.toJson<int?>(ageRating),
+      'readingDirection': serializer.toJson<String>(readingDirection),
+      'pageOrder': serializer.toJson<String>(pageOrder),
+      'pagesCount': serializer.toJson<int>(pagesCount),
+      'sizeBytes': serializer.toJson<int?>(sizeBytes),
+      'contentHash': serializer.toJson<String?>(contentHash),
+      'lastModified': serializer.toJson<int?>(lastModified),
+      'importedAt': serializer.toJson<int>(importedAt),
+    };
+  }
+
+  LocalComic copyWith({
+    String? id,
+    String? sourceId,
+    String? kind,
+    Value<String?> managedPath = const Value.absent(),
+    Value<String?> treeDocPath = const Value.absent(),
+    String? series,
+    String? seriesSort,
+    String? number,
+    Value<double?> numberSort = const Value.absent(),
+    Value<int?> volume = const Value.absent(),
+    String? title,
+    Value<int?> ageRating = const Value.absent(),
+    String? readingDirection,
+    String? pageOrder,
+    int? pagesCount,
+    Value<int?> sizeBytes = const Value.absent(),
+    Value<String?> contentHash = const Value.absent(),
+    Value<int?> lastModified = const Value.absent(),
+    int? importedAt,
+  }) => LocalComic(
+    id: id ?? this.id,
+    sourceId: sourceId ?? this.sourceId,
+    kind: kind ?? this.kind,
+    managedPath: managedPath.present ? managedPath.value : this.managedPath,
+    treeDocPath: treeDocPath.present ? treeDocPath.value : this.treeDocPath,
+    series: series ?? this.series,
+    seriesSort: seriesSort ?? this.seriesSort,
+    number: number ?? this.number,
+    numberSort: numberSort.present ? numberSort.value : this.numberSort,
+    volume: volume.present ? volume.value : this.volume,
+    title: title ?? this.title,
+    ageRating: ageRating.present ? ageRating.value : this.ageRating,
+    readingDirection: readingDirection ?? this.readingDirection,
+    pageOrder: pageOrder ?? this.pageOrder,
+    pagesCount: pagesCount ?? this.pagesCount,
+    sizeBytes: sizeBytes.present ? sizeBytes.value : this.sizeBytes,
+    contentHash: contentHash.present ? contentHash.value : this.contentHash,
+    lastModified: lastModified.present ? lastModified.value : this.lastModified,
+    importedAt: importedAt ?? this.importedAt,
+  );
+  LocalComic copyWithCompanion(LocalComicsCompanion data) {
+    return LocalComic(
+      id: data.id.present ? data.id.value : this.id,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      managedPath: data.managedPath.present
+          ? data.managedPath.value
+          : this.managedPath,
+      treeDocPath: data.treeDocPath.present
+          ? data.treeDocPath.value
+          : this.treeDocPath,
+      series: data.series.present ? data.series.value : this.series,
+      seriesSort: data.seriesSort.present
+          ? data.seriesSort.value
+          : this.seriesSort,
+      number: data.number.present ? data.number.value : this.number,
+      numberSort: data.numberSort.present
+          ? data.numberSort.value
+          : this.numberSort,
+      volume: data.volume.present ? data.volume.value : this.volume,
+      title: data.title.present ? data.title.value : this.title,
+      ageRating: data.ageRating.present ? data.ageRating.value : this.ageRating,
+      readingDirection: data.readingDirection.present
+          ? data.readingDirection.value
+          : this.readingDirection,
+      pageOrder: data.pageOrder.present ? data.pageOrder.value : this.pageOrder,
+      pagesCount: data.pagesCount.present
+          ? data.pagesCount.value
+          : this.pagesCount,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      contentHash: data.contentHash.present
+          ? data.contentHash.value
+          : this.contentHash,
+      lastModified: data.lastModified.present
+          ? data.lastModified.value
+          : this.lastModified,
+      importedAt: data.importedAt.present
+          ? data.importedAt.value
+          : this.importedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalComic(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('kind: $kind, ')
+          ..write('managedPath: $managedPath, ')
+          ..write('treeDocPath: $treeDocPath, ')
+          ..write('series: $series, ')
+          ..write('seriesSort: $seriesSort, ')
+          ..write('number: $number, ')
+          ..write('numberSort: $numberSort, ')
+          ..write('volume: $volume, ')
+          ..write('title: $title, ')
+          ..write('ageRating: $ageRating, ')
+          ..write('readingDirection: $readingDirection, ')
+          ..write('pageOrder: $pageOrder, ')
+          ..write('pagesCount: $pagesCount, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('importedAt: $importedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sourceId,
+    kind,
+    managedPath,
+    treeDocPath,
+    series,
+    seriesSort,
+    number,
+    numberSort,
+    volume,
+    title,
+    ageRating,
+    readingDirection,
+    pageOrder,
+    pagesCount,
+    sizeBytes,
+    contentHash,
+    lastModified,
+    importedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalComic &&
+          other.id == this.id &&
+          other.sourceId == this.sourceId &&
+          other.kind == this.kind &&
+          other.managedPath == this.managedPath &&
+          other.treeDocPath == this.treeDocPath &&
+          other.series == this.series &&
+          other.seriesSort == this.seriesSort &&
+          other.number == this.number &&
+          other.numberSort == this.numberSort &&
+          other.volume == this.volume &&
+          other.title == this.title &&
+          other.ageRating == this.ageRating &&
+          other.readingDirection == this.readingDirection &&
+          other.pageOrder == this.pageOrder &&
+          other.pagesCount == this.pagesCount &&
+          other.sizeBytes == this.sizeBytes &&
+          other.contentHash == this.contentHash &&
+          other.lastModified == this.lastModified &&
+          other.importedAt == this.importedAt);
+}
+
+class LocalComicsCompanion extends UpdateCompanion<LocalComic> {
+  final Value<String> id;
+  final Value<String> sourceId;
+  final Value<String> kind;
+  final Value<String?> managedPath;
+  final Value<String?> treeDocPath;
+  final Value<String> series;
+  final Value<String> seriesSort;
+  final Value<String> number;
+  final Value<double?> numberSort;
+  final Value<int?> volume;
+  final Value<String> title;
+  final Value<int?> ageRating;
+  final Value<String> readingDirection;
+  final Value<String> pageOrder;
+  final Value<int> pagesCount;
+  final Value<int?> sizeBytes;
+  final Value<String?> contentHash;
+  final Value<int?> lastModified;
+  final Value<int> importedAt;
+  final Value<int> rowid;
+  const LocalComicsCompanion({
+    this.id = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.managedPath = const Value.absent(),
+    this.treeDocPath = const Value.absent(),
+    this.series = const Value.absent(),
+    this.seriesSort = const Value.absent(),
+    this.number = const Value.absent(),
+    this.numberSort = const Value.absent(),
+    this.volume = const Value.absent(),
+    this.title = const Value.absent(),
+    this.ageRating = const Value.absent(),
+    this.readingDirection = const Value.absent(),
+    this.pageOrder = const Value.absent(),
+    this.pagesCount = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.contentHash = const Value.absent(),
+    this.lastModified = const Value.absent(),
+    this.importedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalComicsCompanion.insert({
+    required String id,
+    required String sourceId,
+    required String kind,
+    this.managedPath = const Value.absent(),
+    this.treeDocPath = const Value.absent(),
+    required String series,
+    required String seriesSort,
+    required String number,
+    this.numberSort = const Value.absent(),
+    this.volume = const Value.absent(),
+    required String title,
+    this.ageRating = const Value.absent(),
+    this.readingDirection = const Value.absent(),
+    required String pageOrder,
+    required int pagesCount,
+    this.sizeBytes = const Value.absent(),
+    this.contentHash = const Value.absent(),
+    this.lastModified = const Value.absent(),
+    required int importedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sourceId = Value(sourceId),
+       kind = Value(kind),
+       series = Value(series),
+       seriesSort = Value(seriesSort),
+       number = Value(number),
+       title = Value(title),
+       pageOrder = Value(pageOrder),
+       pagesCount = Value(pagesCount),
+       importedAt = Value(importedAt);
+  static Insertable<LocalComic> custom({
+    Expression<String>? id,
+    Expression<String>? sourceId,
+    Expression<String>? kind,
+    Expression<String>? managedPath,
+    Expression<String>? treeDocPath,
+    Expression<String>? series,
+    Expression<String>? seriesSort,
+    Expression<String>? number,
+    Expression<double>? numberSort,
+    Expression<int>? volume,
+    Expression<String>? title,
+    Expression<int>? ageRating,
+    Expression<String>? readingDirection,
+    Expression<String>? pageOrder,
+    Expression<int>? pagesCount,
+    Expression<int>? sizeBytes,
+    Expression<String>? contentHash,
+    Expression<int>? lastModified,
+    Expression<int>? importedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sourceId != null) 'source_id': sourceId,
+      if (kind != null) 'kind': kind,
+      if (managedPath != null) 'managed_path': managedPath,
+      if (treeDocPath != null) 'tree_doc_path': treeDocPath,
+      if (series != null) 'series': series,
+      if (seriesSort != null) 'series_sort': seriesSort,
+      if (number != null) 'number': number,
+      if (numberSort != null) 'number_sort': numberSort,
+      if (volume != null) 'volume': volume,
+      if (title != null) 'title': title,
+      if (ageRating != null) 'age_rating': ageRating,
+      if (readingDirection != null) 'reading_direction': readingDirection,
+      if (pageOrder != null) 'page_order': pageOrder,
+      if (pagesCount != null) 'pages_count': pagesCount,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (contentHash != null) 'content_hash': contentHash,
+      if (lastModified != null) 'last_modified': lastModified,
+      if (importedAt != null) 'imported_at': importedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalComicsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sourceId,
+    Value<String>? kind,
+    Value<String?>? managedPath,
+    Value<String?>? treeDocPath,
+    Value<String>? series,
+    Value<String>? seriesSort,
+    Value<String>? number,
+    Value<double?>? numberSort,
+    Value<int?>? volume,
+    Value<String>? title,
+    Value<int?>? ageRating,
+    Value<String>? readingDirection,
+    Value<String>? pageOrder,
+    Value<int>? pagesCount,
+    Value<int?>? sizeBytes,
+    Value<String?>? contentHash,
+    Value<int?>? lastModified,
+    Value<int>? importedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalComicsCompanion(
+      id: id ?? this.id,
+      sourceId: sourceId ?? this.sourceId,
+      kind: kind ?? this.kind,
+      managedPath: managedPath ?? this.managedPath,
+      treeDocPath: treeDocPath ?? this.treeDocPath,
+      series: series ?? this.series,
+      seriesSort: seriesSort ?? this.seriesSort,
+      number: number ?? this.number,
+      numberSort: numberSort ?? this.numberSort,
+      volume: volume ?? this.volume,
+      title: title ?? this.title,
+      ageRating: ageRating ?? this.ageRating,
+      readingDirection: readingDirection ?? this.readingDirection,
+      pageOrder: pageOrder ?? this.pageOrder,
+      pagesCount: pagesCount ?? this.pagesCount,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      contentHash: contentHash ?? this.contentHash,
+      lastModified: lastModified ?? this.lastModified,
+      importedAt: importedAt ?? this.importedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (managedPath.present) {
+      map['managed_path'] = Variable<String>(managedPath.value);
+    }
+    if (treeDocPath.present) {
+      map['tree_doc_path'] = Variable<String>(treeDocPath.value);
+    }
+    if (series.present) {
+      map['series'] = Variable<String>(series.value);
+    }
+    if (seriesSort.present) {
+      map['series_sort'] = Variable<String>(seriesSort.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (numberSort.present) {
+      map['number_sort'] = Variable<double>(numberSort.value);
+    }
+    if (volume.present) {
+      map['volume'] = Variable<int>(volume.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (ageRating.present) {
+      map['age_rating'] = Variable<int>(ageRating.value);
+    }
+    if (readingDirection.present) {
+      map['reading_direction'] = Variable<String>(readingDirection.value);
+    }
+    if (pageOrder.present) {
+      map['page_order'] = Variable<String>(pageOrder.value);
+    }
+    if (pagesCount.present) {
+      map['pages_count'] = Variable<int>(pagesCount.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
+    }
+    if (lastModified.present) {
+      map['last_modified'] = Variable<int>(lastModified.value);
+    }
+    if (importedAt.present) {
+      map['imported_at'] = Variable<int>(importedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalComicsCompanion(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('kind: $kind, ')
+          ..write('managedPath: $managedPath, ')
+          ..write('treeDocPath: $treeDocPath, ')
+          ..write('series: $series, ')
+          ..write('seriesSort: $seriesSort, ')
+          ..write('number: $number, ')
+          ..write('numberSort: $numberSort, ')
+          ..write('volume: $volume, ')
+          ..write('title: $title, ')
+          ..write('ageRating: $ageRating, ')
+          ..write('readingDirection: $readingDirection, ')
+          ..write('pageOrder: $pageOrder, ')
+          ..write('pagesCount: $pagesCount, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('lastModified: $lastModified, ')
+          ..write('importedAt: $importedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ReaderSettingsTable extends ReaderSettings
     with TableInfo<$ReaderSettingsTable, ReaderSettingsRow> {
   @override
@@ -10335,6 +11430,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CachedMetadataTable cachedMetadata = $CachedMetadataTable(this);
   late final $CapturesTable captures = $CapturesTable(this);
   late final $LibraryPrefsTable libraryPrefs = $LibraryPrefsTable(this);
+  late final $LocalComicsTable localComics = $LocalComicsTable(this);
   late final $ReaderSettingsTable readerSettings = $ReaderSettingsTable(this);
   late final $CachedAssetsTable cachedAssets = $CachedAssetsTable(this);
   late final $DownloadTasksTable downloadTasks = $DownloadTasksTable(this);
@@ -10359,6 +11455,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_captures_captured_at',
     'CREATE INDEX idx_captures_captured_at ON captures (captured_at)',
   );
+  late final Index idxLocalComicsSeries = Index(
+    'idx_local_comics_series',
+    'CREATE INDEX idx_local_comics_series ON local_comics (source_id, series_sort, id)',
+  );
+  late final Index idxLocalComicsBooks = Index(
+    'idx_local_comics_books',
+    'CREATE INDEX idx_local_comics_books ON local_comics (source_id, series, number_sort)',
+  );
   late final Index cachedAssetsLru = Index(
     'cached_assets_lru',
     'CREATE INDEX cached_assets_lru ON cached_assets (last_accessed_at)',
@@ -10381,6 +11485,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cachedMetadata,
     captures,
     libraryPrefs,
+    localComics,
     readerSettings,
     cachedAssets,
     downloadTasks,
@@ -10394,6 +11499,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     seriesKeyset,
     seriesKeysetLib,
     idxCapturesCapturedAt,
+    idxLocalComicsSeries,
+    idxLocalComicsBooks,
     cachedAssetsLru,
     syncQueueBook,
   ];
@@ -12675,6 +13782,490 @@ typedef $$LibraryPrefsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $LibraryPrefsTable, LibraryPref>,
       ),
       LibraryPref,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalComicsTableCreateCompanionBuilder =
+    LocalComicsCompanion Function({
+      required String id,
+      required String sourceId,
+      required String kind,
+      Value<String?> managedPath,
+      Value<String?> treeDocPath,
+      required String series,
+      required String seriesSort,
+      required String number,
+      Value<double?> numberSort,
+      Value<int?> volume,
+      required String title,
+      Value<int?> ageRating,
+      Value<String> readingDirection,
+      required String pageOrder,
+      required int pagesCount,
+      Value<int?> sizeBytes,
+      Value<String?> contentHash,
+      Value<int?> lastModified,
+      required int importedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalComicsTableUpdateCompanionBuilder =
+    LocalComicsCompanion Function({
+      Value<String> id,
+      Value<String> sourceId,
+      Value<String> kind,
+      Value<String?> managedPath,
+      Value<String?> treeDocPath,
+      Value<String> series,
+      Value<String> seriesSort,
+      Value<String> number,
+      Value<double?> numberSort,
+      Value<int?> volume,
+      Value<String> title,
+      Value<int?> ageRating,
+      Value<String> readingDirection,
+      Value<String> pageOrder,
+      Value<int> pagesCount,
+      Value<int?> sizeBytes,
+      Value<String?> contentHash,
+      Value<int?> lastModified,
+      Value<int> importedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalComicsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalComicsTable> {
+  $$LocalComicsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get managedPath => $composableBuilder(
+    column: $table.managedPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get treeDocPath => $composableBuilder(
+    column: $table.treeDocPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get series => $composableBuilder(
+    column: $table.series,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesSort => $composableBuilder(
+    column: $table.seriesSort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get numberSort => $composableBuilder(
+    column: $table.numberSort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ageRating => $composableBuilder(
+    column: $table.ageRating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get readingDirection => $composableBuilder(
+    column: $table.readingDirection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pageOrder => $composableBuilder(
+    column: $table.pageOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pagesCount => $composableBuilder(
+    column: $table.pagesCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get importedAt => $composableBuilder(
+    column: $table.importedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalComicsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalComicsTable> {
+  $$LocalComicsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get managedPath => $composableBuilder(
+    column: $table.managedPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get treeDocPath => $composableBuilder(
+    column: $table.treeDocPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get series => $composableBuilder(
+    column: $table.series,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesSort => $composableBuilder(
+    column: $table.seriesSort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get numberSort => $composableBuilder(
+    column: $table.numberSort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get volume => $composableBuilder(
+    column: $table.volume,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ageRating => $composableBuilder(
+    column: $table.ageRating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get readingDirection => $composableBuilder(
+    column: $table.readingDirection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pageOrder => $composableBuilder(
+    column: $table.pageOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pagesCount => $composableBuilder(
+    column: $table.pagesCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get importedAt => $composableBuilder(
+    column: $table.importedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalComicsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalComicsTable> {
+  $$LocalComicsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get managedPath => $composableBuilder(
+    column: $table.managedPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get treeDocPath => $composableBuilder(
+    column: $table.treeDocPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get series =>
+      $composableBuilder(column: $table.series, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesSort => $composableBuilder(
+    column: $table.seriesSort,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<double> get numberSort => $composableBuilder(
+    column: $table.numberSort,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get volume =>
+      $composableBuilder(column: $table.volume, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get ageRating =>
+      $composableBuilder(column: $table.ageRating, builder: (column) => column);
+
+  GeneratedColumn<String> get readingDirection => $composableBuilder(
+    column: $table.readingDirection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pageOrder =>
+      $composableBuilder(column: $table.pageOrder, builder: (column) => column);
+
+  GeneratedColumn<int> get pagesCount => $composableBuilder(
+    column: $table.pagesCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+    column: $table.contentHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastModified => $composableBuilder(
+    column: $table.lastModified,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get importedAt => $composableBuilder(
+    column: $table.importedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalComicsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalComicsTable,
+          LocalComic,
+          $$LocalComicsTableFilterComposer,
+          $$LocalComicsTableOrderingComposer,
+          $$LocalComicsTableAnnotationComposer,
+          $$LocalComicsTableCreateCompanionBuilder,
+          $$LocalComicsTableUpdateCompanionBuilder,
+          (
+            LocalComic,
+            BaseReferences<_$AppDatabase, $LocalComicsTable, LocalComic>,
+          ),
+          LocalComic,
+          PrefetchHooks Function()
+        > {
+  $$LocalComicsTableTableManager(_$AppDatabase db, $LocalComicsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalComicsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalComicsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalComicsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String?> managedPath = const Value.absent(),
+                Value<String?> treeDocPath = const Value.absent(),
+                Value<String> series = const Value.absent(),
+                Value<String> seriesSort = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<double?> numberSort = const Value.absent(),
+                Value<int?> volume = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int?> ageRating = const Value.absent(),
+                Value<String> readingDirection = const Value.absent(),
+                Value<String> pageOrder = const Value.absent(),
+                Value<int> pagesCount = const Value.absent(),
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
+                Value<int?> lastModified = const Value.absent(),
+                Value<int> importedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalComicsCompanion(
+                id: id,
+                sourceId: sourceId,
+                kind: kind,
+                managedPath: managedPath,
+                treeDocPath: treeDocPath,
+                series: series,
+                seriesSort: seriesSort,
+                number: number,
+                numberSort: numberSort,
+                volume: volume,
+                title: title,
+                ageRating: ageRating,
+                readingDirection: readingDirection,
+                pageOrder: pageOrder,
+                pagesCount: pagesCount,
+                sizeBytes: sizeBytes,
+                contentHash: contentHash,
+                lastModified: lastModified,
+                importedAt: importedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sourceId,
+                required String kind,
+                Value<String?> managedPath = const Value.absent(),
+                Value<String?> treeDocPath = const Value.absent(),
+                required String series,
+                required String seriesSort,
+                required String number,
+                Value<double?> numberSort = const Value.absent(),
+                Value<int?> volume = const Value.absent(),
+                required String title,
+                Value<int?> ageRating = const Value.absent(),
+                Value<String> readingDirection = const Value.absent(),
+                required String pageOrder,
+                required int pagesCount,
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<String?> contentHash = const Value.absent(),
+                Value<int?> lastModified = const Value.absent(),
+                required int importedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalComicsCompanion.insert(
+                id: id,
+                sourceId: sourceId,
+                kind: kind,
+                managedPath: managedPath,
+                treeDocPath: treeDocPath,
+                series: series,
+                seriesSort: seriesSort,
+                number: number,
+                numberSort: numberSort,
+                volume: volume,
+                title: title,
+                ageRating: ageRating,
+                readingDirection: readingDirection,
+                pageOrder: pageOrder,
+                pagesCount: pagesCount,
+                sizeBytes: sizeBytes,
+                contentHash: contentHash,
+                lastModified: lastModified,
+                importedAt: importedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalComicsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalComicsTable,
+      LocalComic,
+      $$LocalComicsTableFilterComposer,
+      $$LocalComicsTableOrderingComposer,
+      $$LocalComicsTableAnnotationComposer,
+      $$LocalComicsTableCreateCompanionBuilder,
+      $$LocalComicsTableUpdateCompanionBuilder,
+      (
+        LocalComic,
+        BaseReferences<_$AppDatabase, $LocalComicsTable, LocalComic>,
+      ),
+      LocalComic,
       PrefetchHooks Function()
     >;
 typedef $$ReaderSettingsTableCreateCompanionBuilder =
@@ -15490,6 +17081,8 @@ class $AppDatabaseManager {
       $$CapturesTableTableManager(_db, _db.captures);
   $$LibraryPrefsTableTableManager get libraryPrefs =>
       $$LibraryPrefsTableTableManager(_db, _db.libraryPrefs);
+  $$LocalComicsTableTableManager get localComics =>
+      $$LocalComicsTableTableManager(_db, _db.localComics);
   $$ReaderSettingsTableTableManager get readerSettings =>
       $$ReaderSettingsTableTableManager(_db, _db.readerSettings);
   $$CachedAssetsTableTableManager get cachedAssets =>
