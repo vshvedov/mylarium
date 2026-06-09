@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'reachability.dart';
+import 'server_details_dialog.dart';
 
 /// App-bar indicator for the active source's server reachability: a small dot
-/// (online / unreachable / checking). Tapping it re-probes the server. The probe
-/// targets the specific server, so a reachable LAN server reads online offline.
+/// (online / unreachable / checking). Tapping it opens a server details popup
+/// where connection info is shown and a Refresh button can re-probe the server.
 class SourceStatusButton extends ConsumerWidget {
   const SourceStatusButton({super.key, required this.sourceId});
 
@@ -15,16 +16,24 @@ class SourceStatusButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final reachable = ref.watch(sourceReachableProvider(sourceId));
-    final (Color color, String tooltip) = switch (reachable) {
-      AsyncData(:final value) => value
-          ? (const Color(0xFF3FB950), 'Server online - tap to recheck')
-          : (scheme.error, 'Server unreachable - tap to retry'),
-      AsyncError() => (scheme.error, 'Server unreachable - tap to retry'),
-      _ => (scheme.onSurfaceVariant, 'Checking server...'),
+    final Color color = switch (reachable) {
+      AsyncData(:final value) =>
+        value ? const Color(0xFF3FB950) : scheme.error,
+      AsyncError() => scheme.error,
+      _ => scheme.onSurfaceVariant,
     };
     return IconButton(
-      tooltip: tooltip,
-      onPressed: () => ref.invalidate(sourceReachableProvider(sourceId)),
+      tooltip: switch (reachable) {
+        AsyncData(:final value) => value
+            ? 'Server online - tap for details'
+            : 'Server unreachable - tap for details',
+        AsyncError() => 'Server unreachable - tap for details',
+        _ => 'Checking server...',
+      },
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (_) => ServerDetailsDialog(sourceId: sourceId),
+      ),
       icon: Container(
         width: 10,
         height: 10,
