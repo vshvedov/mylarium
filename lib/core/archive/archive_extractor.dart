@@ -37,6 +37,12 @@ class ArchiveExtractor {
   /// single worker isolate alive across reads; this remains for one-off extracts.
   Future<Uint8List> page(String archivePath, String entry) =>
       Isolate.run(() => readArchiveEntrySync(archivePath, entry));
+
+  /// Bytes of the entry whose basename case-insensitively equals [entryName]
+  /// (shallowest match wins), or null when no such entry exists. Used to pull
+  /// ComicInfo.xml out of an imported archive without listing it as a page.
+  Future<Uint8List?> tryReadEntry(String archivePath, String entryName) =>
+      Isolate.run(() => _tryReadEntrySync(archivePath, entryName));
 }
 
 // --- isolate bodies (top-level so they are sendable) -----------------------
@@ -113,6 +119,45 @@ Uint8List readArchiveEntrySync(String path, String entry) {
       }
     case ArchiveFormat.rar:
       return UnrarExtractor().extractFile(path, entry);
+    case ArchiveFormat.unknown:
+      throw ArchiveException('Unknown archive format', path: path);
+  }
+}
+
+/// Case-insensitive basename lookup of [entryName] inside the archive at
+/// [path]; the shallowest match wins (a root-level ComicInfo.xml beats a
+/// nested one). Returns null when absent.
+Uint8List? _tryReadEntrySync(String path, String entryName) {
+  final wanted = entryName.toLowerCase();
+  int depth(String name) => name.replaceAll('\\', '/').split('/').length;
+  bool matches(String name) =>
+      name.replaceAll('\\', '/').split('/').last.toLowerCase() == wanted;
+
+  String? best;
+  switch (_sniff(path)) {
+    case ArchiveFormat.zip:
+      final input = InputFileStream(path);
+      try {
+        final archive = ZipDecoder().decodeStream(input);
+        for (final f in archive.files) {
+          if (!f.isFile || !matches(f.name)) continue;
+          final current = best;
+          if (current == null || depth(f.name) < depth(current)) best = f.name;
+        }
+        final found = best;
+        if (found == null) return null;
+        return archive.findFile(found)?.readBytes();
+      } finally {
+        input.closeSync();
+      }
+    case ArchiveFormat.rar:
+      for (final e in UnrarExtractor().listFiles(path)) {
+        if (e.isDirectory || !matches(e.name)) continue;
+        final current = best;
+        if (current == null || depth(e.name) < depth(current)) best = e.name;
+      }
+      final found = best;
+      return found == null ? null : UnrarExtractor().extractFile(path, found);
     case ArchiveFormat.unknown:
       throw ArchiveException('Unknown archive format', path: path);
   }

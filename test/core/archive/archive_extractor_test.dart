@@ -53,6 +53,31 @@ void main() {
     expect(() => extractor.entries(path), throwsA(isA<ArchiveException>()));
   });
 
+  test('tryReadEntry: finds ComicInfo.xml case-insensitively at the root',
+      () async {
+    final path = writeCbz({
+      'page1.jpg': [1],
+      'comicinfo.XML': [60, 67, 62], // "<C>"
+    });
+    final bytes = await extractor.tryReadEntry(path, 'ComicInfo.xml');
+    expect(bytes, [60, 67, 62]);
+  });
+
+  test('tryReadEntry: prefers the shallowest match', () async {
+    final path = writeCbz({
+      'page1.jpg': [1],
+      'sub/ComicInfo.xml': [2],
+      'ComicInfo.xml': [1, 1],
+    });
+    final bytes = await extractor.tryReadEntry(path, 'ComicInfo.xml');
+    expect(bytes, [1, 1]);
+  });
+
+  test('tryReadEntry: null when the entry is absent', () async {
+    final path = writeCbz({'page1.jpg': [1]});
+    expect(await extractor.tryReadEntry(path, 'ComicInfo.xml'), isNull);
+  });
+
   // CBR via the unrar FFI library. The native hook does NOT build under
   // `flutter test`, so this skips there; it is verified for real on host via
   // `dart run tool/cbr_check.dart` against the same ArchiveExtractor. The bundled
