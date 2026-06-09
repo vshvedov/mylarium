@@ -82,7 +82,10 @@ class HomeScreen extends ConsumerWidget {
         subtitle: it.subtitle,
         stacked: it.stacked,
         leadingBadge: (isBook && kind != HomeRailKind.downloaded)
-            ? OfflineBadge(sourceId: sourceId ?? '', bookId: it.ownerId)
+            ? DownloadBadge(sourceId: sourceId ?? '', bookId: it.ownerId)
+            : null,
+        cornerOverlay: isBook
+            ? BookReadCorner(sourceId: sourceId ?? '', bookId: it.ownerId)
             : null,
         onTap: () => context.push(
           it.ownerType == 'series'

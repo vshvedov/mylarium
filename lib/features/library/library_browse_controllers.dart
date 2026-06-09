@@ -385,6 +385,14 @@ Stream<List<Book>> seriesBooks(Ref ref, String sourceId, String seriesId) async*
 Stream<BookStateRow?> bookReadState(Ref ref, String sourceId, String bookId) =>
     ref.watch(appDatabaseProvider).watchBookState(sourceId, bookId);
 
+/// Whether a single book reads as completed (local [BookState] wins, else the
+/// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+/// outside series detail (home rails, read lists), which lack the batched
+/// [seriesReadStates] the series grid uses.
+@riverpod
+Stream<bool> bookCompleted(Ref ref, String sourceId, String bookId) =>
+    ref.watch(appDatabaseProvider).watchBookCompleted(sourceId, bookId);
+
 /// The local read state of every book of a series that has one, for the series
 /// grid badges (books without a row fall back to the cached `Books.completed`).
 @riverpod

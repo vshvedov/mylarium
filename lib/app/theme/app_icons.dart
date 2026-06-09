@@ -135,8 +135,10 @@ abstract final class AppIcons {
   // Offline / downloads
   static const download = IconData(0xe20c,
       fontFamily: _family, fontPackage: _package); // downloadSimple
-  static const downloaded = IconData(0xe184,
-      fontFamily: _family, fontPackage: _package); // checkCircle
+  // "Downloaded" reads as a filled down-arrow (NOT a check) so it never
+  // collides with the green read-check. See DownloadBadge.
+  static const downloaded = IconData(0xe20c,
+      fontFamily: _fillFamily, fontPackage: _package); // downloadSimple (fill)
   static const savedOffline =
       IconData(0xe1b0, fontFamily: _family, fontPackage: _package); // cloudCheck
   static const streaming =

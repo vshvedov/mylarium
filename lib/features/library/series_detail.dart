@@ -155,8 +155,9 @@ class SeriesDetailScreen extends ConsumerWidget {
                           ownerId: b.id,
                           title: b.title,
                           subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
-                          badge: isCompleted(b) ? const _CheckBadge() : null,
-                          leadingBadge: OfflineBadge(
+                          cornerOverlay:
+                              isCompleted(b) ? const ReadCorner() : null,
+                          leadingBadge: DownloadBadge(
                             sourceId: sourceId,
                             bookId: b.id,
                           ),
@@ -284,20 +285,3 @@ class _SeriesDownloadControl extends ConsumerWidget {
   }
 }
 
-class _CheckBadge extends StatelessWidget {
-  const _CheckBadge();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.primary,
-      shape: BoxShape.circle,
-    ),
-    padding: const EdgeInsets.all(2),
-    child: Icon(
-      AppIcons.check,
-      size: 14,
-      color: Theme.of(context).colorScheme.onPrimary,
-    ),
-  );
-}

@@ -199,6 +199,10 @@ class ReadListDetailScreen extends ConsumerWidget {
                       ownerId: b.id,
                       title: b.title,
                       subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
+                      cornerOverlay:
+                          BookReadCorner(sourceId: sourceId, bookId: b.id),
+                      leadingBadge:
+                          DownloadBadge(sourceId: sourceId, bookId: b.id),
                       onTap: () => context.push('/book/$sourceId/${b.id}'),
                     ),
                   );

@@ -638,6 +638,27 @@ class AppDatabase extends _$AppDatabase {
                 t.sourceId.equals(sourceId) & t.bookId.equals(bookId)))
           .watchSingleOrNull();
 
+  /// Whether a book reads as completed for grid badges: a local [BookState] row
+  /// wins (`status == 'completed'`); otherwise the cached `Books.completed`
+  /// flag (which a server refresh may overwrite). Mirrors the series-detail
+  /// `isCompleted` precedence, but for a single book so any cover tile can show
+  /// the "read" corner. Emits `false` when the book is not yet cached.
+  Stream<bool> watchBookCompleted(String sourceId, String bookId) {
+    final query = select(books).join([
+      leftOuterJoin(
+        bookState,
+        bookState.sourceId.equalsExp(books.sourceId) &
+            bookState.bookId.equalsExp(books.id),
+      ),
+    ])..where(books.sourceId.equals(sourceId) & books.id.equals(bookId));
+    return query.watchSingleOrNull().map((row) {
+      if (row == null) return false;
+      final state = row.readTableOrNull(bookState);
+      if (state != null) return state.status == 'completed';
+      return row.readTable(books).completed;
+    });
+  }
+
   /// Komga book-state rows ordered for reconcile rotation: least-recently
   /// reconciled first (NULL [BookState.reconciledAt] = never reconciled =
   /// highest priority, since SQLite sorts NULL first in ascending order). The

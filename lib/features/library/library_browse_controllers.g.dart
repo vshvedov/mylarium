@@ -1616,6 +1616,168 @@ class _BookReadStateProviderElement
   String get bookId => (origin as BookReadStateProvider).bookId;
 }
 
+String _$bookCompletedHash() => r'5e0aa019bd63d0faa3d610892709feb25d93d279';
+
+/// Whether a single book reads as completed (local [BookState] wins, else the
+/// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+/// outside series detail (home rails, read lists), which lack the batched
+/// [seriesReadStates] the series grid uses.
+///
+/// Copied from [bookCompleted].
+@ProviderFor(bookCompleted)
+const bookCompletedProvider = BookCompletedFamily();
+
+/// Whether a single book reads as completed (local [BookState] wins, else the
+/// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+/// outside series detail (home rails, read lists), which lack the batched
+/// [seriesReadStates] the series grid uses.
+///
+/// Copied from [bookCompleted].
+class BookCompletedFamily extends Family<AsyncValue<bool>> {
+  /// Whether a single book reads as completed (local [BookState] wins, else the
+  /// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+  /// outside series detail (home rails, read lists), which lack the batched
+  /// [seriesReadStates] the series grid uses.
+  ///
+  /// Copied from [bookCompleted].
+  const BookCompletedFamily();
+
+  /// Whether a single book reads as completed (local [BookState] wins, else the
+  /// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+  /// outside series detail (home rails, read lists), which lack the batched
+  /// [seriesReadStates] the series grid uses.
+  ///
+  /// Copied from [bookCompleted].
+  BookCompletedProvider call(String sourceId, String bookId) {
+    return BookCompletedProvider(sourceId, bookId);
+  }
+
+  @override
+  BookCompletedProvider getProviderOverride(
+    covariant BookCompletedProvider provider,
+  ) {
+    return call(provider.sourceId, provider.bookId);
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'bookCompletedProvider';
+}
+
+/// Whether a single book reads as completed (local [BookState] wins, else the
+/// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+/// outside series detail (home rails, read lists), which lack the batched
+/// [seriesReadStates] the series grid uses.
+///
+/// Copied from [bookCompleted].
+class BookCompletedProvider extends AutoDisposeStreamProvider<bool> {
+  /// Whether a single book reads as completed (local [BookState] wins, else the
+  /// cached `Books.completed`). Backs the read-corner badge on book cover tiles
+  /// outside series detail (home rails, read lists), which lack the batched
+  /// [seriesReadStates] the series grid uses.
+  ///
+  /// Copied from [bookCompleted].
+  BookCompletedProvider(String sourceId, String bookId)
+    : this._internal(
+        (ref) => bookCompleted(ref as BookCompletedRef, sourceId, bookId),
+        from: bookCompletedProvider,
+        name: r'bookCompletedProvider',
+        debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+            ? null
+            : _$bookCompletedHash,
+        dependencies: BookCompletedFamily._dependencies,
+        allTransitiveDependencies:
+            BookCompletedFamily._allTransitiveDependencies,
+        sourceId: sourceId,
+        bookId: bookId,
+      );
+
+  BookCompletedProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.sourceId,
+    required this.bookId,
+  }) : super.internal();
+
+  final String sourceId;
+  final String bookId;
+
+  @override
+  Override overrideWith(
+    Stream<bool> Function(BookCompletedRef provider) create,
+  ) {
+    return ProviderOverride(
+      origin: this,
+      override: BookCompletedProvider._internal(
+        (ref) => create(ref as BookCompletedRef),
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        sourceId: sourceId,
+        bookId: bookId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeStreamProviderElement<bool> createElement() {
+    return _BookCompletedProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is BookCompletedProvider &&
+        other.sourceId == sourceId &&
+        other.bookId == bookId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, sourceId.hashCode);
+    hash = _SystemHash.combine(hash, bookId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin BookCompletedRef on AutoDisposeStreamProviderRef<bool> {
+  /// The parameter `sourceId` of this provider.
+  String get sourceId;
+
+  /// The parameter `bookId` of this provider.
+  String get bookId;
+}
+
+class _BookCompletedProviderElement
+    extends AutoDisposeStreamProviderElement<bool>
+    with BookCompletedRef {
+  _BookCompletedProviderElement(super.provider);
+
+  @override
+  String get sourceId => (origin as BookCompletedProvider).sourceId;
+  @override
+  String get bookId => (origin as BookCompletedProvider).bookId;
+}
+
 String _$seriesReadStatesHash() => r'0a21e8bfe18337b1834dd24fc28585e7d40cd92f';
 
 /// The local read state of every book of a series that has one, for the series

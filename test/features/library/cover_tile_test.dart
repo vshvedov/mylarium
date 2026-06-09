@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/app_theme.dart';
+import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/thumbnail_cache.dart';
 import 'package:mylarium/features/library/widgets/library_tiles.dart';
 
@@ -103,5 +104,42 @@ void main() {
     expect(find.byKey(const ValueKey('deckCard')), findsNWidgets(2));
     // The front cover keeps its shadow Container in both modes.
     expect(find.byKey(const ValueKey('coverShadow')), findsOneWidget);
+  });
+
+  testWidgets('ReadCorner paints a fold (with its checkmark)', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: Center(child: ReadCorner())),
+      ),
+    );
+    // The fold and its check are hand-painted, so assert the painter renders.
+    expect(find.byType(ReadCorner), findsOneWidget);
+    expect(find.byType(CustomPaint), findsWidgets);
+  });
+
+  Widget bookCorner({required bool completed}) => ProviderScope(
+        overrides: [
+          bookCompletedProvider('s', 'b')
+              .overrideWith((ref) => Stream.value(completed)),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(body: BookReadCorner(sourceId: 's', bookId: 'b')),
+        ),
+      );
+
+  testWidgets('BookReadCorner stays hidden while the book is unread', (
+    tester,
+  ) async {
+    await tester.pumpWidget(bookCorner(completed: false));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReadCorner), findsNothing);
+  });
+
+  testWidgets('BookReadCorner shows the fold once the book is completed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(bookCorner(completed: true));
+    await tester.pumpAndSettle();
+    expect(find.byType(ReadCorner), findsOneWidget);
   });
 }
