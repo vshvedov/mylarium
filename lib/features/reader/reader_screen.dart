@@ -10,6 +10,7 @@ import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_loading.dart';
+import '../../core/archive/archive_reader.dart';
 import '../../core/network/content_exception.dart';
 import '../../core/platform/render_capabilities.dart';
 import '../../core/platform/system_ui.dart';
@@ -154,6 +155,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   List<List<int>> _pairs = const [];
   PagePrefetcher? _prefetcher;
 
+  /// The persistent archive reader for an offline book (one worker isolate, kept
+  /// alive for the whole reading session so page reads never pay an isolate
+  /// spawn). Created in [initState] for an offline source, disposed in [dispose];
+  /// a source rebuild (rotation/color) reuses the same reader.
+  ArchiveReader? _archiveReader;
+
   // Enter distraction-free: the top bar and bottom scrubber start hidden and a
   // tap on the page reveals them.
   bool _chrome = false;
@@ -193,10 +200,18 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// disposed (which throws "Cannot use ref after the widget was disposed").
   late final Future<SyncEngine> _syncEngine;
 
-  /// Captured in [initState] so the deferred offline backfill can run from
+  /// Captured in [initState] so the offline backfill can run from
   /// [dispose] / lifecycle callbacks without touching `ref` after disposal
   /// (which throws). The manager is app-lifetime (keepAlive).
   late final DownloadManager _downloadManager;
+
+  /// Starts the during-read auto-cache backfill a few seconds after open (online
+  /// sources), so a wanted chapter caches while you read instead of only on exit.
+  Timer? _backfillTimer;
+
+  /// Guards [_backfillOffline] so the during-read timer, the background-lifecycle
+  /// path, and dispose enqueue it at most once.
+  bool _backfillStarted = false;
 
   /// Debounces per-turn progress write-back (BookState + Komga queue).
   Timer? _progressDebounce;
@@ -250,6 +265,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     super.initState();
     _syncEngine = ref.read(syncEngineProvider.future);
     _downloadManager = ref.read(downloadManagerProvider);
+    // An offline book reads through ONE persistent archive-reader worker for the
+    // whole session (no per-page isolate spawn), torn down in [dispose].
+    final source = widget.data.source;
+    if (source is OfflinePages) {
+      _archiveReader = ArchiveReader(source.archivePath);
+    }
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
@@ -272,6 +293,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Distraction-free, full-bleed reading: hide the system bars and claim the
     // screen edges from the Android back/switch gesture (no-op on iOS).
     unawaited(enterReaderImmersive());
+    // Start the auto-cache backfill while reading (online sources), a few seconds
+    // in so the opening page + window warm first. Gated by the auto-cache + Wi-Fi
+    // settings inside the download manager; the dispose/background path is an
+    // idempotent fallback if the reader closes before this fires.
+    if (!widget.preview && source is OnlinePages) {
+      _backfillTimer = Timer(const Duration(seconds: 3), _backfillOffline);
+    }
   }
 
   int _nowMs() => DateTime.now().millisecondsSinceEpoch;
@@ -334,14 +362,16 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         .catchError((Object _) {});
   }
 
-  /// Deferred + throttled auto-cache: the full-chapter download is enqueued only
-  /// when the reader is no longer actively pulling pages (on close / background),
-  /// so foreground page fetches always have the connection to themselves. Online
-  /// sources only; never in preview. Idempotent and Wi-Fi/auto-cache gated by the
-  /// download manager.
+  /// Auto-cache backfill: enqueues the full-chapter download once per session.
+  /// Started a few seconds after open (so it never competes with the opening page
+  /// fetches), with the background-lifecycle and dispose paths as fallbacks. The
+  /// [_backfillStarted] guard keeps it to a single enqueue. Online sources only;
+  /// never in preview. Wi-Fi/auto-cache gated by the download manager.
   void _backfillOffline() {
     if (widget.preview) return;
     if (widget.data.source is! OnlinePages) return;
+    if (_backfillStarted) return;
+    _backfillStarted = true;
     final sourceId = widget.sourceId;
     final bookId = widget.bookId;
     unawaited(
@@ -454,11 +484,10 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         cacheWidth: neighborWidth,
         byteStore: ref.read(pageByteStoreProvider),
       ),
-      OfflinePages(:final archivePath, :final entries) => OfflinePageSource(
-        extractor: ref.read(archiveExtractorProvider),
+      OfflinePages(:final entries) => OfflinePageSource(
+        reader: _archiveReader!,
         sourceId: widget.sourceId,
         bookId: widget.bookId,
-        archivePath: archivePath,
         entries: entries,
         cacheWidth: neighborWidth,
       ),
@@ -473,11 +502,17 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         : ColorFilter.matrix(buildMatrix(affine));
     _source = source;
     _recomputePairs();
-    _prefetcher = PagePrefetcher.forContext(source, context);
+    // Offline reads are local and cheap (the persistent reader has no per-page
+    // spawn), so look a little further ahead; online stays at the default to
+    // avoid the archive backfill competing with foreground page fetches.
+    final ahead = widget.data.source is OfflinePages ? 4 : 3;
+    _prefetcher = PagePrefetcher.forContext(source, context, ahead: ahead);
     _pageController ??= PageController(initialPage: _controllerIndexFor(_page));
-    // On a forced (color) rebuild, warm the new providers for the visible
-    // window so the corrected pages decode now rather than on the next turn.
-    if (force) _prefetcher?.onPage(_page);
+    // Warm the window for the current page on every real (re)build, including the
+    // initial open, so the next page is decoded BEFORE the first turn. (Previously
+    // only a forced color rebuild warmed it, so the first page-turn of a freshly
+    // opened book was always a cold decode - the offline "loading" spinner.)
+    _prefetcher?.onPage(_page);
   }
 
   void _recomputePairs() {
@@ -597,14 +632,18 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     unawaited(exitReaderImmersive());
     _progressDebounce?.cancel();
     _focusSettleTimer?.cancel();
+    _backfillTimer?.cancel();
     // Push the final position (durable) and append the session (best-effort;
     // the SyncEngine + database are app-lifetime, so the write survives this
     // screen's teardown).
     _pushProgress(_page, completed: _isLastPage(_page));
     _finalizeSession();
-    // Now that reading is over, backfill the rest of the chapter offline without
-    // competing with foreground page fetches.
+    // Fallback: enqueue the backfill if the during-read timer never fired (the
+    // [_backfillStarted] guard makes this a no-op once it has).
     _backfillOffline();
+    // Tear down the offline archive worker isolate now that all page reads are
+    // done (never mid-session, which would fail in-flight decodes).
+    unawaited(_archiveReader?.dispose() ?? Future<void>.value());
     // If the chapter was finished this session, reclaim its cached copy now that
     // the reader (and its archive reads) are tearing down - never mid-session,
     // which would fail in-flight decodes. No-op unless "delete on read" is on.

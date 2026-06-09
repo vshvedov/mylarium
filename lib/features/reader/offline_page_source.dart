@@ -3,26 +3,26 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
-import '../../core/archive/archive_extractor.dart';
+import '../../core/archive/archive_reader.dart';
 import 'page_source.dart';
 
-/// Reads pages from a downloaded archive on disk via [ArchiveExtractor] (in an
-/// isolate). Entries are listed once by the caller and passed in. Implements the
-/// same [PageSource] contract as the online source so the reader is unchanged.
+/// Reads pages from a downloaded archive on disk via a persistent [ArchiveReader]
+/// (one worker isolate kept alive for the open book, so a page read costs only
+/// the decode - no per-page isolate spawn). Entries are listed once by the caller
+/// and passed in. Implements the same [PageSource] contract as the online source
+/// so the reader is unchanged.
 class OfflinePageSource implements PageSource {
   OfflinePageSource({
-    required this.extractor,
+    required this.reader,
     required this.sourceId,
     required this.bookId,
-    required this.archivePath,
     required this.entries,
     this.cacheWidth,
   });
 
-  final ArchiveExtractor extractor;
+  final ArchiveReader reader;
   final String sourceId;
   final String bookId;
-  final String archivePath;
   final List<String> entries;
   final int? cacheWidth;
 
@@ -35,10 +35,9 @@ class OfflinePageSource implements PageSource {
   @override
   ImageProvider imageProviderAt(int i, int? cacheWidth) =>
       OfflinePageImageProvider(
-        extractor: extractor,
+        reader: reader,
         sourceId: sourceId,
         bookId: bookId,
-        archivePath: archivePath,
         entry: entries[i],
         entryIndex: i,
         cacheWidth: cacheWidth,
@@ -46,10 +45,9 @@ class OfflinePageSource implements PageSource {
 
   @override
   ImageProvider thumbnail(int i) => OfflinePageImageProvider(
-        extractor: extractor,
+        reader: reader,
         sourceId: sourceId,
         bookId: bookId,
-        archivePath: archivePath,
         entry: entries[i],
         entryIndex: i,
         cacheWidth: kScrubberThumbWidth,
@@ -69,25 +67,24 @@ class OfflinePageSource implements PageSource {
 
 /// An [ImageProvider] for one archive entry, keyed by
 /// `(sourceId, bookId, entryIndex, cacheWidth)` so it dedupes in the global
-/// [ImageCache] without colliding across sources. Bytes are extracted in the
-/// isolate; the decode is sized with `cacheWidth`.
+/// [ImageCache] without colliding across sources. Bytes come from the persistent
+/// [ArchiveReader] (shared, so not part of `==`); the decode is sized with
+/// `cacheWidth`.
 @immutable
 class OfflinePageImageProvider
     extends ImageProvider<OfflinePageImageProvider> {
   const OfflinePageImageProvider({
-    required this.extractor,
+    required this.reader,
     required this.sourceId,
     required this.bookId,
-    required this.archivePath,
     required this.entry,
     required this.entryIndex,
     this.cacheWidth,
   });
 
-  final ArchiveExtractor extractor;
+  final ArchiveReader reader;
   final String sourceId;
   final String bookId;
-  final String archivePath;
   final String entry;
   final int entryIndex;
   final int? cacheWidth;
@@ -108,7 +105,7 @@ class OfflinePageImageProvider
       );
 
   Future<ui.Codec> _load(ImageDecoderCallback decode) async {
-    final bytes = await extractor.page(archivePath, entry);
+    final bytes = await reader.page(entry);
     if (bytes.isEmpty) {
       throw StateError('Empty page bytes for $bookId/$entry');
     }

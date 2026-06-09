@@ -32,9 +32,11 @@ class ArchiveExtractor {
   Future<List<String>> entries(String archivePath) =>
       Isolate.run(() => _entries(archivePath));
 
-  /// Decompressed bytes of [entry] inside [archivePath].
+  /// Decompressed bytes of [entry] inside [archivePath] (one-shot, in a throwaway
+  /// isolate). The reader pages through [ArchiveReader] instead, which keeps a
+  /// single worker isolate alive across reads; this remains for one-off extracts.
   Future<Uint8List> page(String archivePath, String entry) =>
-      Isolate.run(() => _page(archivePath, entry));
+      Isolate.run(() => readArchiveEntrySync(archivePath, entry));
 }
 
 // --- isolate bodies (top-level so they are sendable) -----------------------
@@ -82,7 +84,12 @@ List<String> _entries(String path) {
   return names;
 }
 
-Uint8List _page(String path, String entry) {
+/// Synchronously decodes the bytes of [entry] inside the archive at [path] via a
+/// random-access read (decode the central directory, then inflate only the
+/// requested entry). Top-level + public so the same decode runs both in
+/// [ArchiveExtractor]'s one-shot isolate and in the persistent [ArchiveReader]
+/// worker.
+Uint8List readArchiveEntrySync(String path, String entry) {
   switch (_sniff(path)) {
     case ArchiveFormat.zip:
       // Random-access read of a single entry: decode the central directory,
