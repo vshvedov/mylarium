@@ -20,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     final items = ref.watch(homeLayoutControllerProvider);
     final controller = ref.read(homeLayoutControllerProvider.notifier);
     final theme = Theme.of(context);
+    final version = ref.watch(appVersionLabelProvider).valueOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -114,14 +115,29 @@ class SettingsScreen extends ConsumerWidget {
               const Divider(height: 24, indent: 20, endIndent: 20),
               SafeArea(
                 top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                  child: AppListRow(
-                    icon: AppIcons.info,
-                    title: 'Diagnostics',
-                    subtitle: 'GPU and rendering info',
-                    onTap: () => context.push('/settings/diagnostics'),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                      child: AppListRow(
+                        icon: AppIcons.info,
+                        title: 'Diagnostics',
+                        subtitle: 'GPU and rendering info',
+                        onTap: () => context.push('/settings/diagnostics'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                      child: Text(
+                        version == null ? 'Mylarium' : 'Mylarium $version',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

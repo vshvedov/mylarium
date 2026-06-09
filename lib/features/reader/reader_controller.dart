@@ -163,16 +163,33 @@ class ReaderController extends _$ReaderController {
     String seriesId;
     String title;
     int? serverReadPage;
-    if (cached != null) {
+    // With no local read state (e.g. right after a reinstall), resume must come
+    // from the server's authoritative read-progress, NOT the cached
+    // `Books.readPage`: that column is a display denormalization the home rails
+    // populate asynchronously, so in the first moments after a fresh install it
+    // can lag or be missing for a book - and the reader would then open at page
+    // 1 despite the server knowing the position. Fetch the book fresh in that
+    // case. When a local saved page exists it wins regardless (see
+    // [resolveInitialReaderPage]), so the cached metadata is enough and no
+    // network round-trip is needed.
+    if (cached == null || savedPage == null) {
+      try {
+        final dto = await api.getBook(bookId);
+        seriesId = dto.seriesId;
+        title = dto.title;
+        serverReadPage = dto.readPage;
+        await db.upsertBook(bookToRow(sourceId, dto));
+      } on ContentException {
+        if (cached == null) rethrow; // no cache and no server: cannot resolve
+        // Server unreachable: fall back to the last-known cached page.
+        seriesId = cached.seriesId;
+        title = cached.title;
+        serverReadPage = cached.readPage;
+      }
+    } else {
       seriesId = cached.seriesId;
       title = cached.title;
       serverReadPage = cached.readPage;
-    } else {
-      final dto = await api.getBook(bookId);
-      seriesId = dto.seriesId;
-      title = dto.title;
-      serverReadPage = dto.readPage;
-      await db.upsertBook(bookToRow(sourceId, dto));
     }
 
     final pages = await api.bookPages(bookId);
