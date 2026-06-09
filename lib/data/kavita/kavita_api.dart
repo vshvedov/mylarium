@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import '../../core/network/content_exception.dart';
 import '../source/content_api.dart';
 import '../source/models/live_event.dart';
+import '../source/models/server_details.dart';
 import '../source/models/book_dto.dart';
 import '../source/models/collection_dto.dart';
 import '../source/models/library_dto.dart';
@@ -125,6 +126,53 @@ class KavitaApi implements ContentApi {
         final version = await fetchVersion();
         return ServerInfo(version: version, roles: roles);
       });
+
+  @override
+  Future<ServerFacts> fetchServerFacts() async {
+    final libraries = await listLibraries(); // authoritative online/auth probe
+    final versionF = bestEffort(fetchVersion);
+    final accountF = bestEffort(_fetchAccount);
+    final seriesF = bestEffort(
+        () async => (await listSeries(page: 0, size: 1)).totalElements);
+    final slimF = bestEffort(_fetchSlimRows);
+
+    final account = await accountF;
+    return ServerFacts(
+      version: await versionF,
+      account: account?.account,
+      roles: account?.roles ?? const {},
+      libraryNames: libraries.map((l) => l.name).toList(growable: false),
+      totalSeries: await seriesF,
+      totalBooks: null, // Kavita exposes no cheap volume aggregate
+      extra: [...?(await slimF)],
+    );
+  }
+
+  Future<({String? account, Set<String> roles})> _fetchAccount() async {
+    final token = await _auth.token();
+    return (
+      account: KavitaAuth.usernameFromJwt(token),
+      roles: KavitaAuth.rolesFromJwt(token),
+    );
+  }
+
+  Future<List<ServerDetailRow>> _fetchSlimRows() async {
+    final res = await _dio.get<Object?>('/api/Server/server-info-slim');
+    final d = res.data;
+    final rows = <ServerDetailRow>[];
+    if (d is Map) {
+      void add(String label, Object? v) {
+        if (v != null) rows.add((label: label, value: '$v'));
+      }
+      add('OS', d['os']);
+      add('.NET', d['dotnetVersion']);
+      if (d['isDocker'] is bool) {
+        add('Docker', d['isDocker'] == true ? 'Yes' : 'No');
+      }
+      add('Install ID', d['installId']);
+    }
+    return rows;
+  }
 
   // --- Libraries / series ----------------------------------------------------
 
