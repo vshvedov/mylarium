@@ -146,18 +146,23 @@ Uint8List? _tryReadEntrySync(String path, String entryName) {
         }
         final found = best;
         if (found == null) return null;
-        return archive.findFile(found)?.readBytes();
+        final bytes = archive.findFile(found)?.readBytes();
+        if (bytes == null) {
+          throw ArchiveException('Could not read entry: $found', path: path);
+        }
+        return bytes;
       } finally {
         input.closeSync();
       }
     case ArchiveFormat.rar:
-      for (final e in UnrarExtractor().listFiles(path)) {
+      final unrar = UnrarExtractor();
+      for (final e in unrar.listFiles(path)) {
         if (e.isDirectory || !matches(e.name)) continue;
         final current = best;
         if (current == null || depth(e.name) < depth(current)) best = e.name;
       }
       final found = best;
-      return found == null ? null : UnrarExtractor().extractFile(path, found);
+      return found == null ? null : unrar.extractFile(path, found);
     case ArchiveFormat.unknown:
       throw ArchiveException('Unknown archive format', path: path);
   }
