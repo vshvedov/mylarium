@@ -42,6 +42,7 @@ class ReaderData {
     required this.bookId,
     required this.seriesId,
     required this.title,
+    required this.seriesTitle,
     required this.settings,
     required this.source,
     required this.initialPage,
@@ -54,6 +55,10 @@ class ReaderData {
 
   /// The current book's display title, shown by the end-of-book seam (T4).
   final String title;
+
+  /// The owning series' display title (null when not cached), shown in the
+  /// reader top bar alongside the chapter title.
+  final String? seriesTitle;
   final ReaderSettings settings;
   final ReaderPages source;
 
@@ -71,6 +76,7 @@ class ReaderData {
     bookId: bookId,
     seriesId: seriesId,
     title: title,
+    seriesTitle: seriesTitle,
     settings: settings ?? this.settings,
     source: source,
     initialPage: initialPage,
@@ -139,6 +145,7 @@ class ReaderController extends _$ReaderController {
           bookId: bookId,
           seriesId: seriesId,
           title: title,
+          seriesTitle: await db.seriesTitle(sourceId, seriesId),
           settings: settings,
           source: OfflinePages(archivePath, entries),
           initialPage: resolveInitialReaderPage(
@@ -216,6 +223,7 @@ class ReaderController extends _$ReaderController {
       bookId: bookId,
       seriesId: seriesId,
       title: title,
+      seriesTitle: await db.seriesTitle(sourceId, seriesId),
       settings: settings,
       source: OnlinePages(api, pages),
       initialPage: resolveInitialReaderPage(

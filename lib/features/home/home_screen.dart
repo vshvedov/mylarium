@@ -157,6 +157,11 @@ class HomeScreen extends ConsumerWidget {
                 : () => context.push('/browse/$sourceId'),
           ),
           IconButton(
+            icon: const Icon(AppIcons.gallery),
+            tooltip: 'Gallery',
+            onPressed: () => context.push('/gallery'),
+          ),
+          IconButton(
             icon: const Icon(AppIcons.stats),
             tooltip: 'Reading stats',
             onPressed: () => context.push('/stats'),

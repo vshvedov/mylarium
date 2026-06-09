@@ -35,6 +35,7 @@ ReaderChrome _chrome({
       onToggleDirection: onToggleDirection,
       onImageQuality: () {},
       onColorCorrection: () {},
+      onCapture: () {},
     );
 
 void _noop() {}

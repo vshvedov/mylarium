@@ -1763,8 +1763,8 @@ class HomeRailItems extends Table with TableInfo {
   }
 }
 
-class DatabaseAtV1 extends GeneratedDatabase {
-  DatabaseAtV1(QueryExecutor e) : super(e);
+class DatabaseAtV16 extends GeneratedDatabase {
+  DatabaseAtV16(QueryExecutor e) : super(e);
   late final AppSettings appSettings = AppSettings(this);
   late final Sources sources = Sources(this);
   late final Libraries libraries = Libraries(this);
@@ -1828,5 +1828,5 @@ class DatabaseAtV1 extends GeneratedDatabase {
     syncQueueBook,
   ];
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 16;
 }

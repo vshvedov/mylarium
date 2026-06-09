@@ -33,6 +33,7 @@ class ReaderChrome extends ConsumerStatefulWidget {
     required this.onOpenBook,
     required this.onImageQuality,
     required this.onColorCorrection,
+    required this.onCapture,
     this.onToggleDirection,
     this.onNudge,
     this.nudged = false,
@@ -77,6 +78,9 @@ class ReaderChrome extends ConsumerStatefulWidget {
 
   /// Opens the page color-correction controls.
   final VoidCallback onColorCorrection;
+
+  /// Enters page-capture mode (region-select to the gallery).
+  final VoidCallback onCapture;
 
   /// Flip reading direction (shown only when non-null; null hides it in webtoon).
   final VoidCallback? onToggleDirection;
@@ -128,6 +132,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
               onToggleDirection: widget.onToggleDirection,
               onImageQuality: widget.onImageQuality,
               onColorCorrection: widget.onColorCorrection,
+              onCapture: widget.onCapture,
               onNudge: widget.onNudge,
               nudged: widget.nudged,
             ),
@@ -329,6 +334,7 @@ class _TopBar extends StatelessWidget {
     required this.onToggleDirection,
     required this.onImageQuality,
     required this.onColorCorrection,
+    required this.onCapture,
     required this.onNudge,
     required this.nudged,
   });
@@ -343,6 +349,7 @@ class _TopBar extends StatelessWidget {
   final VoidCallback? onToggleDirection;
   final VoidCallback onImageQuality;
   final VoidCallback onColorCorrection;
+  final VoidCallback onCapture;
   final VoidCallback? onNudge;
   final bool nudged;
 
@@ -373,6 +380,11 @@ class _TopBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+              ),
+              IconButton(
+                icon: const Icon(AppIcons.capture),
+                tooltip: 'Capture page',
+                onPressed: onCapture,
               ),
               if (onToggleDirection != null)
                 IconButton(

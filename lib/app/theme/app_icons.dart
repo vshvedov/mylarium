@@ -132,6 +132,12 @@ abstract final class AppIcons {
   static const close =
       IconData(0xe4f6, fontFamily: _family, fontPackage: _package); // x
 
+  // Page capture (reader) + the personal gallery destination.
+  static const capture = IconData(0xe69a,
+      fontFamily: _family, fontPackage: _package); // selection
+  static const gallery =
+      IconData(0xe836, fontFamily: _family, fontPackage: _package); // images
+
   // Offline / downloads
   static const download = IconData(0xe20c,
       fontFamily: _family, fontPackage: _package); // downloadSimple

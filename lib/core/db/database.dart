@@ -13,6 +13,7 @@ import 'tables/book_state.dart';
 import 'tables/books.dart';
 import 'tables/cached_assets.dart';
 import 'tables/cached_metadata.dart';
+import 'tables/captures.dart';
 import 'tables/color_settings.dart';
 import 'tables/download_tasks.dart';
 import 'tables/home_rail_items.dart';
@@ -64,6 +65,7 @@ typedef RailSnapshotRaw = ({
   Books,
   Thumbnails,
   CachedMetadata,
+  Captures,
   LibraryPrefs,
   ReaderSettings,
   CachedAssets,
@@ -97,6 +99,16 @@ class AppDatabase extends _$AppDatabase {
         // baseline (16+) upgrade incrementally; [openOrResetDatabase] keeps
         // resetting only the pre-baseline and downgrade cases.
         onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // v16 -> v17: add the page-capture gallery table. Purely additive
+          // (CREATE TABLE + its index); no existing data is touched.
+          // `createTable` does not create table-scoped indexes, so the
+          // capturedAt index is created explicitly.
+          if (from < 17) {
+            await m.createTable(captures);
+            await m.createIndex(idxCapturesCapturedAt);
+          }
+        },
       );
 
   /// Reads the canonical settings row (id = 1), inserting defaults exactly once
@@ -632,6 +644,40 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertBookState(BookStateCompanion row) =>
       into(bookState).insertOnConflictUpdate(row);
 
+  // --- Captures (page-capture gallery) -------------------------------------
+
+  Future<void> insertCapture(CapturesCompanion row) =>
+      into(captures).insert(row);
+
+  /// All captures, newest first (drives the gallery grid).
+  Stream<List<CaptureRow>> watchCaptures() =>
+      (select(captures)..orderBy([(t) => OrderingTerm.desc(t.capturedAt)]))
+          .watch();
+
+  Future<CaptureRow?> getCapture(String id) =>
+      (select(captures)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  Future<void> deleteCapture(String id) =>
+      (delete(captures)..where((t) => t.id.equals(id))).go();
+
+  /// The owning library id for a cached book, or null when the book is not
+  /// cached. Used to stamp a capture's `libraryId` for lock-aware filtering.
+  Future<String?> bookLibraryId(String sourceId, String bookId) async {
+    final row = await (select(books)
+          ..where((t) => t.sourceId.equals(sourceId) & t.id.equals(bookId)))
+        .getSingleOrNull();
+    return row?.libraryId;
+  }
+
+  /// The display title for a cached series, or null when it is not cached. Used
+  /// to stamp a capture's denormalized `seriesTitle` for gallery display.
+  Future<String?> seriesTitle(String sourceId, String seriesId) async {
+    final row = await (select(series)
+          ..where((t) => t.sourceId.equals(sourceId) & t.id.equals(seriesId)))
+        .getSingleOrNull();
+    return row?.title;
+  }
+
   Stream<BookStateRow?> watchBookState(String sourceId, String bookId) =>
       (select(bookState)
             ..where((t) =>
@@ -987,11 +1033,13 @@ class AppDatabase extends _$AppDatabase {
 /// numbers can never collide with a future migration.
 const int _kBaselineVersion = 16;
 
-/// The current schema version. Equal to [_kBaselineVersion] today; raise it
-/// (17, 18, ...) and add an `onUpgrade` step in [AppDatabase.migration] for each
-/// new incremental migration. Databases in `[_kBaselineVersion, _kSchemaVersion]`
-/// migrate normally; everything else is reset by [openOrResetDatabase].
-const int _kSchemaVersion = _kBaselineVersion;
+/// The current schema version. Raise it (17, 18, ...) and add an `onUpgrade`
+/// step in [AppDatabase.migration] for each new incremental migration. Databases
+/// in `[_kBaselineVersion, _kSchemaVersion]` migrate normally; everything else is
+/// reset by [openOrResetDatabase].
+///
+/// v17: adds the `Captures` table (page-capture gallery).
+const int _kSchemaVersion = 17;
 
 LazyDatabase _open() => LazyDatabase(() async {
       final dir = await getApplicationSupportDirectory();

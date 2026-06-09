@@ -24,6 +24,9 @@ class AppPaths {
   /// Online page-image byte cache (ephemeral, LRU-evicted) root.
   static const pagesDir = 'media/pages';
 
+  /// User page-captures (permanent, user-managed) root.
+  static const capturesDir = 'media/captures';
+
   /// Test seam: when set, [resolve] joins against this root instead of the
   /// platform applicationSupport directory (lets tests simulate the cross-install
   /// container-path change that the relative-path promise guards).
@@ -46,6 +49,12 @@ class AppPaths {
   /// Relative path for a manually-downloaded archive (separate from the cache).
   static String downloadRelativePath(String sourceId, String bookId) =>
       p.join(downloadsDir, _safe(sourceId), '${_safe(bookId)}.archive');
+
+  /// Relative path for a saved page capture. The [id] (uuid) keys the file so a
+  /// book can hold many captures. Ids are sanitized so a hostile id cannot
+  /// escape the media root.
+  static String captureRelativePath(String sourceId, String bookId, String id) =>
+      p.join(capturesDir, _safe(sourceId), _safe(bookId), '${_safe(id)}.png');
 
   /// Relative path for a cached thumbnail. Keeping `<ownerType>/<sourceId>/...`
   /// segments avoids id collisions across sources. Ids are sanitized so a hostile

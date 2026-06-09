@@ -3574,6 +3574,741 @@ class CachedMetadataCompanion extends UpdateCompanion<CachedMetadataRow> {
   }
 }
 
+class $CapturesTable extends Captures
+    with TableInfo<$CapturesTable, CaptureRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CapturesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seriesIdMeta = const VerificationMeta(
+    'seriesId',
+  );
+  @override
+  late final GeneratedColumn<String> seriesId = GeneratedColumn<String>(
+    'series_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<String> bookId = GeneratedColumn<String>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _libraryIdMeta = const VerificationMeta(
+    'libraryId',
+  );
+  @override
+  late final GeneratedColumn<String> libraryId = GeneratedColumn<String>(
+    'library_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _seriesTitleMeta = const VerificationMeta(
+    'seriesTitle',
+  );
+  @override
+  late final GeneratedColumn<String> seriesTitle = GeneratedColumn<String>(
+    'series_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bookTitleMeta = const VerificationMeta(
+    'bookTitle',
+  );
+  @override
+  late final GeneratedColumn<String> bookTitle = GeneratedColumn<String>(
+    'book_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pageNumberMeta = const VerificationMeta(
+    'pageNumber',
+  );
+  @override
+  late final GeneratedColumn<int> pageNumber = GeneratedColumn<int>(
+    'page_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _widthMeta = const VerificationMeta('width');
+  @override
+  late final GeneratedColumn<int> width = GeneratedColumn<int>(
+    'width',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _heightMeta = const VerificationMeta('height');
+  @override
+  late final GeneratedColumn<int> height = GeneratedColumn<int>(
+    'height',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<int> capturedAt = GeneratedColumn<int>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sourceId,
+    seriesId,
+    bookId,
+    libraryId,
+    seriesTitle,
+    bookTitle,
+    pageNumber,
+    relativePath,
+    width,
+    height,
+    capturedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'captures';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CaptureRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('series_id')) {
+      context.handle(
+        _seriesIdMeta,
+        seriesId.isAcceptableOrUnknown(data['series_id']!, _seriesIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seriesIdMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('library_id')) {
+      context.handle(
+        _libraryIdMeta,
+        libraryId.isAcceptableOrUnknown(data['library_id']!, _libraryIdMeta),
+      );
+    }
+    if (data.containsKey('series_title')) {
+      context.handle(
+        _seriesTitleMeta,
+        seriesTitle.isAcceptableOrUnknown(
+          data['series_title']!,
+          _seriesTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('book_title')) {
+      context.handle(
+        _bookTitleMeta,
+        bookTitle.isAcceptableOrUnknown(data['book_title']!, _bookTitleMeta),
+      );
+    }
+    if (data.containsKey('page_number')) {
+      context.handle(
+        _pageNumberMeta,
+        pageNumber.isAcceptableOrUnknown(data['page_number']!, _pageNumberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pageNumberMeta);
+    }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('width')) {
+      context.handle(
+        _widthMeta,
+        width.isAcceptableOrUnknown(data['width']!, _widthMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_widthMeta);
+    }
+    if (data.containsKey('height')) {
+      context.handle(
+        _heightMeta,
+        height.isAcceptableOrUnknown(data['height']!, _heightMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_heightMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CaptureRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CaptureRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      seriesId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_id'],
+      )!,
+      libraryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}library_id'],
+      ),
+      seriesTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}series_title'],
+      ),
+      bookTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}book_title'],
+      ),
+      pageNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}page_number'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      width: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}width'],
+      )!,
+      height: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}height'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}captured_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CapturesTable createAlias(String alias) {
+    return $CapturesTable(attachedDatabase, alias);
+  }
+}
+
+class CaptureRow extends DataClass implements Insertable<CaptureRow> {
+  /// uuid v4.
+  final String id;
+  final String sourceId;
+  final String seriesId;
+  final String bookId;
+
+  /// Owning book's library id, for lock-aware gallery filtering. Null when the
+  /// book was not cached at capture time (treated as not-locked, consistent with
+  /// `AppLock.isLocked(null)`).
+  final String? libraryId;
+
+  /// Series display title, denormalized so the gallery can show the series name
+  /// even when the series row is uncached, offline, or the source was removed.
+  final String? seriesTitle;
+
+  /// Book (chapter) display title, denormalized so the gallery can label a
+  /// capture even when the book row is uncached, offline, or the source was
+  /// removed.
+  final String? bookTitle;
+
+  /// 0-based page index in the reader, matching `BookState.currentPage`.
+  final int pageNumber;
+
+  /// Relative path of the PNG under `media/captures/...`.
+  final String relativePath;
+
+  /// Captured image dimensions in pixels (drive the gallery tile aspect).
+  final int width;
+  final int height;
+
+  /// Device clock, epoch ms.
+  final int capturedAt;
+  const CaptureRow({
+    required this.id,
+    required this.sourceId,
+    required this.seriesId,
+    required this.bookId,
+    this.libraryId,
+    this.seriesTitle,
+    this.bookTitle,
+    required this.pageNumber,
+    required this.relativePath,
+    required this.width,
+    required this.height,
+    required this.capturedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['source_id'] = Variable<String>(sourceId);
+    map['series_id'] = Variable<String>(seriesId);
+    map['book_id'] = Variable<String>(bookId);
+    if (!nullToAbsent || libraryId != null) {
+      map['library_id'] = Variable<String>(libraryId);
+    }
+    if (!nullToAbsent || seriesTitle != null) {
+      map['series_title'] = Variable<String>(seriesTitle);
+    }
+    if (!nullToAbsent || bookTitle != null) {
+      map['book_title'] = Variable<String>(bookTitle);
+    }
+    map['page_number'] = Variable<int>(pageNumber);
+    map['relative_path'] = Variable<String>(relativePath);
+    map['width'] = Variable<int>(width);
+    map['height'] = Variable<int>(height);
+    map['captured_at'] = Variable<int>(capturedAt);
+    return map;
+  }
+
+  CapturesCompanion toCompanion(bool nullToAbsent) {
+    return CapturesCompanion(
+      id: Value(id),
+      sourceId: Value(sourceId),
+      seriesId: Value(seriesId),
+      bookId: Value(bookId),
+      libraryId: libraryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(libraryId),
+      seriesTitle: seriesTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seriesTitle),
+      bookTitle: bookTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bookTitle),
+      pageNumber: Value(pageNumber),
+      relativePath: Value(relativePath),
+      width: Value(width),
+      height: Value(height),
+      capturedAt: Value(capturedAt),
+    );
+  }
+
+  factory CaptureRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CaptureRow(
+      id: serializer.fromJson<String>(json['id']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      seriesId: serializer.fromJson<String>(json['seriesId']),
+      bookId: serializer.fromJson<String>(json['bookId']),
+      libraryId: serializer.fromJson<String?>(json['libraryId']),
+      seriesTitle: serializer.fromJson<String?>(json['seriesTitle']),
+      bookTitle: serializer.fromJson<String?>(json['bookTitle']),
+      pageNumber: serializer.fromJson<int>(json['pageNumber']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      width: serializer.fromJson<int>(json['width']),
+      height: serializer.fromJson<int>(json['height']),
+      capturedAt: serializer.fromJson<int>(json['capturedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'seriesId': serializer.toJson<String>(seriesId),
+      'bookId': serializer.toJson<String>(bookId),
+      'libraryId': serializer.toJson<String?>(libraryId),
+      'seriesTitle': serializer.toJson<String?>(seriesTitle),
+      'bookTitle': serializer.toJson<String?>(bookTitle),
+      'pageNumber': serializer.toJson<int>(pageNumber),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'width': serializer.toJson<int>(width),
+      'height': serializer.toJson<int>(height),
+      'capturedAt': serializer.toJson<int>(capturedAt),
+    };
+  }
+
+  CaptureRow copyWith({
+    String? id,
+    String? sourceId,
+    String? seriesId,
+    String? bookId,
+    Value<String?> libraryId = const Value.absent(),
+    Value<String?> seriesTitle = const Value.absent(),
+    Value<String?> bookTitle = const Value.absent(),
+    int? pageNumber,
+    String? relativePath,
+    int? width,
+    int? height,
+    int? capturedAt,
+  }) => CaptureRow(
+    id: id ?? this.id,
+    sourceId: sourceId ?? this.sourceId,
+    seriesId: seriesId ?? this.seriesId,
+    bookId: bookId ?? this.bookId,
+    libraryId: libraryId.present ? libraryId.value : this.libraryId,
+    seriesTitle: seriesTitle.present ? seriesTitle.value : this.seriesTitle,
+    bookTitle: bookTitle.present ? bookTitle.value : this.bookTitle,
+    pageNumber: pageNumber ?? this.pageNumber,
+    relativePath: relativePath ?? this.relativePath,
+    width: width ?? this.width,
+    height: height ?? this.height,
+    capturedAt: capturedAt ?? this.capturedAt,
+  );
+  CaptureRow copyWithCompanion(CapturesCompanion data) {
+    return CaptureRow(
+      id: data.id.present ? data.id.value : this.id,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      seriesId: data.seriesId.present ? data.seriesId.value : this.seriesId,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      libraryId: data.libraryId.present ? data.libraryId.value : this.libraryId,
+      seriesTitle: data.seriesTitle.present
+          ? data.seriesTitle.value
+          : this.seriesTitle,
+      bookTitle: data.bookTitle.present ? data.bookTitle.value : this.bookTitle,
+      pageNumber: data.pageNumber.present
+          ? data.pageNumber.value
+          : this.pageNumber,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      width: data.width.present ? data.width.value : this.width,
+      height: data.height.present ? data.height.value : this.height,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CaptureRow(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('bookId: $bookId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('seriesTitle: $seriesTitle, ')
+          ..write('bookTitle: $bookTitle, ')
+          ..write('pageNumber: $pageNumber, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('capturedAt: $capturedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sourceId,
+    seriesId,
+    bookId,
+    libraryId,
+    seriesTitle,
+    bookTitle,
+    pageNumber,
+    relativePath,
+    width,
+    height,
+    capturedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CaptureRow &&
+          other.id == this.id &&
+          other.sourceId == this.sourceId &&
+          other.seriesId == this.seriesId &&
+          other.bookId == this.bookId &&
+          other.libraryId == this.libraryId &&
+          other.seriesTitle == this.seriesTitle &&
+          other.bookTitle == this.bookTitle &&
+          other.pageNumber == this.pageNumber &&
+          other.relativePath == this.relativePath &&
+          other.width == this.width &&
+          other.height == this.height &&
+          other.capturedAt == this.capturedAt);
+}
+
+class CapturesCompanion extends UpdateCompanion<CaptureRow> {
+  final Value<String> id;
+  final Value<String> sourceId;
+  final Value<String> seriesId;
+  final Value<String> bookId;
+  final Value<String?> libraryId;
+  final Value<String?> seriesTitle;
+  final Value<String?> bookTitle;
+  final Value<int> pageNumber;
+  final Value<String> relativePath;
+  final Value<int> width;
+  final Value<int> height;
+  final Value<int> capturedAt;
+  final Value<int> rowid;
+  const CapturesCompanion({
+    this.id = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.seriesId = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.libraryId = const Value.absent(),
+    this.seriesTitle = const Value.absent(),
+    this.bookTitle = const Value.absent(),
+    this.pageNumber = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.width = const Value.absent(),
+    this.height = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CapturesCompanion.insert({
+    required String id,
+    required String sourceId,
+    required String seriesId,
+    required String bookId,
+    this.libraryId = const Value.absent(),
+    this.seriesTitle = const Value.absent(),
+    this.bookTitle = const Value.absent(),
+    required int pageNumber,
+    required String relativePath,
+    required int width,
+    required int height,
+    required int capturedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sourceId = Value(sourceId),
+       seriesId = Value(seriesId),
+       bookId = Value(bookId),
+       pageNumber = Value(pageNumber),
+       relativePath = Value(relativePath),
+       width = Value(width),
+       height = Value(height),
+       capturedAt = Value(capturedAt);
+  static Insertable<CaptureRow> custom({
+    Expression<String>? id,
+    Expression<String>? sourceId,
+    Expression<String>? seriesId,
+    Expression<String>? bookId,
+    Expression<String>? libraryId,
+    Expression<String>? seriesTitle,
+    Expression<String>? bookTitle,
+    Expression<int>? pageNumber,
+    Expression<String>? relativePath,
+    Expression<int>? width,
+    Expression<int>? height,
+    Expression<int>? capturedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sourceId != null) 'source_id': sourceId,
+      if (seriesId != null) 'series_id': seriesId,
+      if (bookId != null) 'book_id': bookId,
+      if (libraryId != null) 'library_id': libraryId,
+      if (seriesTitle != null) 'series_title': seriesTitle,
+      if (bookTitle != null) 'book_title': bookTitle,
+      if (pageNumber != null) 'page_number': pageNumber,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (width != null) 'width': width,
+      if (height != null) 'height': height,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CapturesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sourceId,
+    Value<String>? seriesId,
+    Value<String>? bookId,
+    Value<String?>? libraryId,
+    Value<String?>? seriesTitle,
+    Value<String?>? bookTitle,
+    Value<int>? pageNumber,
+    Value<String>? relativePath,
+    Value<int>? width,
+    Value<int>? height,
+    Value<int>? capturedAt,
+    Value<int>? rowid,
+  }) {
+    return CapturesCompanion(
+      id: id ?? this.id,
+      sourceId: sourceId ?? this.sourceId,
+      seriesId: seriesId ?? this.seriesId,
+      bookId: bookId ?? this.bookId,
+      libraryId: libraryId ?? this.libraryId,
+      seriesTitle: seriesTitle ?? this.seriesTitle,
+      bookTitle: bookTitle ?? this.bookTitle,
+      pageNumber: pageNumber ?? this.pageNumber,
+      relativePath: relativePath ?? this.relativePath,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      capturedAt: capturedAt ?? this.capturedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (seriesId.present) {
+      map['series_id'] = Variable<String>(seriesId.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<String>(bookId.value);
+    }
+    if (libraryId.present) {
+      map['library_id'] = Variable<String>(libraryId.value);
+    }
+    if (seriesTitle.present) {
+      map['series_title'] = Variable<String>(seriesTitle.value);
+    }
+    if (bookTitle.present) {
+      map['book_title'] = Variable<String>(bookTitle.value);
+    }
+    if (pageNumber.present) {
+      map['page_number'] = Variable<int>(pageNumber.value);
+    }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (width.present) {
+      map['width'] = Variable<int>(width.value);
+    }
+    if (height.present) {
+      map['height'] = Variable<int>(height.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<int>(capturedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CapturesCompanion(')
+          ..write('id: $id, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('seriesId: $seriesId, ')
+          ..write('bookId: $bookId, ')
+          ..write('libraryId: $libraryId, ')
+          ..write('seriesTitle: $seriesTitle, ')
+          ..write('bookTitle: $bookTitle, ')
+          ..write('pageNumber: $pageNumber, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('width: $width, ')
+          ..write('height: $height, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LibraryPrefsTable extends LibraryPrefs
     with TableInfo<$LibraryPrefsTable, LibraryPref> {
   @override
@@ -9598,6 +10333,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BooksTable books = $BooksTable(this);
   late final $ThumbnailsTable thumbnails = $ThumbnailsTable(this);
   late final $CachedMetadataTable cachedMetadata = $CachedMetadataTable(this);
+  late final $CapturesTable captures = $CapturesTable(this);
   late final $LibraryPrefsTable libraryPrefs = $LibraryPrefsTable(this);
   late final $ReaderSettingsTable readerSettings = $ReaderSettingsTable(this);
   late final $CachedAssetsTable cachedAssets = $CachedAssetsTable(this);
@@ -9619,6 +10355,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'series_keyset_lib',
     'CREATE INDEX series_keyset_lib ON series (source_id, library_id, title_sort, id)',
   );
+  late final Index idxCapturesCapturedAt = Index(
+    'idx_captures_captured_at',
+    'CREATE INDEX idx_captures_captured_at ON captures (captured_at)',
+  );
   late final Index cachedAssetsLru = Index(
     'cached_assets_lru',
     'CREATE INDEX cached_assets_lru ON cached_assets (last_accessed_at)',
@@ -9639,6 +10379,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     books,
     thumbnails,
     cachedMetadata,
+    captures,
     libraryPrefs,
     readerSettings,
     cachedAssets,
@@ -9652,6 +10393,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     homeRailItems,
     seriesKeyset,
     seriesKeysetLib,
+    idxCapturesCapturedAt,
     cachedAssetsLru,
     syncQueueBook,
   ];
@@ -11412,6 +12154,344 @@ typedef $$CachedMetadataTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $CachedMetadataTable, CachedMetadataRow>,
       ),
       CachedMetadataRow,
+      PrefetchHooks Function()
+    >;
+typedef $$CapturesTableCreateCompanionBuilder =
+    CapturesCompanion Function({
+      required String id,
+      required String sourceId,
+      required String seriesId,
+      required String bookId,
+      Value<String?> libraryId,
+      Value<String?> seriesTitle,
+      Value<String?> bookTitle,
+      required int pageNumber,
+      required String relativePath,
+      required int width,
+      required int height,
+      required int capturedAt,
+      Value<int> rowid,
+    });
+typedef $$CapturesTableUpdateCompanionBuilder =
+    CapturesCompanion Function({
+      Value<String> id,
+      Value<String> sourceId,
+      Value<String> seriesId,
+      Value<String> bookId,
+      Value<String?> libraryId,
+      Value<String?> seriesTitle,
+      Value<String?> bookTitle,
+      Value<int> pageNumber,
+      Value<String> relativePath,
+      Value<int> width,
+      Value<int> height,
+      Value<int> capturedAt,
+      Value<int> rowid,
+    });
+
+class $$CapturesTableFilterComposer
+    extends Composer<_$AppDatabase, $CapturesTable> {
+  $$CapturesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bookTitle => $composableBuilder(
+    column: $table.bookTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pageNumber => $composableBuilder(
+    column: $table.pageNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get width => $composableBuilder(
+    column: $table.width,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get height => $composableBuilder(
+    column: $table.height,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CapturesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CapturesTable> {
+  $$CapturesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+    column: $table.sourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesId => $composableBuilder(
+    column: $table.seriesId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get libraryId => $composableBuilder(
+    column: $table.libraryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bookTitle => $composableBuilder(
+    column: $table.bookTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pageNumber => $composableBuilder(
+    column: $table.pageNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get width => $composableBuilder(
+    column: $table.width,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get height => $composableBuilder(
+    column: $table.height,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CapturesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CapturesTable> {
+  $$CapturesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesId =>
+      $composableBuilder(column: $table.seriesId, builder: (column) => column);
+
+  GeneratedColumn<String> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<String> get libraryId =>
+      $composableBuilder(column: $table.libraryId, builder: (column) => column);
+
+  GeneratedColumn<String> get seriesTitle => $composableBuilder(
+    column: $table.seriesTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bookTitle =>
+      $composableBuilder(column: $table.bookTitle, builder: (column) => column);
+
+  GeneratedColumn<int> get pageNumber => $composableBuilder(
+    column: $table.pageNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get width =>
+      $composableBuilder(column: $table.width, builder: (column) => column);
+
+  GeneratedColumn<int> get height =>
+      $composableBuilder(column: $table.height, builder: (column) => column);
+
+  GeneratedColumn<int> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$CapturesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CapturesTable,
+          CaptureRow,
+          $$CapturesTableFilterComposer,
+          $$CapturesTableOrderingComposer,
+          $$CapturesTableAnnotationComposer,
+          $$CapturesTableCreateCompanionBuilder,
+          $$CapturesTableUpdateCompanionBuilder,
+          (
+            CaptureRow,
+            BaseReferences<_$AppDatabase, $CapturesTable, CaptureRow>,
+          ),
+          CaptureRow,
+          PrefetchHooks Function()
+        > {
+  $$CapturesTableTableManager(_$AppDatabase db, $CapturesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CapturesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CapturesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CapturesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<String> seriesId = const Value.absent(),
+                Value<String> bookId = const Value.absent(),
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> seriesTitle = const Value.absent(),
+                Value<String?> bookTitle = const Value.absent(),
+                Value<int> pageNumber = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<int> width = const Value.absent(),
+                Value<int> height = const Value.absent(),
+                Value<int> capturedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CapturesCompanion(
+                id: id,
+                sourceId: sourceId,
+                seriesId: seriesId,
+                bookId: bookId,
+                libraryId: libraryId,
+                seriesTitle: seriesTitle,
+                bookTitle: bookTitle,
+                pageNumber: pageNumber,
+                relativePath: relativePath,
+                width: width,
+                height: height,
+                capturedAt: capturedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sourceId,
+                required String seriesId,
+                required String bookId,
+                Value<String?> libraryId = const Value.absent(),
+                Value<String?> seriesTitle = const Value.absent(),
+                Value<String?> bookTitle = const Value.absent(),
+                required int pageNumber,
+                required String relativePath,
+                required int width,
+                required int height,
+                required int capturedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CapturesCompanion.insert(
+                id: id,
+                sourceId: sourceId,
+                seriesId: seriesId,
+                bookId: bookId,
+                libraryId: libraryId,
+                seriesTitle: seriesTitle,
+                bookTitle: bookTitle,
+                pageNumber: pageNumber,
+                relativePath: relativePath,
+                width: width,
+                height: height,
+                capturedAt: capturedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CapturesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CapturesTable,
+      CaptureRow,
+      $$CapturesTableFilterComposer,
+      $$CapturesTableOrderingComposer,
+      $$CapturesTableAnnotationComposer,
+      $$CapturesTableCreateCompanionBuilder,
+      $$CapturesTableUpdateCompanionBuilder,
+      (CaptureRow, BaseReferences<_$AppDatabase, $CapturesTable, CaptureRow>),
+      CaptureRow,
       PrefetchHooks Function()
     >;
 typedef $$LibraryPrefsTableCreateCompanionBuilder =
@@ -14406,6 +15486,8 @@ class $AppDatabaseManager {
       $$ThumbnailsTableTableManager(_db, _db.thumbnails);
   $$CachedMetadataTableTableManager get cachedMetadata =>
       $$CachedMetadataTableTableManager(_db, _db.cachedMetadata);
+  $$CapturesTableTableManager get captures =>
+      $$CapturesTableTableManager(_db, _db.captures);
   $$LibraryPrefsTableTableManager get libraryPrefs =>
       $$LibraryPrefsTableTableManager(_db, _db.libraryPrefs);
   $$ReaderSettingsTableTableManager get readerSettings =>

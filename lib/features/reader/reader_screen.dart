@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import '../../app/widgets/app_loading.dart';
 import '../../core/network/content_exception.dart';
 import '../../core/platform/render_capabilities.dart';
 import '../../core/platform/system_ui.dart';
+import '../gallery/gallery_controller.dart';
 import '../offline/download_manager.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
@@ -37,6 +39,7 @@ import '../settings/settings_providers.dart';
 import 'reader_navigation.dart';
 import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
+import 'widgets/capture_overlay.dart';
 import 'widgets/color_correction_sheet.dart';
 import 'widgets/image_quality_sheet.dart';
 import 'widgets/reader_chrome.dart';
@@ -50,6 +53,7 @@ class ReaderScreen extends ConsumerWidget {
     required this.sourceId,
     required this.bookId,
     this.preview = false,
+    this.initialPage,
   });
 
   final String sourceId;
@@ -58,6 +62,10 @@ class ReaderScreen extends ConsumerWidget {
   /// "Preview" mode: read the book without reporting any progress to the source
   /// (Komga never sees it as currently-reading) or recording a reading session.
   final bool preview;
+
+  /// Opening page (0-based) override, e.g. a gallery capture deep-link
+  /// (`?page=N`). When null, the reader resumes at the saved position.
+  final int? initialPage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -87,6 +95,7 @@ class ReaderScreen extends ConsumerWidget {
                 bookId: bookId,
                 data: data,
                 preview: preview,
+                initialPage: initialPage,
               ),
       ),
     );
@@ -120,12 +129,16 @@ class _ReaderBody extends ConsumerStatefulWidget {
     required this.bookId,
     required this.data,
     required this.preview,
+    this.initialPage,
   });
 
   final String sourceId;
   final String bookId;
   final ReaderData data;
   final bool preview;
+
+  /// Opening page (0-based) override; null resumes at the saved position.
+  final int? initialPage;
 
   @override
   ConsumerState<_ReaderBody> createState() => _ReaderBodyState();
@@ -145,6 +158,17 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   // tap on the page reveals them.
   bool _chrome = false;
   int? _cacheWidth;
+
+  /// Page-capture mode: when true the capture overlay is up, chrome is hidden,
+  /// and the page view ignores pointers so the overlay owns the marquee gesture.
+  bool _capturing = false;
+
+  /// Guards against a double-Save while a capture write is in flight.
+  bool _saving = false;
+
+  /// Identifies the RepaintBoundary wrapping the rendered page, for WYSIWYG
+  /// capture (color correction is inside it; chrome is outside).
+  final _captureBoundaryKey = GlobalKey();
 
   /// Whether the last page was reached during this session. Drives delete-on-read
   /// at teardown (deleting earlier would break in-flight page decodes).
@@ -229,10 +253,13 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // Cap total decoded-page memory so a long book cannot grow the global image
     // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
     PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
-    // Resume at the saved page (clamped to the book's range), and start a
-    // reading session at the opening page.
+    // Open at the deep-link page if given (a gallery capture), else resume at
+    // the saved page; clamp to the book's range. Start a reading session at the
+    // opening page.
     final count = _readerPageCount(widget.data);
-    _page = count == 0 ? 0 : widget.data.initialPage.clamp(0, count - 1);
+    _page = count == 0
+        ? 0
+        : (widget.initialPage ?? widget.data.initialPage).clamp(0, count - 1);
     // The opening page is stationary, so promote it to full resolution at once
     // (no settle delay on first paint).
     _settledPage = _page;
@@ -624,6 +651,84 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     ),
   );
 
+  /// The reader top-bar title: "series · chapter" when known, the chapter alone
+  /// if the series is uncached, or the page position as a last resort (e.g. an
+  /// offline book with no cached title). The page count still lives in the
+  /// bottom scrubber, so the top bar leads with the series/chapter name.
+  String _chromeTitle(int pageCount) {
+    final chapter = widget.data.title.trim();
+    final series = widget.data.seriesTitle?.trim();
+    if (chapter.isEmpty) return 'Page ${_page + 1} of $pageCount';
+    if (series != null && series.isNotEmpty) return '$series · $chapter';
+    return chapter;
+  }
+
+  /// Enter capture mode: hide chrome and raise the marquee overlay.
+  void _startCapture() => setState(() {
+        _chrome = false;
+        _capturing = true;
+      });
+
+  void _cancelCapture() => setState(() => _capturing = false);
+
+  /// Crop the rendered page to [selection] (WYSIWYG, color correction baked in),
+  /// save it to the gallery, and confirm. Distinct messages for a capture vs a
+  /// save failure; guarded against double-save and post-dispose setState.
+  Future<void> _onCaptureSave(Rect selection) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navContext = context;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    ({Uint8List png, int width, int height}) shot;
+    try {
+      shot = await cropBoundaryToPng(
+        boundaryKey: _captureBoundaryKey,
+        selectionLogical: selection,
+        pixelRatio: pixelRatio,
+      );
+    } catch (_) {
+      _finishCapture(messenger, 'Could not capture this page.');
+      return;
+    }
+    try {
+      await ref.read(capturesRepositoryProvider).save(
+            sourceId: widget.sourceId,
+            seriesId: widget.data.seriesId,
+            bookId: widget.bookId,
+            bookTitle: widget.data.title,
+            pageNumber: _page,
+            pngBytes: shot.png,
+            width: shot.width,
+            height: shot.height,
+          );
+    } catch (_) {
+      _finishCapture(messenger, 'Could not save capture.');
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _capturing = false;
+      _saving = false;
+    });
+    messenger.showSnackBar(SnackBar(
+      content: const Text('Saved to Gallery'),
+      action: SnackBarAction(
+        label: 'View',
+        onPressed: () => navContext.push('/gallery'),
+      ),
+    ));
+  }
+
+  void _finishCapture(ScaffoldMessengerState messenger, String message) {
+    if (!mounted) return;
+    setState(() {
+      _capturing = false;
+      _saving = false;
+    });
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void _step(int delta) {
     final controller = _pageController;
     if (controller == null || !controller.hasClients) return;
@@ -806,7 +911,14 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         ref.watch(autoAdvanceEnabledProvider).valueOrNull ?? false;
     return Stack(
       children: [
-        Positioned.fill(child: filteredView),
+        Positioned.fill(
+          child: RepaintBoundary(
+            key: _captureBoundaryKey,
+            // While capturing, the page ignores pointers so the overlay's
+            // marquee gesture is the sole handler (no photo_view arena contest).
+            child: IgnorePointer(ignoring: _capturing, child: filteredView),
+          ),
+        ),
         if (_atEnd && !_seamDismissed)
           Positioned.fill(
             child: ReaderSeam(
@@ -820,7 +932,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         Positioned.fill(
           child: ReaderChrome(
             visible: _chrome,
-            title: 'Page ${_page + 1} of ${source.pageCount}',
+            title: _chromeTitle(source.pageCount),
             sourceId: widget.sourceId,
             bookId: widget.bookId,
             offline: widget.data.source is OfflinePages,
@@ -856,8 +968,17 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             onColorCorrection: _openColorCorrection,
             onNudge: s.mode == ReadingMode.doublePage ? _toggleNudge : null,
             nudged: _nudge,
+            onCapture: _startCapture,
           ),
         ),
+        if (_capturing)
+          Positioned.fill(
+            child: CaptureOverlay(
+              onCancel: _cancelCapture,
+              onSave: _onCaptureSave,
+              busy: _saving,
+            ),
+          ),
       ],
     );
   }

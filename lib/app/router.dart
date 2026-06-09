@@ -9,6 +9,8 @@ import '../features/library/libraries_screen.dart';
 import '../features/library/search.dart';
 import '../features/library/series_detail.dart';
 import '../features/library/series_grid.dart';
+import '../features/gallery/capture_viewer_screen.dart';
+import '../features/gallery/gallery_screen.dart';
 import '../features/integrations/comic_vine/comic_vine_settings_screen.dart';
 import '../features/offline/storage_screen.dart';
 import '../features/onboarding/kavita_connect_screen.dart';
@@ -79,6 +81,12 @@ final appRouterProvider = Provider<GoRouter>(
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
       GoRoute(path: '/stats', builder: (_, _) => const StatsScreen()),
+      GoRoute(path: '/gallery', builder: (_, _) => const GalleryScreen()),
+      GoRoute(
+        path: '/capture/:id',
+        builder: (_, state) =>
+            CaptureViewerScreen(id: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: '/collections/:sourceId',
         builder: (_, state) =>
@@ -124,6 +132,7 @@ final appRouterProvider = Provider<GoRouter>(
           sourceId: state.pathParameters['sourceId']!,
           bookId: state.pathParameters['bookId']!,
           preview: state.uri.queryParameters['preview'] == 'true',
+          initialPage: int.tryParse(state.uri.queryParameters['page'] ?? ''),
         ),
       ),
     ],
