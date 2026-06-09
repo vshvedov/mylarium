@@ -713,6 +713,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     });
     messenger.showSnackBar(SnackBar(
       content: const Text('Saved to Gallery'),
+      // Auto-dismiss the capture confirmation after a short timeout so it does
+      // not linger over the page; still long enough to tap "View".
+      duration: const Duration(seconds: 3),
       action: SnackBarAction(
         label: 'View',
         onPressed: () => navContext.push('/gallery'),
