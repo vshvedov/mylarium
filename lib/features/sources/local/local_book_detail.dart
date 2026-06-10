@@ -106,6 +106,7 @@ class LocalBookDetailScreen extends ConsumerWidget {
       ),
     );
     if (ok != true) return;
+    if (!context.mounted) return;
     await ref.read(importServiceProvider).deleteImported(comic);
     ref.invalidate(localComicProvider(comic.id));
     if (context.mounted) context.pop();
