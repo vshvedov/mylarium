@@ -157,6 +157,15 @@ class HomeScreen extends ConsumerWidget {
         title: const BrandTitle(),
         actions: [
           if (sourceId != null && !isLocal) SourceStatusButton(sourceId: sourceId),
+          // The status button doubles as the visible source affordance on
+          // server sources; without this a local-source home has no obvious
+          // way to switch sources (the settings-sheet row is too buried).
+          if (isLocal)
+            IconButton(
+              icon: const Icon(AppIcons.sources),
+              tooltip: 'Sources',
+              onPressed: () => showSourcesSheet(context),
+            ),
           IconButton(
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
