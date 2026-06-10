@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/widgets/app_bottom_sheet.dart';
 import '../../../data/local/import_service.dart';
 
 /// Shows the per-file outcome of an import batch. The list itself is a plain
 /// widget ([ImportResultsList]) so it can be tested and embedded; the static
-/// [show] wraps it in a modal bottom sheet.
-///
-/// Note: [AppBottomSheet.show] requires a [DesignTokens] extension in the
-/// theme, making it unsuitable here (tests and call sites use plain
-/// [MaterialApp] without that extension). [showModalBottomSheet] is used
-/// directly instead.
+/// [show] wraps it in a modal bottom sheet using the app's standard sheet
+/// chrome.
 class ImportResultsSheet {
   const ImportResultsSheet._();
 
   static Future<void> show(BuildContext context, ImportResult result) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
+      AppBottomSheet.show<void>(
+        context,
         builder: (_) => SafeArea(
+          top: false,
           child: SingleChildScrollView(
             child: ImportResultsList(result: result),
           ),
