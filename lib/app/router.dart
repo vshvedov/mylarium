@@ -20,6 +20,8 @@ import '../features/reader/reader_screen.dart';
 import '../features/settings/diagnostics_screen.dart';
 import '../features/settings/library_lock.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/sources/local/local_book_detail.dart';
+import '../features/sources/local/local_browse.dart';
 import '../features/stats/stats_screen.dart';
 
 /// The route the app boots to. Overridden in main() to `/onboarding` when no
@@ -77,6 +79,25 @@ final appRouterProvider = Provider<GoRouter>(
         builder: (_, state) => BookDetailScreen(
           sourceId: state.pathParameters['sourceId']!,
           bookId: state.pathParameters['bookId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/local-browse/:sourceId',
+        builder: (_, state) =>
+            LocalBrowseShell(sourceId: state.pathParameters['sourceId']!),
+      ),
+      GoRoute(
+        path: '/local-series/:sourceId',
+        builder: (_, state) => LocalSeriesDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          series: state.uri.queryParameters['series'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/local-book/:sourceId/:comicId',
+        builder: (_, state) => LocalBookDetailScreen(
+          sourceId: state.pathParameters['sourceId']!,
+          comicId: state.pathParameters['comicId']!,
         ),
       ),
       GoRoute(path: '/search', builder: (_, _) => const SearchScreen()),
