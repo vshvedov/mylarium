@@ -12,6 +12,7 @@ import '../../data/kavita/kavita_providers.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/content_source.dart';
 import '../../data/source/source_providers.dart';
+import '../sources/local/local_providers.dart';
 
 /// Shows the connected-sources switcher as a bottom sheet: switch the active
 /// source, add another, or remove one. Kept shallow (one tap from the home
@@ -108,21 +109,27 @@ class _SourcesSheet extends ConsumerWidget {
                 itemBuilder: (context, i) {
                   final source = sources[i];
                   final isActive = source.id == activeId;
+                  // Local sources have no delete affordance: removing the row
+                  // would orphan the imported library. Books are managed per
+                  // book on the local detail screen.
+                  final isLocal = source.kind == SourceKind.local.name;
                   return AppListRow(
                     icon: _iconFor(source.kind),
                     title: source.label,
-                    subtitle:
-                        '${_kindLabel(source.kind)} - ${source.baseUrl ?? source.kind}',
+                    subtitle: isLocal
+                        ? 'On this device'
+                        : '${_kindLabel(source.kind)} - ${source.baseUrl ?? source.kind}',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (isActive)
                           Icon(AppIcons.check, color: theme.colorScheme.primary),
-                        IconButton(
-                          icon: const Icon(AppIcons.delete),
-                          tooltip: 'Remove source',
-                          onPressed: () => _remove(context, ref, source),
-                        ),
+                        if (!isLocal)
+                          IconButton(
+                            icon: const Icon(AppIcons.delete),
+                            tooltip: 'Remove source',
+                            onPressed: () => _remove(context, ref, source),
+                          ),
                       ],
                     ),
                     onTap: isActive
@@ -138,6 +145,18 @@ class _SourcesSheet extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
+            if (!sources.any((s) => s.kind == SourceKind.local.name))
+              AppListRow(
+                icon: AppIcons.sourceLocal,
+                title: 'Local files',
+                subtitle: 'Import comics from this device',
+                onTap: () async {
+                  final service = ref.read(importServiceProvider);
+                  final id = await service.ensureLocalSource();
+                  ref.read(activeSourceIdProvider.notifier).select(id);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
+              ),
             AppListRow(
               icon: AppIcons.add,
               title: 'Add a source',

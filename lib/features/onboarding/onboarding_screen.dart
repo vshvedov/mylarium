@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/brand_mark.dart';
+import '../../data/source/source_providers.dart';
+import '../sources/local/local_providers.dart';
 import 'widgets/source_option_card.dart';
 
 /// First-run welcome and source picker. The brand mark and wordmark continue
 /// the launch screen; below them the user chooses where their comics come from.
-/// Komga is connectable today; Kavita and local files are flagged coming-soon
-/// until their sources land (the "More sources" phase). Connecting Komga opens
-/// the dedicated connect form at `/onboarding/komga`.
-class OnboardingScreen extends StatelessWidget {
+/// Komga and Kavita open their dedicated connect forms; Local files creates the
+/// local source immediately and lands on home. Connecting Komga opens the
+/// dedicated connect form at `/onboarding/komga`.
+class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
@@ -89,11 +92,16 @@ class OnboardingScreen extends StatelessWidget {
                   onTap: () => context.push('/onboarding/kavita'),
                 ),
                 const SizedBox(height: 12),
-                const SourceOptionCard(
+                SourceOptionCard(
                   icon: AppIcons.sourceLocal,
                   title: 'Local files',
                   subtitle: 'Read comics stored on this device',
-                  comingSoon: true,
+                  onTap: () async {
+                    final service = ref.read(importServiceProvider);
+                    final id = await service.ensureLocalSource();
+                    ref.read(activeSourceIdProvider.notifier).select(id);
+                    if (context.mounted) context.go('/');
+                  },
                 ),
                 const SizedBox(height: 28),
                 Text(
