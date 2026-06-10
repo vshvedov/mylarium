@@ -50,6 +50,7 @@ class ReaderData {
     required this.source,
     required this.initialPage,
     required this.colorAdjustments,
+    this.directionUnset = false,
   });
 
   final String sourceId;
@@ -74,17 +75,26 @@ class ReaderData {
   /// first paint without awaiting the color controller.
   final ColorAdjustments colorAdjustments;
 
-  ReaderData copyWith({ReaderSettings? settings}) => ReaderData(
-    sourceId: sourceId,
-    bookId: bookId,
-    seriesId: seriesId,
-    title: title,
-    seriesTitle: seriesTitle,
-    settings: settings ?? this.settings,
-    source: source,
-    initialPage: initialPage,
-    colorAdjustments: colorAdjustments,
-  );
+  /// True when the reading direction is a pure default: no per-series settings
+  /// were persisted AND the source gave no direction hint (no Komga
+  /// `readingDirection`, no ComicInfo RTL flag). Drives the one-time
+  /// "try right-to-left" nudge in the reader; persisting settings (any save)
+  /// clears it forever.
+  final bool directionUnset;
+
+  ReaderData copyWith({ReaderSettings? settings, bool? directionUnset}) =>
+      ReaderData(
+        sourceId: sourceId,
+        bookId: bookId,
+        seriesId: seriesId,
+        title: title,
+        seriesTitle: seriesTitle,
+        settings: settings ?? this.settings,
+        source: source,
+        initialPage: initialPage,
+        colorAdjustments: colorAdjustments,
+        directionUnset: directionUnset ?? this.directionUnset,
+      );
 }
 
 /// The 0-based page to open the reader on for a book.
@@ -142,6 +152,7 @@ class ReaderController extends _$ReaderController {
       // ComicInfo's reading direction seeds the default (RTL manga opens RTL);
       // a persisted per-series setting wins, exactly like the server path. The
       // row stores 'rtl'/'ltr'; defaults() speaks Komga's direction names.
+      final hasSettings = await settingsRepo.has(sourceId, seriesKey);
       final settings = await settingsRepo.load(
         sourceId,
         seriesKey,
@@ -162,6 +173,10 @@ class ReaderController extends _$ReaderController {
         ),
         colorAdjustments: await ColorSettingsRepository(db)
             .resolve(sourceId, seriesKey, bookId),
+        // The row's 'rtl' is a real hint (ComicInfo Manga flag); 'ltr' is also
+        // the no-metadata fallback, indistinguishable from a real LTR flag, so
+        // only an RTL hint suppresses the direction nudge here.
+        directionUnset: !hasSettings && localComic.readingDirection != 'rtl',
       );
     }
 
@@ -176,6 +191,9 @@ class ReaderController extends _$ReaderController {
         final book = await db.getBook(sourceId, bookId);
         final seriesId = book?.seriesId ?? '';
         final title = book?.title ?? '';
+        // Settings load without a server direction probe here (offline), so the
+        // direction is a pure default whenever nothing was persisted.
+        final hasSettings = await settingsRepo.has(sourceId, seriesId);
         final settings = await settingsRepo.load(sourceId, seriesId);
         final colorAdjustments = await ColorSettingsRepository(
           db,
@@ -193,6 +211,7 @@ class ReaderController extends _$ReaderController {
             serverReadPage: book?.readPage,
           ),
           colorAdjustments: colorAdjustments,
+          directionUnset: !hasSettings,
         );
       } on ArchiveException {
         // Corrupt cache: quarantine and fall through to online.
@@ -242,7 +261,8 @@ class ReaderController extends _$ReaderController {
     final pages = await api.bookPages(bookId);
 
     String? direction;
-    if (!await settingsRepo.has(sourceId, seriesId)) {
+    final hasSettings = await settingsRepo.has(sourceId, seriesId);
+    if (!hasSettings) {
       try {
         direction = (await api.getSeries(seriesId)).readingDirection;
       } on ContentException {
@@ -271,6 +291,9 @@ class ReaderController extends _$ReaderController {
         serverReadPage: serverReadPage,
       ),
       colorAdjustments: colorAdjustments,
+      // Unset only when nothing was persisted AND the series metadata probe
+      // gave no reading-direction hint (null, or unreachable).
+      directionUnset: !hasSettings && direction == null,
     );
   }
 
@@ -284,7 +307,11 @@ class ReaderController extends _$ReaderController {
     await ReaderSettingsRepository(
       ref.read(appDatabaseProvider),
     ).save(data.sourceId, data.seriesId, normalized);
-    state = AsyncData(data.copyWith(settings: normalized));
+    // Settings are now persisted for the series, so the direction is no longer
+    // an unhinted default (clears the first-open direction nudge for good).
+    state = AsyncData(
+      data.copyWith(settings: normalized, directionUnset: false),
+    );
   }
 
   /// Flips horizontal reading direction and persists it (T4). Paged modes flip the

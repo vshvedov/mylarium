@@ -19,10 +19,6 @@ import 'widgets/library_tiles.dart';
 final selectedSeriesProvider = StateProvider.autoDispose
     .family<String?, String>((ref, sourceId) => null);
 
-/// Title sort direction for the browse grid, per source. false = A-Z, true = Z-A.
-final browseSortProvider =
-    StateProvider.autoDispose.family<bool, String>((ref, sourceId) => false);
-
 /// Virtualized series grid over the whole locally-cached library for a source. A
 /// shared background full sync (see [seriesSyncProvider]) fills the cache once;
 /// this grid renders the sorted rows from [browseSeriesProvider] as they land,
@@ -70,10 +66,12 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final descending = ref.watch(browseSortProvider(widget.sourceId));
-    final async = ref.watch(
-      browseSeriesProvider(widget.sourceId, widget.libraryId, descending),
-    );
+    final sort = ref.watch(browseSortProvider(widget.sourceId));
+    final async = sort == BrowseSort.mostBooks
+        ? ref.watch(browseSeriesByBooksProvider(
+            (sourceId: widget.sourceId, libraryId: widget.libraryId)))
+        : ref.watch(browseSeriesProvider(
+            widget.sourceId, widget.libraryId, sort.titleDescending));
     // Observable completion (not SeriesSync.complete, which mutates in place and
     // would never rebuild the grid - leaving an empty library on the loader
     // forever). Resolves true once the background fill finishes or degrades.
@@ -91,6 +89,7 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
         syncComplete: syncComplete,
         onTap: _onTap,
         controller: _scroll,
+        alphabetical: sort.alphabetical,
       ),
     );
     if (widget.embedded) return body;
@@ -122,6 +121,7 @@ class SeriesGridBody extends StatelessWidget {
     required this.syncComplete,
     required this.onTap,
     this.controller,
+    this.alphabetical = true,
   });
 
   /// The sorted series, or null before the first cache emission.
@@ -134,6 +134,10 @@ class SeriesGridBody extends StatelessWidget {
 
   /// Drives the scroll position (the A-Z scrubber jumps it).
   final ScrollController? controller;
+
+  /// Whether [items] are in alphabetical order. A non-title sort (Most books)
+  /// hides the A-Z scrubber, whose letter jumps assume an alphabetical list.
+  final bool alphabetical;
 
   @override
   Widget build(BuildContext context) {
@@ -221,16 +225,17 @@ class SeriesGridBody extends StatelessWidget {
                 ),
               ],
             ),
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: 0,
-              width: scrubberWidth,
-              child: AlphabetScrubber(
-                present: {for (final s in list) letterBucket(s.titleSort)},
-                onLetter: jumpToLetter,
+            if (alphabetical)
+              Positioned(
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: scrubberWidth,
+                child: AlphabetScrubber(
+                  present: {for (final s in list) letterBucket(s.titleSort)},
+                  onLetter: jumpToLetter,
+                ),
               ),
-            ),
           ],
         );
       },
@@ -238,7 +243,8 @@ class SeriesGridBody extends StatelessWidget {
   }
 }
 
-/// The Title A-Z / Z-A sort control for the browse grid.
+/// The sort control for the browse grid: one entry per [BrowseSort], the
+/// active one marked with a check.
 class SortButton extends ConsumerWidget {
   const SortButton({super.key, required this.sourceId});
 
@@ -246,16 +252,38 @@ class SortButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final descending = ref.watch(browseSortProvider(sourceId));
-    return PopupMenuButton<bool>(
+    final sort = ref.watch(browseSortProvider(sourceId));
+    return PopupMenuButton<BrowseSort>(
       icon: const Icon(AppIcons.sort),
-      initialValue: descending,
+      initialValue: sort,
       tooltip: 'Sort',
       onSelected: (v) =>
           ref.read(browseSortProvider(sourceId).notifier).state = v,
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: false, child: Text('Title A-Z')),
-        PopupMenuItem(value: true, child: Text('Title Z-A')),
+      itemBuilder: (_) => [
+        for (final s in BrowseSort.values)
+          PopupMenuItem(
+            value: s,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // A fixed leading check slot (not CheckedPopupMenuItem, which
+                // draws a Material icon; see CLAUDE.md "Iconography").
+                SizedBox(
+                  width: 28,
+                  child: s == sort
+                      ? const Icon(AppIcons.check, size: 18)
+                      : null,
+                ),
+                Flexible(
+                  child: Text(
+                    s.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

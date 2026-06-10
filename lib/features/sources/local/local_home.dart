@@ -4,7 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../core/db/database.dart';
+import '../../library/library_browse_controllers.dart'
+    show bookReadStateProvider;
 import '../../library/widgets/library_tiles.dart';
+import '../../library/widgets/rail.dart';
+import '../../library/widgets/reading_progress.dart';
+import '../../library/widgets/skeleton.dart';
 import 'import_controller.dart';
 import 'import_results_sheet.dart';
 import 'local_providers.dart';
@@ -19,13 +24,64 @@ class LocalHomeBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final keepReading =
-        ref.watch(localKeepReadingProvider(sourceId)).valueOrNull ??
-            const <LocalComic>[];
-    final recent =
-        ref.watch(localRecentlyImportedProvider(sourceId)).valueOrNull ??
-            const <LocalComic>[];
+    final keepReadingAsync = ref.watch(localKeepReadingProvider(sourceId));
+    final recentAsync = ref.watch(localRecentlyImportedProvider(sourceId));
     final run = ref.watch(importControllerProvider);
+
+    // Resolved items, or null while a rail is genuinely still loading (no
+    // value yet); an error degrades to empty rather than a perpetual skeleton.
+    List<LocalComic>? resolve(AsyncValue<List<LocalComic>> async) =>
+        async.valueOrNull ?? (async.hasError ? const <LocalComic>[] : null);
+    final keepReading = resolve(keepReadingAsync);
+    final recent = resolve(recentAsync);
+
+    final actions = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              icon: const Icon(AppIcons.importComics),
+              label: Text(
+                  run is ImportRunActive ? 'Importing...' : 'Import comics'),
+              onPressed:
+                  run is ImportRunActive ? null : () => _import(context, ref),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: const Icon(AppIcons.sourceLocal),
+              label: const Text('Browse all'),
+              onPressed: () => context.push('/local-browse/$sourceId'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Skeleton rails while loading, at the real rail metrics, so the empty
+    // call-to-action never flashes before the library streams in and nothing
+    // jumps when data lands.
+    if (keepReading == null || recent == null) {
+      return ListView(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        children: [
+          actions,
+          const SizedBox(height: 8),
+          const SkeletonRail(
+            title: 'Keep reading',
+            height: kHeroRailHeight,
+            tileWidth: kHeroRailTileWidth,
+          ),
+          const SkeletonRail(
+            title: 'Recently imported',
+            height: _localRailHeight,
+            tileWidth: _localTileWidth,
+          ),
+        ],
+      );
+    }
 
     if (recent.isEmpty && keepReading.isEmpty) {
       return _EmptyLibrary(
@@ -37,38 +93,17 @@ class LocalHomeBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 12),
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  icon: const Icon(AppIcons.importComics),
-                  label: Text(
-                      run is ImportRunActive ? 'Importing...' : 'Import comics'),
-                  onPressed:
-                      run is ImportRunActive ? null : () => _import(context, ref),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  icon: const Icon(AppIcons.sourceLocal),
-                  label: const Text('Browse all'),
-                  onPressed: () => context.push('/local-browse/$sourceId'),
-                ),
-              ),
-            ],
-          ),
-        ),
+        actions,
         if (keepReading.isNotEmpty)
           // Keep-reading taps straight into the reader (resuming at the saved
-          // page), matching the server-source home rail.
+          // page), matching the server-source home rail. Hero treatment:
+          // larger tiles plus the page-progress footer.
           LocalComicsRail(
             title: 'Keep reading',
             sourceId: sourceId,
             comics: keepReading,
             openReader: true,
+            hero: true,
           ),
         if (recent.isNotEmpty)
           LocalComicsRail(
@@ -89,6 +124,11 @@ class LocalHomeBody extends ConsumerWidget {
   }
 }
 
+/// Default metrics for the local home rails (the keep-reading rail uses the
+/// shared hero metrics from rail.dart instead).
+const double _localRailHeight = 210;
+const double _localTileWidth = 120;
+
 class LocalComicsRail extends StatelessWidget {
   const LocalComicsRail({
     super.key,
@@ -96,6 +136,7 @@ class LocalComicsRail extends StatelessWidget {
     required this.sourceId,
     required this.comics,
     this.openReader = false,
+    this.hero = false,
   });
 
   final String title;
@@ -104,6 +145,10 @@ class LocalComicsRail extends StatelessWidget {
 
   /// When true a tile opens the reader directly; otherwise the book detail.
   final bool openReader;
+
+  /// Hero treatment for the keep-reading rail: larger tiles plus a
+  /// page-progress footer (bar + "p. X of Y") under each cover.
+  final bool hero;
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +160,7 @@ class LocalComicsRail extends StatelessWidget {
           child: Text(title, style: Theme.of(context).textTheme.titleMedium),
         ),
         SizedBox(
-          height: 210,
+          height: hero ? kHeroRailHeight : _localRailHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -124,13 +169,16 @@ class LocalComicsRail extends StatelessWidget {
             itemBuilder: (context, i) {
               final c = comics[i];
               return SizedBox(
-                width: 120,
+                width: hero ? kHeroRailTileWidth : _localTileWidth,
                 child: CoverTile(
                   sourceId: sourceId,
                   ownerType: 'book',
                   ownerId: c.id,
                   title: c.title,
                   subtitle: c.series,
+                  footer: hero
+                      ? _LocalReadingProgress(sourceId: sourceId, comic: c)
+                      : null,
                   onTap: () => context.push(openReader
                       ? '/reader/$sourceId/${c.id}'
                       : '/local-book/$sourceId/${c.id}'),
@@ -140,6 +188,30 @@ class LocalComicsRail extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Resolves the local read state for one imported comic and renders the
+/// page-progress bar + caption (the comic row already carries its page count).
+/// Renders nothing until progress exists, so a never-opened import stays clean.
+class _LocalReadingProgress extends ConsumerWidget {
+  const _LocalReadingProgress({required this.sourceId, required this.comic});
+
+  final String sourceId;
+  final LocalComic comic;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state =
+        ref.watch(bookReadStateProvider(sourceId, comic.id)).valueOrNull;
+    if (state == null || comic.pagesCount <= 0) {
+      return const SizedBox.shrink();
+    }
+    // BookState.currentPage is 0-based (reader-native); the caption is 1-based.
+    return ReadingProgressLabel(
+      current: state.currentPage + 1,
+      total: comic.pagesCount,
     );
   }
 }

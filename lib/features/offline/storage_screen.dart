@@ -76,6 +76,10 @@ class StorageScreen extends ConsumerWidget {
                       onChanged: (gib) =>
                           db.updateCacheCapBytes(gib * 1024 * 1024 * 1024),
                     ),
+                    _BookCapControl(
+                      capMb: settings.autoCacheBookCapMb,
+                      onChanged: (mb) => db.updateAutoCacheBookCapMb(mb),
+                    ),
                   ],
                   const Divider(),
                   ListTile(
@@ -169,6 +173,54 @@ class _CapControl extends StatelessWidget {
         onChanged: (v) => onChanged(v.round()),
       ),
       trailing: Text('$gib GB'),
+    );
+  }
+}
+
+/// Per-book auto-cache ceiling: a stepped slider over fixed MB stops, with a
+/// final "No limit" stop that maps to 0 (see AppSettings.autoCacheBookCapMb).
+class _BookCapControl extends StatelessWidget {
+  const _BookCapControl({required this.capMb, required this.onChanged});
+
+  static const _stops = [50, 100, 200, 300, 500, 1000, 0];
+
+  final int capMb;
+  final void Function(int mb) onChanged;
+
+  static String _label(int mb) => mb == 0 ? 'No limit' : '$mb MB';
+
+  /// The slider index for [mb]: 0 maps to the trailing "No limit" stop; an
+  /// off-grid value (never written by this control) snaps to the nearest stop
+  /// at or above it.
+  static int _indexFor(int mb) {
+    if (mb <= 0) return _stops.length - 1;
+    for (var i = 0; i < _stops.length - 1; i++) {
+      if (mb <= _stops[i]) return i;
+    }
+    return _stops.length - 2;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final index = _indexFor(capMb);
+    return ListTile(
+      title: const Text('Per-book limit'),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Skip auto-downloading chapters larger than this. '
+              'Manual downloads are not limited.'),
+          Slider(
+            min: 0,
+            max: (_stops.length - 1).toDouble(),
+            divisions: _stops.length - 1,
+            label: _label(_stops[index]),
+            value: index.toDouble(),
+            onChanged: (v) => onChanged(_stops[v.round()]),
+          ),
+        ],
+      ),
+      trailing: Text(_label(capMb)),
     );
   }
 }

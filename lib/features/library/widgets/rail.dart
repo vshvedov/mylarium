@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Default rail metrics: the standard home cover tile.
+const double kRailHeight = 230;
+const double kRailTileWidth = 130;
+
+/// Hero rail metrics (the keep-reading rail): larger covers plus room for the
+/// page-progress bar and "p. X of Y" caption beneath each tile.
+const double kHeroRailHeight = 292;
+const double kHeroRailTileWidth = 156;
+
 /// A titled horizontal rail of cover tiles. Hidden entirely when [children] is
 /// empty so empty rails do not clutter the home.
 class Rail extends StatelessWidget {
@@ -8,8 +17,8 @@ class Rail extends StatelessWidget {
     required this.title,
     required this.children,
     this.icon,
-    this.height = 230,
-    this.tileWidth = 130,
+    this.height = kRailHeight,
+    this.tileWidth = kRailTileWidth,
   });
 
   final String title;

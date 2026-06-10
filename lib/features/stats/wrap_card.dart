@@ -58,7 +58,9 @@ class WrapCard extends StatelessWidget {
           _BigStat(value: '${summary.totalPages}', label: 'pages read'),
           const SizedBox(height: 12),
           _BigStat(
-            value: '${(summary.totalSeconds / 3600).toStringAsFixed(1)} h',
+            value: formatReadingDuration(
+              Duration(seconds: summary.totalSeconds),
+            ),
             label: 'time reading',
           ),
           const SizedBox(height: 12),

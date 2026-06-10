@@ -189,4 +189,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ReadCorner), findsOneWidget);
   });
+
+  group('progress strip', () {
+    Future<void> pumpTile(WidgetTester tester, {double? progress}) async {
+      final scope = await TestScope.create();
+      addTearDown(scope.db.close);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            ...scope.overrides,
+            coverImageProvider('s', 'book', 'x')
+                .overrideWith((ref) async => null),
+          ],
+          child: MaterialApp(
+            theme: darkTheme,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 200,
+                  child: CoverTile(
+                    sourceId: 's',
+                    ownerType: 'book',
+                    ownerId: 'x',
+                    title: 'Title',
+                    progress: progress,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    const strip = ValueKey('coverProgressStrip');
+
+    testWidgets('an in-progress fraction draws the strip on the cover', (
+      tester,
+    ) async {
+      await pumpTile(tester, progress: 0.4);
+      expect(find.byKey(strip), findsOneWidget);
+      // The fill matches the fraction.
+      final fill = tester.widget<FractionallySizedBox>(
+        find.descendant(
+          of: find.byKey(strip),
+          matching: find.byType(FractionallySizedBox),
+        ),
+      );
+      expect(fill.widthFactor, closeTo(0.4, 0.0001));
+    });
+
+    testWidgets('no progress draws no strip', (tester) async {
+      await pumpTile(tester);
+      expect(find.byKey(strip), findsNothing);
+    });
+
+    testWidgets('unstarted (0) and completed (1) draw no strip', (
+      tester,
+    ) async {
+      await pumpTile(tester, progress: 0);
+      expect(find.byKey(strip), findsNothing);
+      await pumpTile(tester, progress: 1);
+      expect(find.byKey(strip), findsNothing,
+          reason: 'completed books keep the read corner, not a full strip');
+    });
+  });
 }

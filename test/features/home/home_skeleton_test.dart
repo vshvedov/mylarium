@@ -9,7 +9,7 @@ import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/features/home/home_screen.dart';
 import 'package:mylarium/features/library/library_browse_controllers.dart';
 import 'package:mylarium/features/library/rail_item.dart';
-import 'package:mylarium/features/library/widgets/rail_skeleton.dart';
+import 'package:mylarium/features/library/widgets/skeleton.dart';
 
 import '../../support/test_scope.dart';
 
@@ -18,7 +18,7 @@ Stream<List<RailItem>> _pending() => StreamController<List<RailItem>>().stream;
 
 /// A MaterialApp that forces reduce-motion ON *below* its own MediaQuery (a
 /// MediaQuery wrapped above MaterialApp would be overridden by the one
-/// MaterialApp inserts from the test window). This keeps SkeletonBox static so
+/// MaterialApp inserts from the test window). This keeps SkeletonTile static so
 /// its repeating ticker schedules no frames (test 1 holds skeletons forever via
 /// never-emitting streams; without this the ticker would never let the test end),
 /// and skips the home's per-rail AnimatedSize so a rail collapsing to empty in
@@ -56,7 +56,7 @@ void main() {
     ));
     await tester.pump(); // one frame; do not settle (streams never close)
 
-    expect(find.byType(RailSkeleton), findsWidgets);
+    expect(find.byType(SkeletonRail), findsWidgets);
     expect(find.text('Nothing to show yet. Pull to refresh.'), findsNothing);
 
     await tester.pumpWidget(const SizedBox());
@@ -90,7 +90,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.byType(RailSkeleton), findsNothing);
+    expect(find.byType(SkeletonRail), findsNothing);
     expect(find.text('Nothing to show yet. Pull to refresh.'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());

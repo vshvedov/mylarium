@@ -136,6 +136,12 @@ class AppDatabase extends _$AppDatabase {
           if (from < 19 && to >= 19) {
             await m.addColumn(appSettings, appSettings.lastActiveSourceId);
           }
+          // v19 -> v20: per-book auto-cache ceiling. Purely additive column
+          // (defaulted to 200 MB) on the settings row. Same `to` guard as v19:
+          // it matters only for the per-version golden tests.
+          if (from < 20 && to >= 20) {
+            await m.addColumn(appSettings, appSettings.autoCacheBookCapMb);
+          }
         },
       );
 
@@ -198,6 +204,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateLastActiveSourceId(String id) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(lastActiveSourceId: Value(id)));
+
+  Future<void> updateAutoCacheBookCapMb(int mb) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(autoCacheBookCapMb: Value(mb)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();
@@ -1240,7 +1250,8 @@ const int _kBaselineVersion = 16;
 /// v17: adds the `Captures` table (page-capture gallery).
 /// v18: adds the `LocalComics` table (local files / folder sources, T1).
 /// v19: adds `AppSettings.lastActiveSourceId` (restore the active source).
-const int _kSchemaVersion = 19;
+/// v20: adds AppSettings.autoCacheBookCapMb (per-book auto-cache ceiling).
+const int _kSchemaVersion = 20;
 
 LazyDatabase _open() => LazyDatabase(() async {
       final dir = await getApplicationSupportDirectory();

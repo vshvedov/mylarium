@@ -54,6 +54,12 @@ class AppSettings extends Table {
   /// was deleted) falls back to the deterministic lowest-sorted pick.
   TextColumn get lastActiveSourceId => text().nullable()();
 
+  /// Per-book ceiling in MB for the auto-cache pool: a book whose archive is
+  /// larger than this is skipped by the auto-download backfill. 0 means no
+  /// per-book limit; manual downloads are exempt.
+  IntColumn get autoCacheBookCapMb =>
+      integer().withDefault(const Constant(200))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

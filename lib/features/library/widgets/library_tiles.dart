@@ -8,6 +8,7 @@ import '../../../app/widgets/pressable_scale.dart';
 import '../../offline/offline_providers.dart';
 import '../library_browse_controllers.dart' show bookCompletedProvider;
 import 'cover_image.dart';
+import 'reading_progress.dart';
 
 /// Horizontal peek of each back card in a [CoverTile] deck (series only).
 const double _deckStep = 5;
@@ -36,6 +37,8 @@ class CoverTile extends StatelessWidget {
     this.onLongPress,
     this.cornerOverlay,
     this.leadingBadge,
+    this.progress,
+    this.footer,
     this.stacked = false,
   });
 
@@ -58,6 +61,16 @@ class CoverTile extends StatelessWidget {
   /// Top-left overlay (e.g. the offline indicator), kept opposite [badge] so the
   /// two never collide.
   final Widget? leadingBadge;
+
+  /// Fractional read progress (0..1) drawn as a thin strip along the bottom
+  /// edge of the cover. Only painted strictly between 0 and 1: unstarted books
+  /// show nothing and completed books keep the read-corner badge instead of a
+  /// full strip.
+  final double? progress;
+
+  /// Optional block rendered beneath the title/subtitle (e.g. the keep-reading
+  /// rail's page-progress bar + caption).
+  final Widget? footer;
 
   /// Whether to render the layered-deck "stack of books" treatment behind the
   /// cover. Reserved for series tiles with more than one book.
@@ -91,6 +104,16 @@ class CoverTile extends StatelessWidget {
               Positioned(top: 0, right: 0, child: cornerOverlay!),
             if (leadingBadge != null)
               Positioned(top: 6, left: 6, child: leadingBadge!),
+            if (progress != null && progress! > 0 && progress! < 1)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ReadingProgressBar(
+                  key: const ValueKey('coverProgressStrip'),
+                  value: progress!,
+                ),
+              ),
           ],
         ),
       ),
@@ -128,6 +151,7 @@ class CoverTile extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+          ?footer,
         ],
       ),
     );

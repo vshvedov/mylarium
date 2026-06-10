@@ -101,6 +101,23 @@ void main() {
       expect(data.settings.direction, ReadingDirection.rtl);
     });
 
+    test('directionUnset: ltr import with nothing persisted is unset, rtl not',
+        () async {
+      AppPaths.debugOverrideRoot = '/r';
+      addTearDown(() => AppPaths.debugOverrideRoot = null);
+      // 'ltr' is also the no-metadata fallback (no ComicInfo hint), so the
+      // direction counts as unset; 'rtl' is a real hint and suppresses it.
+      await seedComic('c1'); // ltr
+      await seedComic('c2', series: 'Akira', direction: 'rtl');
+
+      final c = container();
+      final ltr = await c.read(readerControllerProvider('loc', 'c1').future);
+      final rtl = await c.read(readerControllerProvider('loc', 'c2').future);
+
+      expect(ltr.directionUnset, isTrue);
+      expect(rtl.directionUnset, isFalse);
+    });
+
     test('resumes at the saved local page after a simulated relaunch',
         () async {
       AppPaths.debugOverrideRoot = '/install-a';

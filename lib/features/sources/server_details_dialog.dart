@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_icons.dart';
+import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../data/source/content_source.dart';
 import '../../data/source/models/server_details.dart';
+import '../sync/sync_providers.dart';
 import 'reachability.dart';
 import 'server_details.dart';
+import 'sync_status_providers.dart';
 
 /// Centered dialog showing everything fetchable about the active source's
 /// server, opened from the app-bar status dot. Fetches on open; Refresh
@@ -135,6 +138,10 @@ class _Body extends StatelessWidget {
       ));
     }
 
+    // Queued/dead-lettered write-backs; renders nothing while the queue is
+    // empty. Shown offline too: that is exactly when updates pile up.
+    sections.add(_SyncSection(sourceId: sourceId));
+
     return _Frame(
       sourceId: sourceId,
       child: Column(
@@ -199,6 +206,81 @@ class _Body extends StatelessWidget {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// SYNC section: surfaces queued and dead-lettered write-backs for this
+/// source. Hidden entirely while the queue is empty (the common case).
+/// "Retry now" flips failed rows back to pending and drains the queue.
+class _SyncSection extends ConsumerStatefulWidget {
+  const _SyncSection({required this.sourceId});
+
+  final String sourceId;
+
+  @override
+  ConsumerState<_SyncSection> createState() => _SyncSectionState();
+}
+
+class _SyncSectionState extends ConsumerState<_SyncSection> {
+  bool _retrying = false;
+
+  Future<void> _retry() async {
+    setState(() => _retrying = true);
+    try {
+      await retryFailedSync(ref.read(appDatabaseProvider), widget.sourceId);
+      final engine = await ref.read(syncEngineProvider.future);
+      await engine.flushQueue();
+    } finally {
+      if (mounted) setState(() => _retrying = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status =
+        ref.watch(syncQueueStatusProvider(widget.sourceId)).valueOrNull;
+    if (status == null || status.total == 0) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SYNC',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  letterSpacing: 0.8,
+                ),
+          ),
+          const SizedBox(height: 4),
+          if (status.pending > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                status.pending == 1
+                    ? '1 update waiting to sync'
+                    : '${status.pending} updates waiting to sync',
+              ),
+            ),
+          if (status.failed > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                status.failed == 1 ? '1 failed' : '${status.failed} failed',
+                style: TextStyle(color: scheme.error),
+              ),
+            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: _retrying ? null : _retry,
+              child: const Text('Retry now'),
+            ),
+          ),
         ],
       ),
     );

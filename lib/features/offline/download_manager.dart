@@ -86,7 +86,8 @@ class DownloadManager {
   /// downloads pool, ignores the Wi-Fi-only setting, and runs even when
   /// auto-cache is disabled. [manual] false = the deferred auto-cache backfill
   /// (enqueued by the reader on close/background, not on open): skipped when
-  /// auto-cache is disabled and gated by the Wi-Fi-only setting.
+  /// auto-cache is disabled, gated by the Wi-Fi-only setting, and skipped for
+  /// books over the per-book size cap (`AppSettings.autoCacheBookCapMb`).
   ///
   /// Idempotent: a manual request promotes an existing auto-cached copy; an
   /// existing cache or active task is otherwise a no-op. Never throws.
@@ -119,14 +120,29 @@ class DownloadManager {
       // Unsupported source kind or missing credential: nothing to download.
       if (req == null) return;
 
-      if (await _db.getBook(sourceId, bookId) == null) {
+      var book = await _db.getBook(sourceId, bookId);
+      if (book == null) {
         final api = await _apiResolver(sourceId);
         if (api != null) {
           try {
             await _db.upsertBook(bookToRow(sourceId, await api.getBook(bookId)));
+            book = await _db.getBook(sourceId, bookId);
           } on ContentException {
             // Non-fatal.
           }
+        }
+      }
+
+      // Per-book auto-cache ceiling: an oversized book is skipped by the auto
+      // backfill, SILENTLY - this is a background heuristic, not a user action,
+      // so there is nothing to surface. Manual downloads are exempt, a cap of 0
+      // means no limit, and an unknown size (no cached row / null sizeBytes)
+      // never blocks the download.
+      if (!manual && settings.autoCacheBookCapMb > 0) {
+        final sizeBytes = book?.sizeBytes;
+        if (sizeBytes != null &&
+            sizeBytes > settings.autoCacheBookCapMb * 1024 * 1024) {
+          return;
         }
       }
 

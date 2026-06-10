@@ -108,6 +108,16 @@ class StatsSummary {
   bool get isEmpty => sessionCount == 0;
 }
 
+/// Formats a reading duration for display, unit included in the value: under
+/// a minute reads '<1 min' (never '0.0'), under an hour whole minutes
+/// ('24 min'), and from an hour up the existing one-decimal hours ('1.5 h').
+String formatReadingDuration(Duration d) {
+  if (d.inMinutes < 1) return '<1 min';
+  if (d.inMinutes < 60) return '${d.inMinutes} min';
+  final hours = d.inSeconds / Duration.secondsPerHour;
+  return '${hours.toStringAsFixed(1)} h';
+}
+
 /// Maps a Komga/local media type string to a friendly format bucket. Extension
 /// filters are UX-only; this is best-effort from the stored mediaType.
 String formatLabel(String? mediaType) {

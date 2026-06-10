@@ -152,6 +152,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final libraries = ref.watch(librariesProvider).valueOrNull ?? const [];
     final sourceId = ref.watch(activeSourceIdProvider).valueOrNull ?? '';
+    // A locked library is hidden everywhere: no chip until the lock state has
+    // resolved (null while loading), and a selected filter pointing at a
+    // now-locked library is dropped so the query cannot keep targeting it
+    // (re-running so stale results do not linger). Results are independently
+    // lock-filtered in [_run].
+    final lock = ref.watch(appLockProvider).valueOrNull;
+    if (lock != null && _libraryIds.any(lock.isLocked)) {
+      _libraryIds.removeWhere(lock.isLocked);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _run();
+      });
+    }
     return Scaffold(
       appBar: AppBar(
         title: AppTextField(
@@ -182,13 +194,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: Column(
         children: [
           _filterRow([
-            for (final lib in libraries)
-              _chip(lib.name, _libraryIds.contains(lib.id), (sel) {
-                setState(() => sel
-                    ? _libraryIds.add(lib.id)
-                    : _libraryIds.remove(lib.id));
-                _run();
-              }),
+            if (lock != null)
+              for (final lib in libraries)
+                if (!lock.isLocked(lib.id))
+                  _chip(lib.name, _libraryIds.contains(lib.id), (sel) {
+                    setState(() => sel
+                        ? _libraryIds.add(lib.id)
+                        : _libraryIds.remove(lib.id));
+                    _run();
+                  }),
           ]),
           _filterRow([
             for (final e in _statusOptions.entries)

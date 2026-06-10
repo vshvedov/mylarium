@@ -149,6 +149,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                           ),
                       delegate: SliverChildBuilderDelegate((context, i) {
                         final b = bookRows[i];
+                        final state = stateById[b.id];
                         return CoverTile(
                           sourceId: sourceId,
                           ownerType: 'book',
@@ -157,6 +158,13 @@ class SeriesDetailScreen extends ConsumerWidget {
                           subtitle: b.number.isEmpty ? null : 'No. ${b.number}',
                           cornerOverlay:
                               isCompleted(b) ? const ReadCorner() : null,
+                          // In-progress strip: local read state over the cached
+                          // page count; completed books keep only the corner.
+                          progress: state != null &&
+                                  !isCompleted(b) &&
+                                  b.pagesCount > 0
+                              ? (state.currentPage + 1) / b.pagesCount
+                              : null,
                           leadingBadge: DownloadBadge(
                             sourceId: sourceId,
                             bookId: b.id,

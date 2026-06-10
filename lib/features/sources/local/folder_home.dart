@@ -77,6 +77,7 @@ class FolderHomeBody extends ConsumerWidget {
             sourceId: sourceId,
             comics: keepReading,
             openReader: true,
+            hero: true,
           ),
         if (recent.isNotEmpty)
           LocalComicsRail(

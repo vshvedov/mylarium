@@ -42,6 +42,7 @@ import 'webtoon_metrics.dart';
 import 'webtoon_view.dart';
 import 'widgets/capture_overlay.dart';
 import 'widgets/color_correction_sheet.dart';
+import 'widgets/direction_nudge.dart';
 import 'widgets/image_quality_sheet.dart';
 import 'widgets/reader_chrome.dart';
 import 'widgets/reader_seam.dart';
@@ -216,6 +217,22 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Debounces per-turn progress write-back (BookState + Komga queue).
   Timer? _progressDebounce;
 
+  /// Periodic in-flight session checkpoint. A hard process kill (OOM, crash,
+  /// task-switcher swipe-kill) never runs [dispose] or the lifecycle pause
+  /// path, so without this the whole in-flight reading session would be lost;
+  /// checkpointing every minute bounds the stats loss to at most one interval.
+  /// Never started in preview mode.
+  Timer? _sessionCheckpointTimer;
+
+  /// Guards the adaptive image-cache cap so it is computed once per reader
+  /// open (it needs MediaQuery, so it runs in [didChangeDependencies]).
+  bool _imageCacheCapSet = false;
+
+  /// Hides the first-open direction nudge for this screen instance once acted
+  /// on (both actions also persist settings, which clears
+  /// `ReaderData.directionUnset` so the nudge never returns for the series).
+  bool _directionNudgeDismissed = false;
+
   /// Double-page "single-page nudge": shifts the spread pairing by one page
   /// (in-session; a transient alignment correction).
   bool _nudge = false;
@@ -271,9 +288,8 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     if (source is OfflinePages) {
       _archiveReader = ArchiveReader(source.archivePath);
     }
-    // Cap total decoded-page memory so a long book cannot grow the global image
-    // cache without bound. The full cacheCapBytes-driven LRU media cache is T5.
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 256 << 20; // 256 MB
+    // The decoded-page image-cache cap is set adaptively on the first
+    // [didChangeDependencies] (it needs MediaQuery, unavailable here).
     // Open at the deep-link page if given (a gallery capture), else resume at
     // the saved page; clamp to the book's range. Start a reading session at the
     // opening page.
@@ -299,6 +315,14 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // idempotent fallback if the reader closes before this fires.
     if (!widget.preview && source is OnlinePages) {
       _backfillTimer = Timer(const Duration(seconds: 3), _backfillOffline);
+    }
+    // Checkpoint the in-flight session every minute (see [_checkpointSession]
+    // for the hard-kill rationale). Preview records no sessions, so no timer.
+    if (!widget.preview) {
+      _sessionCheckpointTimer = Timer.periodic(
+        const Duration(seconds: 60),
+        (_) => _checkpointSession(),
+      );
     }
   }
 
@@ -360,6 +384,21 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _syncEngine
         .then((e) => e.recordSession(span, isCompletion: isCompletion))
         .catchError((Object _) {});
+  }
+
+  /// Periodic checkpoint of the in-flight reading session. A hard process kill
+  /// (OOM, crash, swipe-kill) skips [dispose] and the lifecycle pause path, so
+  /// an unflushed session would vanish entirely; appending it every minute
+  /// bounds the loss to the last interval. Mirrors the paused -> resumed
+  /// lifecycle sequence (flush time, append, restart at the current page) but
+  /// deliberately does NOT push progress (that has its own debounce).
+  /// [_finalizeSession] is naturally a no-op when the recorder has nothing
+  /// measurable (its build() returns null).
+  void _checkpointSession() {
+    if (widget.preview) return;
+    _recorder.pause(_nowMs());
+    _finalizeSession();
+    _recorder.onPage(_page, _nowMs());
   }
 
   /// Auto-cache backfill: enqueues the full-chapter download once per session.
@@ -429,6 +468,21 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Cap total decoded-page memory ADAPTIVELY, once per reader open: one
+    // full-screen page decodes to about (logical width * dpr) x (logical
+    // height * dpr) RGBA pixels at 4 bytes each, and the reader keeps roughly
+    // a dozen pages alive (focused page, prefetch window, recently viewed).
+    // Clamped to [128 MB, 512 MB] so a small phone still gets a useful cache
+    // and a high-dpr tablet cannot balloon memory. The full cacheCapBytes-
+    // driven LRU media cache is T5.
+    if (!_imageCacheCapSet) {
+      _imageCacheCapSet = true;
+      final size = MediaQuery.sizeOf(context);
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final pageBytes = size.width * size.height * dpr * dpr * 4;
+      final cap = (pageBytes * 12).round().clamp(128 << 20, 512 << 20);
+      PaintingBinding.instance.imageCache.maximumSizeBytes = cap;
+    }
     _rebuildSource();
   }
 
@@ -633,6 +687,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _progressDebounce?.cancel();
     _focusSettleTimer?.cancel();
     _backfillTimer?.cancel();
+    _sessionCheckpointTimer?.cancel();
     // Push the final position (durable) and append the session (best-effort;
     // the SyncEngine + database are app-lifetime, so the write survives this
     // screen's teardown).
@@ -673,6 +728,24 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   }
 
   void _toggleChrome() => setState(() => _chrome = !_chrome);
+
+  /// Accept the first-open direction nudge: flip this series to right-to-left.
+  /// toggleDirection persists the settings, so the nudge never returns.
+  void _acceptDirectionNudge() {
+    setState(() => _directionNudgeDismissed = true);
+    ref
+        .read(readerControllerProvider(widget.sourceId, widget.bookId).notifier)
+        .toggleDirection();
+  }
+
+  /// Dismiss the first-open direction nudge: persist the current settings
+  /// as-is so it shows at most once per series, ever.
+  void _dismissDirectionNudge() {
+    setState(() => _directionNudgeDismissed = true);
+    ref
+        .read(readerControllerProvider(widget.sourceId, widget.bookId).notifier)
+        .updateSettings(widget.data.settings);
+  }
 
   void _openImageQuality() => AppBottomSheet.show<void>(
     context,
@@ -951,6 +1024,15 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         const BookNeighbors();
     final autoAdvance =
         ref.watch(autoAdvanceEnabledProvider).valueOrNull ?? false;
+    // First-open direction nudge: only when the direction is a pure default
+    // (no persisted settings, no source hint), reading a paged LTR layout, not
+    // previewing, and not capturing (the overlay owns the screen then).
+    final showDirectionNudge = widget.data.directionUnset &&
+        !widget.preview &&
+        !_capturing &&
+        !_directionNudgeDismissed &&
+        s.mode.isPaged &&
+        !effectiveRtl(s);
     return Stack(
       children: [
         Positioned.fill(
@@ -1013,6 +1095,22 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             onCapture: _startCapture,
           ),
         ),
+        if (showDirectionNudge)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              // Sit above the bottom scrubber area when the chrome is shown.
+              minimum: const EdgeInsets.only(bottom: 88),
+              child: Center(
+                child: DirectionNudge(
+                  onRightToLeft: _acceptDirectionNudge,
+                  onDismiss: _dismissDirectionNudge,
+                ),
+              ),
+            ),
+          ),
         if (_capturing)
           Positioned.fill(
             child: CaptureOverlay(

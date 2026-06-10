@@ -149,6 +149,95 @@ void main() {
     expect((await db.getCachedAsset('s1', 'b1'))!.permanent, isTrue);
   });
 
+  test('per-book cap skips an oversized auto download silently', () async {
+    await db.getOrCreateSettings(); // default cap: 200 MB
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'big',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'Omnibus',
+        number: '1',
+        sizeBytes: const Value(300 * 1024 * 1024)));
+
+    final dl = _FakeDownloader([1]);
+    await manager(dl).enqueueBook('s1', 'big'); // auto -> over cap, skipped
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(dl.calls, 0);
+    expect(await db.getCachedAsset('s1', 'big'), isNull);
+    expect(await db.getDownloadTask('s1', 'big'), isNull,
+        reason: 'skipped before a task row is created (silent, no failure)');
+  });
+
+  test('per-book cap allows an under-cap auto download', () async {
+    await db.getOrCreateSettings();
+    await db.updateAutoCacheBookCapMb(200);
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'small',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'Issue',
+        number: '1',
+        sizeBytes: const Value(50 * 1024 * 1024)));
+
+    final dl = _FakeDownloader([1, 2]);
+    await manager(dl).enqueueBook('s1', 'small');
+    await waitForAsset('small');
+    expect((await db.getCachedAsset('s1', 'small'))!.permanent, isFalse);
+  });
+
+  test('per-book cap of 0 means no limit', () async {
+    await db.getOrCreateSettings();
+    await db.updateAutoCacheBookCapMb(0);
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'big',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'Omnibus',
+        number: '1',
+        sizeBytes: const Value(900 * 1024 * 1024)));
+
+    final dl = _FakeDownloader([1, 2, 3]);
+    await manager(dl).enqueueBook('s1', 'big');
+    await waitForAsset('big');
+    expect(await db.getCachedAsset('s1', 'big'), isNotNull);
+  });
+
+  test('manual download ignores the per-book cap', () async {
+    await db.getOrCreateSettings(); // default cap: 200 MB
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'big',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'Omnibus',
+        number: '1',
+        sizeBytes: const Value(300 * 1024 * 1024)));
+
+    final dl = _FakeDownloader([1, 2, 3]);
+    await manager(dl).enqueueBook('s1', 'big', manual: true);
+    await waitForAsset('big');
+    expect((await db.getCachedAsset('s1', 'big'))!.permanent, isTrue);
+  });
+
+  test('an unknown book size never blocks the auto download', () async {
+    await db.getOrCreateSettings();
+    await db.upsertBook(BooksCompanion.insert(
+        sourceId: 's1',
+        id: 'nosize',
+        seriesId: 'ser1',
+        libraryId: 'l',
+        title: 'Mystery',
+        number: '1')); // sizeBytes stays NULL
+
+    final dl = _FakeDownloader([1]);
+    await manager(dl).enqueueBook('s1', 'nosize');
+    await waitForAsset('nosize');
+    expect(await db.getCachedAsset('s1', 'nosize'), isNotNull);
+  });
+
   test('manual download promotes an existing auto-cached copy', () async {
     final dl = _FakeDownloader([9, 9]);
     final m = manager(dl);

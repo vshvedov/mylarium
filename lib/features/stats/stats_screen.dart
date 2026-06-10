@@ -65,7 +65,6 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 
   List<Widget> _content(BuildContext context, StatsSummary s) {
-    final hours = (s.totalSeconds / 3600);
     return [
       _KpiGrid(summary: s),
       const SizedBox(height: 20),
@@ -113,7 +112,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       ),
       const SizedBox(height: 8),
       Text(
-        'Total reading time ${hours.toStringAsFixed(1)} h '
+        'Total reading time '
+        '${formatReadingDuration(Duration(seconds: s.totalSeconds))} '
         'across ${s.sessionCount} sessions.',
         style: Theme.of(context).textTheme.bodySmall,
       ),
@@ -180,8 +180,12 @@ class _KpiGrid extends StatelessWidget {
         ),
         _Kpi(
           icon: AppIcons.clock,
-          label: 'Hours',
-          value: (summary.totalSeconds / 3600).toStringAsFixed(1),
+          // Short label: the unit lives in the value ('24 min' / '1.5 h') and
+          // the KPI tile is narrow on phones.
+          label: 'Time',
+          value: formatReadingDuration(
+            Duration(seconds: summary.totalSeconds),
+          ),
           delta: null,
         ),
         _Kpi(
@@ -228,13 +232,29 @@ class _Kpi extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  value,
-                  style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                // Single line, scaled down when narrow: a unit-bearing value
+                // like '25 min' must never wrap and overflow the fixed-aspect
+                // KPI tile on phone widths.
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style:
+                        text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
                 Row(
                   children: [
-                    Text(label, style: text.bodySmall),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodySmall,
+                      ),
+                    ),
                     if (delta != null && delta != 0) ...[
                       const SizedBox(width: 6),
                       Text(

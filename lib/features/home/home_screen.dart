@@ -19,12 +19,13 @@ import '../library/rail_item.dart';
 import '../library/widgets/item_context_menu.dart';
 import '../library/widgets/library_tiles.dart';
 import '../library/widgets/rail.dart';
-import '../library/widgets/rail_skeleton.dart';
+import '../library/widgets/skeleton.dart';
 import '../offline/offline_providers.dart';
 import '../sources/source_status_button.dart';
 import '../sources/sources_sheet.dart';
 import 'home_layout.dart';
 import 'home_layout_controller.dart';
+import 'home_progress_providers.dart';
 
 /// The home shelf: Keep-Reading (On-Deck) plus Recently Added/Updated rails,
 /// over the active source. A "Browse" action opens the full virtualized grid.
@@ -299,6 +300,11 @@ class _ServerHomeBody extends ConsumerWidget {
         cornerOverlay: isBook
             ? BookReadCorner(sourceId: sourceId, bookId: it.ownerId)
             : null,
+        // Only the keep-reading (hero) rail carries the page-progress footer;
+        // it renders nothing for books without progress (e.g. on-deck).
+        footer: (isBook && kind == HomeRailKind.keepReading)
+            ? BookReadingProgress(sourceId: sourceId, bookId: it.ownerId)
+            : null,
         onTap: () => context.push(
           it.ownerType == 'series'
               ? '/series/$sourceId/${it.ownerId}'
@@ -319,16 +325,29 @@ class _ServerHomeBody extends ConsumerWidget {
     // empty. The header is identical between skeleton and real rail, so only
     // the tiles swap.
     Widget railSlot(HomeRailKind kind) {
+      // Keep-reading is the hero rail: larger tiles with a page-progress
+      // footer, so the row the user actually returns to reads as the headline.
+      // The skeleton uses the same metrics so nothing jumps when data lands.
+      final hero = kind == HomeRailKind.keepReading;
+      final height = hero ? kHeroRailHeight : kRailHeight;
+      final tileWidth = hero ? kHeroRailTileWidth : kRailTileWidth;
       final items = itemsFor(kind);
       final Widget child;
       if (items == null) {
-        child = RailSkeleton(title: kind.title, icon: kind.icon);
+        child = SkeletonRail(
+          title: kind.title,
+          icon: kind.icon,
+          height: height,
+          tileWidth: tileWidth,
+        );
       } else if (items.isEmpty) {
         child = const SizedBox.shrink();
       } else {
         child = Rail(
           title: kind.title,
           icon: kind.icon,
+          height: height,
+          tileWidth: tileWidth,
           children: [for (final it in items) tileFor(kind, it)],
         );
       }

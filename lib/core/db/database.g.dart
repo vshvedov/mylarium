@@ -175,6 +175,17 @@ class $AppSettingsTable extends AppSettings
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _autoCacheBookCapMbMeta =
+      const VerificationMeta('autoCacheBookCapMb');
+  @override
+  late final GeneratedColumn<int> autoCacheBookCapMb = GeneratedColumn<int>(
+    'auto_cache_book_cap_mb',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(200),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -190,6 +201,7 @@ class $AppSettingsTable extends AppSettings
     deleteOnRead,
     autoAdvance,
     lastActiveSourceId,
+    autoCacheBookCapMb,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -305,6 +317,15 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('auto_cache_book_cap_mb')) {
+      context.handle(
+        _autoCacheBookCapMbMeta,
+        autoCacheBookCapMb.isAcceptableOrUnknown(
+          data['auto_cache_book_cap_mb']!,
+          _autoCacheBookCapMbMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -366,6 +387,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.string,
         data['${effectivePrefix}last_active_source_id'],
       ),
+      autoCacheBookCapMb: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}auto_cache_book_cap_mb'],
+      )!,
     );
   }
 
@@ -419,6 +444,11 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// on the next launch. NULL until the first selection; a stale id (the source
   /// was deleted) falls back to the deterministic lowest-sorted pick.
   final String? lastActiveSourceId;
+
+  /// Per-book ceiling in MB for the auto-cache pool: a book whose archive is
+  /// larger than this is skipped by the auto-download backfill. 0 means no
+  /// per-book limit; manual downloads are exempt.
+  final int autoCacheBookCapMb;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -433,6 +463,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     this.deleteOnRead,
     required this.autoAdvance,
     this.lastActiveSourceId,
+    required this.autoCacheBookCapMb,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -458,6 +489,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     if (!nullToAbsent || lastActiveSourceId != null) {
       map['last_active_source_id'] = Variable<String>(lastActiveSourceId);
     }
+    map['auto_cache_book_cap_mb'] = Variable<int>(autoCacheBookCapMb);
     return map;
   }
 
@@ -484,6 +516,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastActiveSourceId: lastActiveSourceId == null && nullToAbsent
           ? const Value.absent()
           : Value(lastActiveSourceId),
+      autoCacheBookCapMb: Value(autoCacheBookCapMb),
     );
   }
 
@@ -512,6 +545,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastActiveSourceId: serializer.fromJson<String?>(
         json['lastActiveSourceId'],
       ),
+      autoCacheBookCapMb: serializer.fromJson<int>(json['autoCacheBookCapMb']),
     );
   }
   @override
@@ -533,6 +567,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'deleteOnRead': serializer.toJson<bool?>(deleteOnRead),
       'autoAdvance': serializer.toJson<bool>(autoAdvance),
       'lastActiveSourceId': serializer.toJson<String?>(lastActiveSourceId),
+      'autoCacheBookCapMb': serializer.toJson<int>(autoCacheBookCapMb),
     };
   }
 
@@ -550,6 +585,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     Value<bool?> deleteOnRead = const Value.absent(),
     bool? autoAdvance,
     Value<String?> lastActiveSourceId = const Value.absent(),
+    int? autoCacheBookCapMb,
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -567,6 +603,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     lastActiveSourceId: lastActiveSourceId.present
         ? lastActiveSourceId.value
         : this.lastActiveSourceId,
+    autoCacheBookCapMb: autoCacheBookCapMb ?? this.autoCacheBookCapMb,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -603,6 +640,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       lastActiveSourceId: data.lastActiveSourceId.present
           ? data.lastActiveSourceId.value
           : this.lastActiveSourceId,
+      autoCacheBookCapMb: data.autoCacheBookCapMb.present
+          ? data.autoCacheBookCapMb.value
+          : this.autoCacheBookCapMb,
     );
   }
 
@@ -621,7 +661,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('homeLayout: $homeLayout, ')
           ..write('deleteOnRead: $deleteOnRead, ')
           ..write('autoAdvance: $autoAdvance, ')
-          ..write('lastActiveSourceId: $lastActiveSourceId')
+          ..write('lastActiveSourceId: $lastActiveSourceId, ')
+          ..write('autoCacheBookCapMb: $autoCacheBookCapMb')
           ..write(')'))
         .toString();
   }
@@ -641,6 +682,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     deleteOnRead,
     autoAdvance,
     lastActiveSourceId,
+    autoCacheBookCapMb,
   );
   @override
   bool operator ==(Object other) =>
@@ -658,7 +700,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.homeLayout == this.homeLayout &&
           other.deleteOnRead == this.deleteOnRead &&
           other.autoAdvance == this.autoAdvance &&
-          other.lastActiveSourceId == this.lastActiveSourceId);
+          other.lastActiveSourceId == this.lastActiveSourceId &&
+          other.autoCacheBookCapMb == this.autoCacheBookCapMb);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -675,6 +718,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<bool?> deleteOnRead;
   final Value<bool> autoAdvance;
   final Value<String?> lastActiveSourceId;
+  final Value<int> autoCacheBookCapMb;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -689,6 +733,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.deleteOnRead = const Value.absent(),
     this.autoAdvance = const Value.absent(),
     this.lastActiveSourceId = const Value.absent(),
+    this.autoCacheBookCapMb = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -704,6 +749,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.deleteOnRead = const Value.absent(),
     this.autoAdvance = const Value.absent(),
     this.lastActiveSourceId = const Value.absent(),
+    this.autoCacheBookCapMb = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -719,6 +765,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<bool>? deleteOnRead,
     Expression<bool>? autoAdvance,
     Expression<String>? lastActiveSourceId,
+    Expression<int>? autoCacheBookCapMb,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -737,6 +784,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (autoAdvance != null) 'auto_advance': autoAdvance,
       if (lastActiveSourceId != null)
         'last_active_source_id': lastActiveSourceId,
+      if (autoCacheBookCapMb != null)
+        'auto_cache_book_cap_mb': autoCacheBookCapMb,
     });
   }
 
@@ -754,6 +803,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<bool?>? deleteOnRead,
     Value<bool>? autoAdvance,
     Value<String?>? lastActiveSourceId,
+    Value<int>? autoCacheBookCapMb,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -770,6 +820,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       deleteOnRead: deleteOnRead ?? this.deleteOnRead,
       autoAdvance: autoAdvance ?? this.autoAdvance,
       lastActiveSourceId: lastActiveSourceId ?? this.lastActiveSourceId,
+      autoCacheBookCapMb: autoCacheBookCapMb ?? this.autoCacheBookCapMb,
     );
   }
 
@@ -819,6 +870,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (lastActiveSourceId.present) {
       map['last_active_source_id'] = Variable<String>(lastActiveSourceId.value);
     }
+    if (autoCacheBookCapMb.present) {
+      map['auto_cache_book_cap_mb'] = Variable<int>(autoCacheBookCapMb.value);
+    }
     return map;
   }
 
@@ -837,7 +891,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('homeLayout: $homeLayout, ')
           ..write('deleteOnRead: $deleteOnRead, ')
           ..write('autoAdvance: $autoAdvance, ')
-          ..write('lastActiveSourceId: $lastActiveSourceId')
+          ..write('lastActiveSourceId: $lastActiveSourceId, ')
+          ..write('autoCacheBookCapMb: $autoCacheBookCapMb')
           ..write(')'))
         .toString();
   }
@@ -11584,6 +11639,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<bool?> deleteOnRead,
       Value<bool> autoAdvance,
       Value<String?> lastActiveSourceId,
+      Value<int> autoCacheBookCapMb,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -11600,6 +11656,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<bool?> deleteOnRead,
       Value<bool> autoAdvance,
       Value<String?> lastActiveSourceId,
+      Value<int> autoCacheBookCapMb,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -11673,6 +11730,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<String> get lastActiveSourceId => $composableBuilder(
     column: $table.lastActiveSourceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get autoCacheBookCapMb => $composableBuilder(
+    column: $table.autoCacheBookCapMb,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11750,6 +11812,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.lastActiveSourceId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get autoCacheBookCapMb => $composableBuilder(
+    column: $table.autoCacheBookCapMb,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -11819,6 +11886,11 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.lastActiveSourceId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get autoCacheBookCapMb => $composableBuilder(
+    column: $table.autoCacheBookCapMb,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -11865,6 +11937,7 @@ class $$AppSettingsTableTableManager
                 Value<bool?> deleteOnRead = const Value.absent(),
                 Value<bool> autoAdvance = const Value.absent(),
                 Value<String?> lastActiveSourceId = const Value.absent(),
+                Value<int> autoCacheBookCapMb = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -11879,6 +11952,7 @@ class $$AppSettingsTableTableManager
                 deleteOnRead: deleteOnRead,
                 autoAdvance: autoAdvance,
                 lastActiveSourceId: lastActiveSourceId,
+                autoCacheBookCapMb: autoCacheBookCapMb,
               ),
           createCompanionCallback:
               ({
@@ -11895,6 +11969,7 @@ class $$AppSettingsTableTableManager
                 Value<bool?> deleteOnRead = const Value.absent(),
                 Value<bool> autoAdvance = const Value.absent(),
                 Value<String?> lastActiveSourceId = const Value.absent(),
+                Value<int> autoCacheBookCapMb = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -11909,6 +11984,7 @@ class $$AppSettingsTableTableManager
                 deleteOnRead: deleteOnRead,
                 autoAdvance: autoAdvance,
                 lastActiveSourceId: lastActiveSourceId,
+                autoCacheBookCapMb: autoCacheBookCapMb,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

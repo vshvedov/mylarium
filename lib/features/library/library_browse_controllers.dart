@@ -1,4 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show Ref, StateProvider, StreamProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
@@ -16,6 +17,67 @@ import 'rail_item.dart';
 import 'series_sync.dart';
 
 part 'library_browse_controllers.g.dart';
+
+/// Sort orders for the browse-all series grid. Only columns cached on the
+/// local Series table can back a sort (the grid is an offline read), which
+/// today means titleSort and booksCount; the cache carries no created/updated
+/// dates, so date sorts live in search only.
+enum BrowseSort {
+  titleAsc('Title A-Z'),
+  titleDesc('Title Z-A'),
+  mostBooks('Most books');
+
+  const BrowseSort(this.label);
+  final String label;
+
+  /// Whether the underlying title query runs descending.
+  bool get titleDescending => this == titleDesc;
+
+  /// Whether the resulting list is alphabetical (drives the A-Z scrubber).
+  bool get alphabetical => this != mostBooks;
+}
+
+/// The chosen browse sort, per source. Kept alive so the choice survives
+/// leaving and re-entering browse for the whole session; deliberately
+/// memory-only (no DB persistence) for now.
+final browseSortProvider = StateProvider.family<BrowseSort, String>(
+    (ref, sourceId) => BrowseSort.titleAsc);
+
+/// The browse list ordered by cached booksCount (desc), title as tie-break.
+/// Mirrors [browseSeries] (same sync kick, lock-gating and library scoping)
+/// over the same cached stream, re-ordered in memory: the rows are already
+/// fully materialised for the grid, so the re-sort is cheap and reuses the
+/// tested filter SQL of [AppDatabase.watchSeriesSorted].
+final browseSeriesByBooksProvider = StreamProvider.autoDispose
+    .family<List<SeriesRow>, ({String sourceId, String? libraryId})>(
+        (ref, args) async* {
+  if (args.sourceId.isEmpty) {
+    yield const [];
+    return;
+  }
+  // read, not watch: see [browseSeries] for why watching here would trip
+  // Riverpod's "dependency changed mid-await" assertion.
+  ref.read(seriesSyncProvider(args.sourceId, args.libraryId));
+  final lock = await ref.watch(appLockProvider.future);
+  yield* ref
+      .watch(appDatabaseProvider)
+      .watchSeriesSorted(
+        args.sourceId,
+        libraryId: args.libraryId,
+        hiddenLibraryIds: lock.hiddenLibraryIds,
+      )
+      .map((rows) => [...rows]..sort(_byBooksDesc));
+});
+
+/// Most books first. List.sort is not stable, so equal counts tie-break on the
+/// title order (then id) to keep the result deterministic and alphabetical
+/// within a count.
+int _byBooksDesc(SeriesRow a, SeriesRow b) {
+  final byCount = b.booksCount.compareTo(a.booksCount);
+  if (byCount != 0) return byCount;
+  final byTitle = a.titleSort.compareTo(b.titleSort);
+  return byTitle != 0 ? byTitle : a.id.compareTo(b.id);
+}
 
 /// The full sorted series list for the browse-all grid, scoped to [libraryId]
 /// and lock-gated. Watching it kicks the shared background full sync (so the

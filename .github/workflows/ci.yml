@@ -1,0 +1,35 @@
+# CI: analyze + full test suite on every push to main and every PR.
+#
+# Runs on macos-latest deliberately: the golden tests are macOS-rendered, and
+# font rasterization differs per OS, so a Linux runner would produce spurious
+# golden diffs. No platform (Android/iOS) builds in this workflow; it is the
+# fast analyze-and-test gate only.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate code (Riverpod, Drift)
+        run: dart run build_runner build -d
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

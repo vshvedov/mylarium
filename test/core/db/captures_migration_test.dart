@@ -7,6 +7,7 @@ import '../../drift/generated/schema.dart';
 import '../../drift/generated/schema_v16.dart' as v16;
 import '../../drift/generated/schema_v17.dart' as v17;
 import '../../drift/generated/schema_v18.dart' as v18;
+import '../../drift/generated/schema_v19.dart' as v19;
 
 void main() {
   late SchemaVerifier verifier;
@@ -149,6 +150,46 @@ void main() {
     // The new column is writable and readable after the upgrade.
     await db.updateLastActiveSourceId('s1');
     expect((await db.getOrCreateSettings()).lastActiveSourceId, 's1');
+
+    await db.close();
+  });
+
+  test('migrates v19 -> v20 to the expected schema', () async {
+    final connection = await verifier.startAt(19);
+    final db = AppDatabase(connection);
+    // Validates that running AppDatabase.migration from 19 to 20 yields exactly
+    // the committed v20 snapshot (adds app_settings.auto_cache_book_cap_mb).
+    await verifier.migrateAndValidate(db, 20);
+    await db.close();
+  });
+
+  test('v19 -> v20 preserves the settings row and autoCacheBookCapMb works',
+      () async {
+    final schema = await verifier.schemaAt(19);
+
+    final old = v19.DatabaseAtV19(schema.newConnection());
+    await old.customStatement(
+      "INSERT INTO app_settings (id, theme_mode, device_id, "
+      "last_active_source_id) VALUES (1, 'dark', 'dev-1', 's1')",
+    );
+    await old.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await db.customStatement('SELECT 1');
+
+    // The settings row survived with its values; the new column reads its
+    // 200 MB default.
+    final settings = await db.getOrCreateSettings();
+    expect(settings.themeMode, 'dark');
+    expect(settings.deviceId, 'dev-1');
+    expect(settings.lastActiveSourceId, 's1');
+    expect(settings.autoCacheBookCapMb, 200);
+
+    // The new column is writable and readable after the upgrade (0 = no limit).
+    await db.updateAutoCacheBookCapMb(500);
+    expect((await db.getOrCreateSettings()).autoCacheBookCapMb, 500);
+    await db.updateAutoCacheBookCapMb(0);
+    expect((await db.getOrCreateSettings()).autoCacheBookCapMb, 0);
 
     await db.close();
   });

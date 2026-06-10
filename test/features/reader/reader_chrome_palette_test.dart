@@ -105,12 +105,26 @@ void main() {
     expect(btn(AppIcons.nextChapter).onPressed, isNotNull);
   });
 
-  testWidgets('direction toggle hidden in webtoon, shown otherwise',
+  testWidgets(
+      'direction toggle lives in the options menu, hidden in webtoon',
       (tester) async {
+    // The toggle is an options-menu entry now, never a bar icon.
     await _pump(tester, _chrome(onToggleDirection: null));
     expect(find.byIcon(AppIcons.readingDirection), findsNothing);
+    await tester.tap(find.byIcon(AppIcons.options));
+    await tester.pumpAndSettle();
+    expect(find.text('Toggle reading direction'), findsNothing);
+    expect(find.text('Capture page'), findsOneWidget);
+
+    // Close the open menu before re-pumping: the options glyph also appears
+    // on the Image quality row, which would make the next tap ambiguous.
+    await tester.tapAt(const Offset(5, 590));
+    await tester.pumpAndSettle();
 
     await _pump(tester, _chrome(onToggleDirection: _noop));
+    await tester.tap(find.byIcon(AppIcons.options).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Toggle reading direction'), findsOneWidget);
     expect(find.byIcon(AppIcons.readingDirection), findsOneWidget);
   });
 
