@@ -65,8 +65,15 @@ class ImportController extends _$ImportController {
 
   /// Imports [files] one at a time so the UI can show per-file progress.
   /// Exposed separately from [pickAndImport] so tests can drive the state
-  /// machine without an OS picker.
+  /// machine without an OS picker. Re-entrant calls while a run is active
+  /// return an empty result.
   Future<ImportResult> importFiles(List<PickedFile> files) async {
+    if (state is ImportRunActive) return const ImportResult([]);
+    state = ImportRunActive(
+      done: 0,
+      total: files.length,
+      currentName: files.first.name,
+    );
     final service = ref.read(importServiceProvider);
     final localId = await service.ensureLocalSource();
     final results = <FileImportResult>[];

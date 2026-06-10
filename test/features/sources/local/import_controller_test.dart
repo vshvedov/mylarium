@@ -54,12 +54,28 @@ void main() {
 
     expect(result.files, hasLength(2));
     expect(result.importedCount, 1);
-    expect(seen.whereType<ImportRunActive>(), hasLength(2));
+    expect(seen.whereType<ImportRunActive>(), hasLength(3));
     expect(seen.last, isA<ImportRunDone>());
     expect(c.read(importControllerProvider), isA<ImportRunDone>());
 
     // The local source row exists and is discoverable for the active-source
     // provider re-read.
     expect(await db.localFilesSource(), isNotNull);
+  });
+
+  test('a second importFiles call during an active run is a no-op', () async {
+    final c = ProviderContainer(
+        overrides: [appDatabaseProvider.overrideWithValue(db)]);
+    addTearDown(c.dispose);
+
+    final notifier = c.read(importControllerProvider.notifier);
+    final files = [PickedFile(path: writeCbz('one.cbz'), name: 'one.cbz')];
+    final first = notifier.importFiles(files);
+    // The first call set ImportRunActive synchronously before its first await
+    // completes; a re-entrant call must bail out empty.
+    final second = await notifier.importFiles(files);
+    expect(second.files, isEmpty);
+    final result = await first;
+    expect(result.importedCount, 1);
   });
 }
