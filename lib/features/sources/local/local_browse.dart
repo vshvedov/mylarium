@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_icons.dart';
+import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/adaptive_layout.dart';
 import '../../../core/db/database.dart';
 import '../../library/widgets/library_tiles.dart';
@@ -188,6 +189,9 @@ class LocalSeriesDetailScreen extends ConsumerWidget {
                   ownerId: b.id,
                   title: b.title,
                   subtitle: b.number,
+                  leadingBadge: b.readingDirection == 'rtl'
+                      ? const _RtlBadge()
+                      : null,
                   onTap: () => context.push('/local-book/$sourceId/${b.id}'),
                 );
               },
@@ -201,6 +205,38 @@ class LocalSeriesDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(series)),
       body: body,
+    );
+  }
+}
+
+/// A compact pill badge shown on local book tiles whose [LocalComic.readingDirection]
+/// is 'rtl'. Mirrors the shape/style of [DownloadBadge]'s cached-state pill so
+/// the two leading-badge slots look consistent.
+class _RtlBadge extends StatelessWidget {
+  const _RtlBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<DesignTokens>()!;
+    final eink = tokens.isEink;
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: eink ? scheme.surface : scheme.inverseSurface,
+        borderRadius: BorderRadius.circular(4),
+        border: eink ? Border.all(color: scheme.onSurface) : null,
+      ),
+      child: Text(
+        'RTL',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: eink ? scheme.onSurface : scheme.onInverseSurface,
+          letterSpacing: 0.4,
+          height: 1,
+        ),
+      ),
     );
   }
 }

@@ -98,6 +98,4 @@ class ImportController extends _$ImportController {
     }
     return result;
   }
-
-  void reset() => state = const ImportRunIdle();
 }

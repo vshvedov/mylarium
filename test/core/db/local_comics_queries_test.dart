@@ -84,6 +84,7 @@ void main() {
     await db.insertLocalComic(comic('k1', 'Akira', '1', 1));
     await db.insertLocalComic(comic('k2', 'Akira', '2', 2));
     await db.insertLocalComic(comic('k3', 'Akira', '3', 3));
+    await db.insertLocalComic(comic('k4', 'Akira', '4', 4));
     await db.upsertBookState(BookStateCompanion.insert(
       sourceId: 'local-1',
       bookId: 'k1',
@@ -102,9 +103,16 @@ void main() {
       status: const Value('completed'),
       updatedAt: 300,
     ));
+    await db.upsertBookState(BookStateCompanion.insert(
+      sourceId: 'local-1',
+      bookId: 'k4',
+      status: const Value('rereading'),
+      updatedAt: 400,
+    ));
 
     final reading = await db.watchLocalKeepReading('local-1').first;
-    expect(reading.map((c) => c.id), ['k2', 'k1']); // newest first, no k3
+    // k4 (rereading, 400) > k2 (reading, 200) > k1 (reading, 100); k3 excluded
+    expect(reading.map((c) => c.id), ['k4', 'k2', 'k1']);
   });
 
   test('watchRecentlyImported orders by importedAt descending', () async {

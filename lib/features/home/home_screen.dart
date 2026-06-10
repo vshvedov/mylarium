@@ -9,6 +9,7 @@ import '../../app/widgets/brand_mark.dart';
 import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
+import '../../data/source/content_source.dart';
 import '../../data/source/source_providers.dart';
 import '../sources/local/local_home.dart';
 import '../library/library_browse_controllers.dart';
@@ -147,7 +148,7 @@ class HomeScreen extends ConsumerWidget {
     // accessible.
     final activeSource = ref.watch(activeSourceProvider).valueOrNull;
     final isLocal =
-        activeSource != null && activeSource.kind == 'local';
+        activeSource != null && activeSource.kind == SourceKind.local.name;
 
     return Scaffold(
       appBar: AppBar(

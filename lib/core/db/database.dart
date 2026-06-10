@@ -735,7 +735,7 @@ class AppDatabase extends _$AppDatabase {
           .getSingleOrNull();
 
   /// Local keep-reading rail: comics on [sourceId] whose local [BookState] is
-  /// in progress (`status == 'reading'`), most recently touched first.
+  /// in progress (status reading or rereading), most recently touched first.
   Stream<List<LocalComic>> watchLocalKeepReading(
     String sourceId, {
     int limit = 20,
@@ -748,7 +748,7 @@ class AppDatabase extends _$AppDatabase {
       ),
     ])
       ..where(bookState.sourceId.equals(sourceId) &
-          bookState.status.equals('reading'))
+          bookState.status.isIn(const ['reading', 'rereading']))
       ..orderBy([OrderingTerm.desc(bookState.updatedAt)])
       ..limit(limit);
     return query

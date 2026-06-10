@@ -75,8 +75,9 @@ class ImportService {
   static const _inlineThumbnailCap = 256 * 1024;
 
   /// Returns the id of the device's single "Local files" source, creating its
-  /// Sources row on first use. Callers that add the row must invalidate the
-  /// active-source provider (a T2 concern; see the keepAlive gotcha).
+  /// Sources row on first use. Callers that add the row select() it on the
+  /// active-source notifier; never invalidate the keepAlive provider (its
+  /// rebuild picks the lowest-sorted id and could switch sources).
   Future<String> ensureLocalSource() => _db.transaction(() async {
         final existing = await _db.localFilesSource();
         if (existing != null) return existing.id;
