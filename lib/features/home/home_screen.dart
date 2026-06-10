@@ -11,6 +11,7 @@ import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/content_source.dart';
 import '../../data/source/source_providers.dart';
+import '../sources/local/folder_home.dart';
 import '../sources/local/local_home.dart';
 import '../library/library_browse_controllers.dart';
 import '../library/pin_controllers.dart';
@@ -46,6 +47,10 @@ class HomeScreen extends ConsumerWidget {
     final isLocal = resolved &&
         activeSource != null &&
         activeSource.kind == SourceKind.local.name;
+    final isTree = resolved &&
+        activeSource != null &&
+        activeSource.kind == SourceKind.safTree.name;
+    final isDeviceSource = isLocal || isTree;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,12 +58,13 @@ class HomeScreen extends ConsumerWidget {
         // leave too little width for the text (narrow phones).
         title: const BrandTitle(),
         actions: [
-          if (sourceId != null && resolved && !isLocal)
+          if (sourceId != null && resolved && !isDeviceSource)
             SourceStatusButton(sourceId: sourceId),
           // The status button doubles as the visible source affordance on
-          // server sources; without this a local-source home has no obvious
-          // way to switch sources (the settings-sheet row is too buried).
-          if (isLocal)
+          // server sources; without this a local/folder-source home has no
+          // obvious way to switch sources (the settings-sheet row is too
+          // buried).
+          if (isDeviceSource)
             IconButton(
               icon: const Icon(AppIcons.sources),
               tooltip: 'Sources',
@@ -68,7 +74,7 @@ class HomeScreen extends ConsumerWidget {
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
-          if (!isLocal)
+          if (!isDeviceSource)
             IconButton(
               icon: const Icon(AppIcons.browse),
               tooltip: 'Browse all',
@@ -107,7 +113,9 @@ class HomeScreen extends ConsumerWidget {
                     ? const SizedBox.shrink()
                     : isLocal
                         ? LocalHomeBody(sourceId: sourceId)
-                        : _ServerHomeBody(sourceId: sourceId),
+                        : isTree
+                            ? FolderHomeBody(sourceId: sourceId)
+                            : _ServerHomeBody(sourceId: sourceId),
           ),
         ],
       ),

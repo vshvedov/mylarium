@@ -1,8 +1,11 @@
+import 'dart:convert' show jsonDecode;
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/archive/archive_extractor.dart';
 import '../../core/network/content_exception.dart';
+import '../../data/local/local_path_resolver.dart';
 import '../../data/source/models/mappers.dart';
 import '../../data/source/models/page_dto.dart';
 import '../../data/source/content_api.dart';
@@ -125,6 +128,42 @@ class ReaderController extends _$ReaderController {
     // server page cached on the book (resolved per-path below, once the book is
     // known) so a fresh install resumes where the user left off.
     final savedPage = (await db.getBookState(sourceId, bookId))?.currentPage;
+
+    // Local (sideloaded) books read straight from their archive row: the page
+    // order was natural-sorted at import, the archive lives on this device, and
+    // there is no server to consult. The row's series NAME doubles as the
+    // series id for settings/color/stats scoping (local series have no id).
+    final localComic = await db.getLocalComic(bookId);
+    if (localComic != null && localComic.sourceId == sourceId) {
+      final entries = (jsonDecode(localComic.pageOrder) as List).cast<String>();
+      final archivePath =
+          await LocalPathResolver().archivePath(localComic);
+      final seriesKey = localComic.series;
+      // ComicInfo's reading direction seeds the default (RTL manga opens RTL);
+      // a persisted per-series setting wins, exactly like the server path. The
+      // row stores 'rtl'/'ltr'; defaults() speaks Komga's direction names.
+      final settings = await settingsRepo.load(
+        sourceId,
+        seriesKey,
+        mangaDirection:
+            localComic.readingDirection == 'rtl' ? 'RIGHT_TO_LEFT' : null,
+      );
+      return ReaderData(
+        sourceId: sourceId,
+        bookId: bookId,
+        seriesId: seriesKey,
+        title: localComic.title,
+        seriesTitle: seriesKey,
+        settings: settings,
+        source: OfflinePages(archivePath, entries),
+        initialPage: resolveInitialReaderPage(
+          savedCurrentPage: savedPage,
+          serverReadPage: null,
+        ),
+        colorAdjustments: await ColorSettingsRepository(db)
+            .resolve(sourceId, seriesKey, bookId),
+      );
+    }
 
     // Offline-first: read a cached archive if available.
     final cache = ref.watch(offlineCacheManagerProvider);

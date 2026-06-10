@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_icons.dart';
 import '../../../core/db/database.dart';
+import '../../library/library_browse_controllers.dart'
+    show bookReadStateProvider;
 import '../../library/widgets/cover_image.dart';
 import 'local_providers.dart';
 
-/// Detail screen for one imported comic: cover, facts, and remove. The Read
-/// action is deliberately absent until T3 wires the local page source into
-/// the reader.
+/// Detail screen for one imported comic: cover, facts, Read, and remove. Read
+/// opens the shared reader on the local archive (T3); the reader resumes at
+/// the saved position automatically.
 class LocalBookDetailScreen extends ConsumerWidget {
   const LocalBookDetailScreen({
     super.key,
@@ -72,11 +74,18 @@ class LocalBookDetailScreen extends ConsumerWidget {
               _formatDate(
                   DateTime.fromMillisecondsSinceEpoch(comic.importedAt))),
           const SizedBox(height: 24),
-          OutlinedButton.icon(
-            icon: Icon(AppIcons.delete, color: theme.colorScheme.error),
-            label: const Text('Remove from library'),
-            onPressed: () => _confirmRemove(context, ref, comic),
-          ),
+          _ReadButton(sourceId: sourceId, comic: comic),
+          // Tree (in-place) books are managed by the folder rescan, not per
+          // book: "removing" one here could not delete the on-card file and
+          // the next rescan would just re-add the row.
+          if (comic.kind != 'safTree') ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: Icon(AppIcons.delete, color: theme.colorScheme.error),
+              label: const Text('Remove from library'),
+              onPressed: () => _confirmRemove(context, ref, comic),
+            ),
+          ],
         ],
       ),
     );
@@ -110,6 +119,35 @@ class LocalBookDetailScreen extends ConsumerWidget {
     await ref.read(importServiceProvider).deleteImported(comic);
     ref.invalidate(localComicProvider(comic.id));
     if (context.mounted) context.pop();
+  }
+}
+
+/// The Read action: opens the shared reader on this comic. Labelled
+/// "Continue reading" once a local read position exists (the reader resumes
+/// there) and "Read again" after completion (a re-read).
+class _ReadButton extends ConsumerWidget {
+  const _ReadButton({required this.sourceId, required this.comic});
+
+  final String sourceId;
+  final LocalComic comic;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state =
+        ref.watch(bookReadStateProvider(sourceId, comic.id)).valueOrNull;
+    final completed = state?.status == 'completed';
+    final inProgress =
+        !completed && state != null && state.currentPage > 0;
+    final label = completed
+        ? 'Read again'
+        : inProgress
+            ? 'Continue reading'
+            : 'Read';
+    return FilledButton.icon(
+      icon: const Icon(AppIcons.read),
+      label: Text(label),
+      onPressed: () => context.push('/reader/$sourceId/${comic.id}'),
+    );
   }
 }
 

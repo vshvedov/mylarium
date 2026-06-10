@@ -62,13 +62,16 @@ class LocalHomeBody extends ConsumerWidget {
           ),
         ),
         if (keepReading.isNotEmpty)
-          _LocalRail(
+          // Keep-reading taps straight into the reader (resuming at the saved
+          // page), matching the server-source home rail.
+          LocalComicsRail(
             title: 'Keep reading',
             sourceId: sourceId,
             comics: keepReading,
+            openReader: true,
           ),
         if (recent.isNotEmpty)
-          _LocalRail(
+          LocalComicsRail(
             title: 'Recently imported',
             sourceId: sourceId,
             comics: recent,
@@ -86,16 +89,21 @@ class LocalHomeBody extends ConsumerWidget {
   }
 }
 
-class _LocalRail extends StatelessWidget {
-  const _LocalRail({
+class LocalComicsRail extends StatelessWidget {
+  const LocalComicsRail({
+    super.key,
     required this.title,
     required this.sourceId,
     required this.comics,
+    this.openReader = false,
   });
 
   final String title;
   final String sourceId;
   final List<LocalComic> comics;
+
+  /// When true a tile opens the reader directly; otherwise the book detail.
+  final bool openReader;
 
   @override
   Widget build(BuildContext context) {
@@ -123,8 +131,9 @@ class _LocalRail extends StatelessWidget {
                   ownerId: c.id,
                   title: c.title,
                   subtitle: c.series,
-                  onTap: () =>
-                      context.push('/local-book/$sourceId/${c.id}'),
+                  onTap: () => context.push(openReader
+                      ? '/reader/$sourceId/${c.id}'
+                      : '/local-book/$sourceId/${c.id}'),
                 ),
               );
             },

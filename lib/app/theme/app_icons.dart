@@ -37,6 +37,10 @@ abstract final class AppIcons {
       IconData(0xe1de, fontFamily: _family, fontPackage: _package); // database
   static const sourceLocal = IconData(0xe2a0,
       fontFamily: _family, fontPackage: _package); // hardDrives
+  static const sourceFolder =
+      IconData(0xe24a, fontFamily: _family, fontPackage: _package); // folder
+  static const sdCard =
+      IconData(0xe664, fontFamily: _family, fontPackage: _package); // simCard
 
   // Library areas
   static const libraries =

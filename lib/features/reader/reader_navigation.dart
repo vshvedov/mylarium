@@ -41,6 +41,23 @@ Future<BookNeighbors> bookNeighbors(
   String bookId,
 ) async {
   final db = ref.watch(appDatabaseProvider);
+
+  // Local (sideloaded) books: resolve within the local series, ordered exactly
+  // like the local series detail list (numberSort NULLs-last, then title). For
+  // local books [seriesId] carries the series NAME (they have no series id).
+  final local = await db.getLocalComic(bookId);
+  if (local != null && local.sourceId == sourceId) {
+    final books = await db.getLocalBooksForSeriesOrdered(sourceId, local.series);
+    final i = books.indexWhere((b) => b.id == bookId);
+    if (i < 0) return const BookNeighbors();
+    return BookNeighbors(
+      prevId: i > 0 ? books[i - 1].id : null,
+      prevTitle: i > 0 ? books[i - 1].title : null,
+      nextId: i < books.length - 1 ? books[i + 1].id : null,
+      nextTitle: i < books.length - 1 ? books[i + 1].title : null,
+    );
+  }
+
   final api = await ref.watch(contentApiForProvider(sourceId).future);
   if (api != null) {
     try {

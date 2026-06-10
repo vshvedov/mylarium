@@ -6,7 +6,7 @@ part of 'reader_navigation.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$bookNeighborsHash() => r'7c7f89c38d63d1308f3e2ca14d35cd75091cdcae';
+String _$bookNeighborsHash() => r'cda2bc982a86edd896837e2e7e93caa2278d14c7';
 
 /// Copied from Dart SDK
 class _SystemHash {

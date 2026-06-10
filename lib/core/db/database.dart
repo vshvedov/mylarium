@@ -746,6 +746,24 @@ class AppDatabase extends _$AppDatabase {
       (select(sources)..where((t) => t.kind.equals('local')))
           .getSingleOrNull();
 
+  /// Books of one local series ordered exactly like [watchLocalBooks]
+  /// (numberSort with NULLs last, then title) but awaitable. Backs the local
+  /// next/prev book resolution (T3) so "next in the reader" matches "next in
+  /// the series list".
+  Future<List<LocalComic>> getLocalBooksForSeriesOrdered(
+    String sourceId,
+    String series,
+  ) =>
+      (select(localComics)
+            ..where(
+                (t) => t.sourceId.equals(sourceId) & t.series.equals(series))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.numberSort.isNull()),
+              (t) => OrderingTerm(expression: t.numberSort),
+              (t) => OrderingTerm(expression: t.title),
+            ]))
+          .get();
+
   /// Local keep-reading rail: comics on [sourceId] whose local [BookState] is
   /// in progress (status reading or rereading), most recently touched first.
   Stream<List<LocalComic>> watchLocalKeepReading(
@@ -781,6 +799,37 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> deleteLocalComic(String id) =>
       (delete(localComics)..where((t) => t.id.equals(id))).go();
+
+  /// Every local comic row of one source (drives the T4 rescan reconcile).
+  Future<List<LocalComic>> localComicsForSource(String sourceId) =>
+      (select(localComics)..where((t) => t.sourceId.equals(sourceId))).get();
+
+  /// Replaces a local comic row in place, KEEPING its id (a T4 rescan update:
+  /// the row's BookState and sessions keep pointing at the same book).
+  Future<void> replaceLocalComic(String id, LocalComicsCompanion row) =>
+      transaction(() async {
+        await (delete(localComics)..where((t) => t.id.equals(id))).go();
+        await into(localComics).insert(row);
+      });
+
+  /// Drops every local comic row of a source (folder-source removal). The
+  /// books' BookState and sessions are kept: reading history survives, per the
+  /// stats promise.
+  Future<void> deleteLocalComicsForSource(String sourceId) =>
+      (delete(localComics)..where((t) => t.sourceId.equals(sourceId))).go();
+
+  /// Drops every cached thumbnail row of a source (folder-source removal).
+  /// Spilled thumbnail files are cleaned by the caller before this.
+  Future<List<Thumbnail>> thumbnailsForSource(String sourceId) =>
+      (select(thumbnails)..where((t) => t.sourceId.equals(sourceId))).get();
+
+  Future<void> deleteThumbnailsForSource(String sourceId) =>
+      (delete(thumbnails)..where((t) => t.sourceId.equals(sourceId))).go();
+
+  /// Points a folder source at a new tree root (the re-pick/relink flow).
+  Future<void> updateSourceHandle(String id, String handle) =>
+      (update(sources)..where((t) => t.id.equals(id)))
+          .write(SourcesCompanion(handle: Value(handle)));
 
   Future<void> deleteThumbnail(
     String sourceId,

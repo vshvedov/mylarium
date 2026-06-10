@@ -1,3 +1,6 @@
+import 'dart:async' show unawaited;
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,10 +11,12 @@ import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../core/db/database.dart';
+import '../../core/platform/storage_volumes.dart';
 import '../../data/kavita/kavita_providers.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/content_source.dart';
 import '../../data/source/source_providers.dart';
+import '../sources/local/folder_source_controller.dart';
 import '../sources/local/local_providers.dart';
 
 /// Shows the connected-sources switcher as a bottom sheet: switch the active
@@ -26,12 +31,14 @@ class _SourcesSheet extends ConsumerWidget {
   IconData _iconFor(String kind) => switch (kind) {
         'komga' => AppIcons.sourceKomga,
         'kavita' => AppIcons.sourceKavita,
+        'safTree' => AppIcons.sourceFolder,
         _ => AppIcons.sourceLocal,
       };
 
   String _kindLabel(String kind) => switch (kind) {
         'komga' => 'Komga',
         'kavita' => 'Kavita',
+        'safTree' => 'Folder library',
         _ => kind,
       };
 
@@ -40,14 +47,19 @@ class _SourcesSheet extends ConsumerWidget {
     WidgetRef ref,
     Source source,
   ) async {
+    final isTree = source.kind == SourceKind.safTree.name;
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (ctx) => AlertDialog(
         title: Text('Remove ${source.label}?'),
-        content: const Text(
-          'This disconnects the source and deletes its stored credentials. '
-          'Downloaded files for this source are removed by storage cleanup.',
+        content: Text(
+          isTree
+              ? 'This forgets the folder library. The files on the card or '
+                  'folder are untouched, and reading history is kept.'
+              : 'This disconnects the source and deletes its stored '
+                  'credentials. Downloaded files for this source are removed '
+                  'by storage cleanup.',
         ),
         actions: [
           TextButton(
@@ -64,6 +76,11 @@ class _SourcesSheet extends ConsumerWidget {
     if (confirmed != true) return;
 
     final db = ref.read(appDatabaseProvider);
+    if (isTree) {
+      await ref.read(folderSourceServiceProvider).removeFolderSource(source);
+      ref.invalidate(activeSourceIdProvider);
+      return;
+    }
     if (source.kind == SourceKind.kavita.name) {
       await ref.read(kavitaCredentialStoreProvider).delete(source.id);
     } else {
@@ -71,6 +88,24 @@ class _SourcesSheet extends ConsumerWidget {
     }
     await db.deleteSource(source.id);
     ref.invalidate(activeSourceIdProvider);
+  }
+
+  /// Picks a folder (optionally rooted at an SD card), creates the safTree
+  /// source, makes it active, and starts the initial scan.
+  Future<void> _addFolder(
+    BuildContext context,
+    WidgetRef ref, {
+    String? initialUri,
+  }) async {
+    final id = await ref
+        .read(folderSourceServiceProvider)
+        .addFolderSource(initialUri: initialUri);
+    if (id == null) return; // picker cancelled
+    ref.read(activeSourceIdProvider.notifier).select(id);
+    unawaited(
+      ref.read(folderScanControllerProvider(id).notifier).rescan(),
+    );
+    if (context.mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -109,16 +144,21 @@ class _SourcesSheet extends ConsumerWidget {
                 itemBuilder: (context, i) {
                   final source = sources[i];
                   final isActive = source.id == activeId;
-                  // Local sources have no delete affordance: removing the row
-                  // would orphan the imported library. Books are managed per
-                  // book on the local detail screen.
+                  // The copy-import Local source has no delete affordance:
+                  // removing the row would orphan the imported library. Books
+                  // are managed per book on the local detail screen. Folder
+                  // (safTree) sources ARE removable: they are a read-only view
+                  // over external files, so removal loses nothing.
                   final isLocal = source.kind == SourceKind.local.name;
+                  final isTree = source.kind == SourceKind.safTree.name;
                   return AppListRow(
                     icon: _iconFor(source.kind),
                     title: source.label,
                     subtitle: isLocal
                         ? 'On this device'
-                        : '${_kindLabel(source.kind)} - ${source.baseUrl ?? source.kind}',
+                        : isTree
+                            ? 'Folder library - in place'
+                            : '${_kindLabel(source.kind)} - ${source.baseUrl ?? source.kind}',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -157,6 +197,29 @@ class _SourcesSheet extends ConsumerWidget {
                   if (context.mounted) Navigator.of(context).pop();
                 },
               ),
+            // Folder libraries are Android-only (SAF document trees); iOS
+            // folder sources are a future phase (PRD OQ1).
+            if (Platform.isAndroid) ...[
+              // A detected SD card gets its own shortcut: the picker opens
+              // rooted at the card so "use my card as a library" is two taps.
+              for (final volume in ref
+                      .watch(removableVolumesProvider)
+                      .valueOrNull ??
+                  const <RemovableVolume>[])
+                AppListRow(
+                  icon: AppIcons.sdCard,
+                  title: 'Use ${volume.description}',
+                  subtitle: 'Read comics from the card, in place',
+                  onTap: () =>
+                      _addFolder(context, ref, initialUri: volume.initialUri),
+                ),
+              AppListRow(
+                icon: AppIcons.sourceFolder,
+                title: 'Add folder library',
+                subtitle: 'Read comics from a folder, in place',
+                onTap: () => _addFolder(context, ref),
+              ),
+            ],
             AppListRow(
               icon: AppIcons.add,
               title: 'Add a source',

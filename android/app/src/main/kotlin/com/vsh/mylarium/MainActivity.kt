@@ -1,5 +1,6 @@
 package com.vsh.mylarium
 
+import android.content.Context
 import android.graphics.Rect
 import android.opengl.EGL14
 import android.opengl.EGLConfig
@@ -9,6 +10,7 @@ import android.opengl.EGLSurface
 import android.opengl.GLES20
 import android.os.Build
 import android.os.Bundle
+import android.os.storage.StorageManager
 import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -17,6 +19,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private val channelName = "mylarium/system_gestures"
     private val deviceChannelName = "mylarium/device"
+    private val storageChannelName = "mylarium/storage"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +51,39 @@ class MainActivity : FlutterActivity() {
                     "maxTextureSize" -> result.success(probeMaxTextureSize())
                     else -> result.notImplemented()
                 }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, storageChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "removableVolumes" -> result.success(removableVolumes())
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    // Mounted removable volumes (SD cards, USB drives) for the "use SD card as
+    // a source" shortcut. Each entry carries the user-facing description and,
+    // on API 29+, the EXTRA_INITIAL_URI of the volume's open-document-tree
+    // intent so the SAF folder picker opens rooted at the card.
+    private fun removableVolumes(): List<Map<String, Any?>> {
+        val sm = getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+            ?: return emptyList()
+        return sm.storageVolumes
+            .filter { it.isRemovable && it.state == "mounted" }
+            .map { volume ->
+                val initialUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    volume.createOpenDocumentTreeIntent()
+                        .getParcelableExtra<android.net.Uri>(
+                            "android.provider.extra.INITIAL_URI",
+                        )?.toString()
+                } else {
+                    null
+                }
+                mapOf(
+                    "description" to volume.getDescription(this),
+                    "uuid" to volume.uuid,
+                    "initialUri" to initialUri,
+                )
             }
     }
 
