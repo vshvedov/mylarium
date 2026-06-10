@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:archive/archive.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/core/db/database.dart';
 import 'package:mylarium/core/fs/app_paths.dart';
 import 'package:mylarium/data/local/import_service.dart';
@@ -142,5 +143,31 @@ void main() {
     final result = await service
         .importFiles([const PickedFile(path: '/nope/x.cbz', name: 'x.cbz')]);
     expect(result.files.single.outcome, ImportOutcome.failed);
+  });
+
+  test('deleteImported removes file, thumbnail, and row but keeps BookState',
+      () async {
+    final path = writeCbz('gone.cbz', {'p1.jpg': [1]});
+    final result = await service.importFiles([pick(path)]);
+    final comicId = result.files.single.comicId!;
+    final sourceId = (await db.localFilesSource())!.id;
+    await db.upsertBookState(BookStateCompanion.insert(
+      sourceId: sourceId,
+      bookId: comicId,
+      status: const Value('completed'),
+      updatedAt: 1,
+    ));
+
+    final comic = (await db.getLocalComic(comicId))!;
+    final abs = await AppPaths.resolve(comic.managedPath!);
+    expect(File(abs).existsSync(), isTrue);
+
+    await service.deleteImported(comic);
+
+    expect(File(abs).existsSync(), isFalse);
+    expect(await db.getLocalComic(comicId), isNull);
+    expect(await db.getThumbnail(sourceId, 'book', comicId), isNull);
+    // Read history survives for stats.
+    expect(await db.getBookState(sourceId, comicId), isNotNull);
   });
 }

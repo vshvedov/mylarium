@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -75,5 +77,60 @@ void main() {
       label: 'Local files',
     ));
     expect((await db.localFilesSource())!.id, 'local-1');
+  });
+
+  test('watchLocalKeepReading joins in-progress BookState, newest first',
+      () async {
+    await db.insertLocalComic(comic('k1', 'Akira', '1', 1));
+    await db.insertLocalComic(comic('k2', 'Akira', '2', 2));
+    await db.insertLocalComic(comic('k3', 'Akira', '3', 3));
+    await db.upsertBookState(BookStateCompanion.insert(
+      sourceId: 'local-1',
+      bookId: 'k1',
+      status: const Value('reading'),
+      updatedAt: 100,
+    ));
+    await db.upsertBookState(BookStateCompanion.insert(
+      sourceId: 'local-1',
+      bookId: 'k2',
+      status: const Value('reading'),
+      updatedAt: 200,
+    ));
+    await db.upsertBookState(BookStateCompanion.insert(
+      sourceId: 'local-1',
+      bookId: 'k3',
+      status: const Value('completed'),
+      updatedAt: 300,
+    ));
+
+    final reading = await db.watchLocalKeepReading('local-1').first;
+    expect(reading.map((c) => c.id), ['k2', 'k1']); // newest first, no k3
+  });
+
+  test('watchRecentlyImported orders by importedAt descending', () async {
+    await db.insertLocalComic(comic('r1', 'A', '1', 1));
+    await db.insertLocalComic(comic('r2', 'B', '1', 1));
+    // comic() helper stamps importedAt: 0; bump one row.
+    await (db.update(db.localComics)
+          ..where((t) => t.id.equals('r2')))
+        .write(const LocalComicsCompanion(importedAt: Value(999)));
+
+    final recent = await db.watchRecentlyImported('local-1').first;
+    expect(recent.map((c) => c.id), ['r2', 'r1']);
+  });
+
+  test('deleteLocalComic and deleteThumbnail remove the rows', () async {
+    await db.insertLocalComic(comic('d9', 'Dorohedoro', '9', 9));
+    await db.upsertThumbnail(ThumbnailsCompanion.insert(
+      sourceId: 'local-1',
+      ownerType: 'book',
+      ownerId: 'd9',
+      bytes: Value(Uint8List.fromList([1])),
+      fetchedAt: 0,
+    ));
+    await db.deleteThumbnail('local-1', 'book', 'd9');
+    await db.deleteLocalComic('d9');
+    expect(await db.getLocalComic('d9'), isNull);
+    expect(await db.getThumbnail('local-1', 'book', 'd9'), isNull);
   });
 }

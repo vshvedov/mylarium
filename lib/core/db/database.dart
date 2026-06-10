@@ -734,6 +734,54 @@ class AppDatabase extends _$AppDatabase {
       (select(sources)..where((t) => t.kind.equals('local')))
           .getSingleOrNull();
 
+  /// Local keep-reading rail: comics on [sourceId] whose local [BookState] is
+  /// in progress (`status == 'reading'`), most recently touched first.
+  Stream<List<LocalComic>> watchLocalKeepReading(
+    String sourceId, {
+    int limit = 20,
+  }) {
+    final query = select(localComics).join([
+      innerJoin(
+        bookState,
+        bookState.sourceId.equalsExp(localComics.sourceId) &
+            bookState.bookId.equalsExp(localComics.id),
+      ),
+    ])
+      ..where(bookState.sourceId.equals(sourceId) &
+          bookState.status.equals('reading'))
+      ..orderBy([OrderingTerm.desc(bookState.updatedAt)])
+      ..limit(limit);
+    return query
+        .watch()
+        .map((rows) => rows.map((r) => r.readTable(localComics)).toList());
+  }
+
+  /// Recently-imported rail: newest imports first.
+  Stream<List<LocalComic>> watchRecentlyImported(
+    String sourceId, {
+    int limit = 20,
+  }) =>
+      (select(localComics)
+            ..where((t) => t.sourceId.equals(sourceId))
+            ..orderBy([(t) => OrderingTerm.desc(t.importedAt)])
+            ..limit(limit))
+          .watch();
+
+  Future<void> deleteLocalComic(String id) =>
+      (delete(localComics)..where((t) => t.id.equals(id))).go();
+
+  Future<void> deleteThumbnail(
+    String sourceId,
+    String ownerType,
+    String ownerId,
+  ) =>
+      (delete(thumbnails)
+            ..where((t) =>
+                t.sourceId.equals(sourceId) &
+                t.ownerType.equals(ownerType) &
+                t.ownerId.equals(ownerId)))
+          .go();
+
   // --- Captures (page-capture gallery) -------------------------------------
 
   Future<void> insertCapture(CapturesCompanion row) =>

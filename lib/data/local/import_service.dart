@@ -227,6 +227,26 @@ class ImportService {
     ));
   }
 
+  /// Removes an imported comic: the managed copy, the cover thumbnail (row
+  /// plus any spilled file), and the LocalComics row. [BookState] and
+  /// [ReadingSessions] are kept deliberately so past reads still count in
+  /// stats. File deletes are best-effort; the rows always go.
+  Future<void> deleteImported(LocalComic comic) async {
+    final rel = comic.managedPath;
+    if (rel != null) {
+      final file = File(await AppPaths.resolve(rel));
+      if (await file.exists()) await file.delete();
+    }
+    final thumb = await _db.getThumbnail(comic.sourceId, 'book', comic.id);
+    final diskPath = thumb?.diskPath;
+    if (diskPath != null) {
+      final thumbFile = File(await AppPaths.resolve(diskPath));
+      if (await thumbFile.exists()) await thumbFile.delete();
+    }
+    await _db.deleteThumbnail(comic.sourceId, 'book', comic.id);
+    await _db.deleteLocalComic(comic.id);
+  }
+
   String _nameWithoutExtension(String name) {
     final dot = name.lastIndexOf('.');
     return dot > 0 ? name.substring(0, dot) : name;
