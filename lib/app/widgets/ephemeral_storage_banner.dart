@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n.dart';
 import '../theme/app_icons.dart';
 import '../theme/theme_controller.dart';
 
@@ -46,7 +47,7 @@ class EphemeralStorageBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Storage unavailable',
+                    context.l10n.storageUnavailableTitle,
                     style: text.titleSmall?.copyWith(
                       color: scheme.onErrorContainer,
                       fontWeight: FontWeight.w700,
@@ -54,10 +55,7 @@ class EphemeralStorageBanner extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Mylarium could not open its local storage and is running in '
-                    'memory only. Anything you connect or read will be lost when '
-                    'the app closes. Try restarting; if this keeps happening, '
-                    'check that the device has free space.',
+                    context.l10n.storageUnavailableBody,
                     style: text.bodySmall
                         ?.copyWith(color: scheme.onErrorContainer),
                   ),

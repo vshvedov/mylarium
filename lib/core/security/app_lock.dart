@@ -85,12 +85,13 @@ class AppLock extends _$AppLock {
 
   /// Prompts for biometric/PIN; on success unlocks [libraryId] (persistently,
   /// until it is locked again) and returns true. Any failure/cancel returns
-  /// false and leaves it locked. [libraryName] is shown in the prompt reason.
-  Future<bool> unlock(String libraryId, {String? libraryName}) async {
-    final reason = libraryName != null && libraryName.isNotEmpty
-        ? 'Unlock "$libraryName"'
-        : 'Unlock this library';
-    final ok = await ref.read(authenticatorProvider).authenticate(reason);
+  /// false and leaves it locked. [reason] is the localized text shown in the
+  /// OS auth prompt; the caller (a widget) supplies it so this provider stays
+  /// free of UI strings. Falls back to an English default if omitted.
+  Future<bool> unlock(String libraryId, {String? reason}) async {
+    final ok = await ref
+        .read(authenticatorProvider)
+        .authenticate(reason ?? 'Unlock this library');
     if (!ok) return false;
     await _setLocked(libraryId, false);
     return true;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_text_field.dart';
@@ -43,23 +44,21 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
         );
   }
 
-  String _errorFor(ConnectionResult r) => switch (r) {
-        ConnInvalidUrl() =>
-          'Enter a valid server URL (for example https://kavita.example.com).',
-        ConnUnreachable() =>
-          'Could not reach the server. Check the URL and your network.',
-        ConnUnauthorized() => 'That API key was not accepted.',
-        ConnMissingRoles(:final missing) =>
-          'Your Kavita account is missing the ${missing.join(' and ')} '
-              'role. Ask your server admin to enable it.',
-        ConnVersionTooOldForApiKey(:final version) =>
-          'This server${version == null ? '' : ' (v$version)'} is not '
-              'supported.',
-        ConnTlsError() =>
-          'The server security certificate could not be verified.',
-        ConnUnknown(:final message) => message,
-        ConnSuccess() => '',
-      };
+  String _errorFor(BuildContext context, ConnectionResult r) {
+    final l10n = context.l10n;
+    return switch (r) {
+      ConnInvalidUrl() => l10n.kavitaConnectInvalidUrl,
+      ConnUnreachable() => l10n.connectUnreachable,
+      ConnUnauthorized() => l10n.kavitaConnectUnauthorized,
+      ConnMissingRoles(:final missing) =>
+        l10n.kavitaConnectMissingRoles(missing.join(' and ')),
+      ConnVersionTooOldForApiKey(:final version) => l10n
+          .kavitaConnectVersionUnsupported(version == null ? '' : ' (v$version)'),
+      ConnTlsError() => l10n.connectTlsError,
+      ConnUnknown(:final message) => message,
+      ConnSuccess() => '',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,8 +74,9 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
 
     final busy = state.isLoading;
     final result = state.valueOrNull;
-    final error =
-        (result == null || result is ConnSuccess) ? null : _errorFor(result);
+    final error = (result == null || result is ConnSuccess)
+        ? null
+        : _errorFor(context, result);
 
     return Scaffold(
       appBar: AppBar(
@@ -99,13 +99,13 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
                 const Center(child: BrandMark(size: 56)),
                 const SizedBox(height: 18),
                 Text(
-                  'Connect to Kavita',
+                  context.l10n.kavitaConnectTitle,
                   textAlign: TextAlign.center,
                   style: text.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Point Mylarium at your server and paste your API key.',
+                  context.l10n.kavitaConnectSubtitle,
                   textAlign: TextAlign.center,
                   style: text.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -113,7 +113,7 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
                 ),
                 const SizedBox(height: 28),
                 AppTextField(
-                  label: 'Server URL',
+                  label: context.l10n.connectServerUrlLabel,
                   controller: _url,
                   enabled: !busy,
                   keyboardType: TextInputType.url,
@@ -122,7 +122,7 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
                 ),
                 const SizedBox(height: 18),
                 AppTextField(
-                  label: 'API key',
+                  label: context.l10n.connectApiKeyLabel,
                   controller: _apiKey,
                   enabled: !busy,
                   obscureText: true,
@@ -130,8 +130,7 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Find your API key in Kavita under '
-                  'Settings, Account, 3rd Party Clients.',
+                  context.l10n.kavitaConnectApiKeyHint,
                   style: text.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -144,7 +143,9 @@ class _KavitaConnectScreenState extends ConsumerState<KavitaConnectScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    label: busy ? 'Connecting...' : 'Connect',
+                    label: busy
+                        ? context.l10n.connectBusy
+                        : context.l10n.connectAction,
                     onPressed: busy ? null : _connect,
                   ),
                 ),

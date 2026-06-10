@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'l10n.dart';
 import '../features/home/home_screen.dart';
 import '../features/library/book_detail.dart';
 import '../features/library/collections_screen.dart';
@@ -157,7 +158,8 @@ final appRouterProvider = Provider<GoRouter>(
         ),
       ),
     ],
-    errorBuilder: (_, state) =>
-        Scaffold(body: Center(child: Text('Route not found: ${state.uri}'))),
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(child: Text(context.l10n.routeNotFound(state.uri.toString()))),
+    ),
   ),
 );

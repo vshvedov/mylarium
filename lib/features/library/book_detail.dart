@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -72,15 +73,17 @@ class BookDetailScreen extends ConsumerWidget {
                       sourceId: sourceId,
                       ownerType: 'book',
                       ownerId: bookId,
-                      title: book?.title ?? dto?.title ?? 'Book',
+                      title: book?.title ?? dto?.title ?? context.l10n.bookFallbackName,
                       pills: [
                         if (book != null && book.number.isNotEmpty)
-                          DetailPill('No. ${book.number}'),
-                        if (pagesCount > 0) DetailPill('$pagesCount pages'),
+                          DetailPill(context.l10n.bookNumberPill(book.number)),
+                        if (pagesCount > 0)
+                          DetailPill(context.l10n.pagesPill(pagesCount)),
                         if (completed)
-                          const DetailPill('Read', accent: true)
+                          DetailPill(context.l10n.readPill, accent: true)
                         else if (percent != null)
-                          DetailPill('$percent% read', accent: true),
+                          DetailPill(context.l10n.percentReadPill(percent),
+                              accent: true),
                       ],
                       actions: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -90,8 +93,9 @@ class BookDetailScreen extends ConsumerWidget {
                               Expanded(
                                 flex: 2,
                                 child: HeroAction(
-                                  label:
-                                      inProgress ? 'Continue reading' : 'Read',
+                                  label: inProgress
+                                      ? context.l10n.continueReading
+                                      : context.l10n.read,
                                   icon: AppIcons.read,
                                   onPressed: () => context
                                       .push('/reader/$sourceId/$bookId'),
@@ -104,7 +108,7 @@ class BookDetailScreen extends ConsumerWidget {
                               Expanded(
                                 flex: 1,
                                 child: HeroAction(
-                                  label: 'Preview',
+                                  label: context.l10n.preview,
                                   icon: AppIcons.preview,
                                   style: HeroActionStyle.ghost,
                                   onPressed: () => context.push(
@@ -122,7 +126,7 @@ class BookDetailScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           HeroAction(
-                            label: 'Add to read list',
+                            label: context.l10n.addToReadList,
                             icon: AppIcons.readList,
                             style: HeroActionStyle.ghost,
                             onPressed: () => AddToCollectionSheet.show(
@@ -140,7 +144,7 @@ class BookDetailScreen extends ConsumerWidget {
                       details: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          DetailMetadata.book(dto),
+                          DetailMetadata.book(context, dto),
                           const SizedBox(height: 18),
                           RatingRow(
                             value: rating,
@@ -199,7 +203,9 @@ class _MarkReadControl extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => HeroAction(
-        label: completed ? 'Mark unread' : 'Mark read',
+        label: completed
+            ? context.l10n.markUnread
+            : context.l10n.markRead,
         icon: completed ? AppIcons.markUnread : AppIcons.markRead,
         style: HeroActionStyle.ghost,
         onPressed: pagesCount == 0
@@ -234,9 +240,9 @@ class _DownloadControl extends ConsumerWidget {
       if (asset.permanent) {
         return _StatusRow(
           icon: AppIcons.downloaded,
-          label: 'Downloaded',
+          label: context.l10n.downloaded,
           action: HeroAction(
-            label: 'Remove',
+            label: context.l10n.remove,
             icon: AppIcons.delete,
             style: HeroActionStyle.ghost,
             compact: true,
@@ -246,9 +252,9 @@ class _DownloadControl extends ConsumerWidget {
       }
       return _StatusRow(
         icon: AppIcons.savedOffline,
-        label: 'Saved offline',
+        label: context.l10n.savedOffline,
         action: HeroAction(
-          label: 'Keep',
+          label: context.l10n.keep,
           icon: AppIcons.download,
           style: HeroActionStyle.ghost,
           compact: true,
@@ -273,13 +279,15 @@ class _DownloadControl extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Text('Downloading...'),
+          Text(context.l10n.downloading),
         ],
       );
     }
 
     return HeroAction(
-      label: state == 'failed' ? 'Retry download' : 'Download',
+      label: state == 'failed'
+          ? context.l10n.retryDownload
+          : context.l10n.download,
       icon: AppIcons.download,
       style: HeroActionStyle.ghost,
       onPressed: () => manager.enqueueBook(sourceId, bookId, manual: true),

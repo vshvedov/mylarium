@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import 'stats_models.dart';
 
@@ -15,9 +16,27 @@ class Badge {
   });
 
   final String id;
+
+  /// English label, retained for non-UI use; the UI uses [localizedLabel].
   final String label;
   final IconData icon;
   final bool earned;
+
+  /// Localized milestone label, keyed by [id]; falls back to [label].
+  String localizedLabel(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (id) {
+      'firstBook' => l10n.badgeFirstBook,
+      'tenBooks' => l10n.badgeTenBooks,
+      'fiftyBooks' => l10n.badgeFiftyBooks,
+      'centuryBooks' => l10n.badgeHundredBooks,
+      'weekStreak' => l10n.badgeWeekStreak,
+      'monthStreak' => l10n.badgeMonthStreak,
+      'thousandPages' => l10n.badgeThousandPages,
+      'tenKPages' => l10n.badgeTenThousandPages,
+      _ => label,
+    };
+  }
 }
 
 /// Evaluates the fixed milestone set against [s]. Pure: each badge's [earned]

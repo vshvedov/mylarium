@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../data/source/models/book_dto.dart';
 import '../../../data/source/models/series_dto.dart';
 import 'detail_header.dart' show DetailPill;
@@ -17,18 +18,19 @@ class DetailMetadata extends StatelessWidget {
   });
 
   /// From the live [BookDto] (null when offline -> renders nothing).
-  factory DetailMetadata.book(BookDto? b) {
+  factory DetailMetadata.book(BuildContext context, BookDto? b) {
     if (b == null) return const DetailMetadata._(chips: [], rows: [], linkLabels: []);
+    final l10n = context.l10n;
     final authors =
         b.authors.map((a) => a.name).where((n) => n.isNotEmpty).toSet();
     return DetailMetadata._(
       chips: b.tags,
       rows: [
-        if (authors.isNotEmpty) ('By', authors.join(', ')),
-        if (b.releaseDate != null) ('Released', _fmtDate(b.releaseDate!)),
-        if (b.pagesCount > 0) ('Pages', '${b.pagesCount}'),
-        if (b.sizeBytes != null) ('Size', _fmtBytes(b.sizeBytes!)),
-        if (b.readDate != null) ('Last read', _fmtDate(b.readDate!)),
+        if (authors.isNotEmpty) (l10n.metaBy, authors.join(', ')),
+        if (b.releaseDate != null) (l10n.metaReleased, _fmtDate(b.releaseDate!)),
+        if (b.pagesCount > 0) (l10n.factPages, '${b.pagesCount}'),
+        if (b.sizeBytes != null) (l10n.factSize, _fmtBytes(b.sizeBytes!)),
+        if (b.readDate != null) (l10n.metaLastRead, _fmtDate(b.readDate!)),
       ],
       linkLabels: [for (final l in b.links) l.label],
     );
@@ -36,14 +38,15 @@ class DetailMetadata extends StatelessWidget {
 
   /// From the live [SeriesDto] (null when offline -> renders nothing). The
   /// summary is shown by the series screen, so it is not repeated here.
-  factory DetailMetadata.series(SeriesDto? s) {
+  factory DetailMetadata.series(BuildContext context, SeriesDto? s) {
     if (s == null) return const DetailMetadata._(chips: [], rows: [], linkLabels: []);
+    final l10n = context.l10n;
     return DetailMetadata._(
       chips: [...s.genres, ...s.tags],
       rows: [
-        if (s.publisher != null) ('Publisher', s.publisher!),
-        if (s.ageRating != null) ('Age rating', '${s.ageRating}+'),
-        if (s.language != null) ('Language', s.language!),
+        if (s.publisher != null) (l10n.metaPublisher, s.publisher!),
+        if (s.ageRating != null) (l10n.metaAgeRating, '${s.ageRating}+'),
+        if (s.language != null) (l10n.metaLanguage, s.language!),
       ],
       linkLabels: [for (final l in s.links) l.label],
     );
@@ -98,7 +101,7 @@ class DetailMetadata extends StatelessWidget {
                 SizedBox(
                   width: 96,
                   child: Text(
-                    'Links',
+                    context.l10n.metaLinks,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

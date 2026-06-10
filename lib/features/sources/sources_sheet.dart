@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
@@ -35,10 +36,10 @@ class _SourcesSheet extends ConsumerWidget {
         _ => AppIcons.sourceLocal,
       };
 
-  String _kindLabel(String kind) => switch (kind) {
+  String _kindLabel(BuildContext context, String kind) => switch (kind) {
         'komga' => 'Komga',
         'kavita' => 'Kavita',
-        'safTree' => 'Folder library',
+        'safTree' => context.l10n.sourceKindFolderLibrary,
         _ => kind,
       };
 
@@ -52,23 +53,20 @@ class _SourcesSheet extends ConsumerWidget {
       context: context,
       barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove ${source.label}?'),
+        title: Text(ctx.l10n.sourceRemoveTitle(source.label)),
         content: Text(
           isTree
-              ? 'This forgets the folder library. The files on the card or '
-                  'folder are untouched, and reading history is kept.'
-              : 'This disconnects the source and deletes its stored '
-                  'credentials. Downloaded files for this source are removed '
-                  'by storage cleanup.',
+              ? ctx.l10n.sourceRemoveFolderBody
+              : ctx.l10n.sourceRemoveServerBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(ctx.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
+            child: Text(ctx.l10n.remove),
           ),
         ],
       ),
@@ -124,13 +122,14 @@ class _SourcesSheet extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 12),
-              child: Text('Sources', style: theme.textTheme.titleMedium),
+              child: Text(context.l10n.sourcesTitle,
+                  style: theme.textTheme.titleMedium),
             ),
             if (sources.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
                 child: Text(
-                  'No sources connected yet.',
+                  context.l10n.sourcesEmpty,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -155,10 +154,10 @@ class _SourcesSheet extends ConsumerWidget {
                     icon: _iconFor(source.kind),
                     title: source.label,
                     subtitle: isLocal
-                        ? 'On this device'
+                        ? context.l10n.sourceSubtitleOnDevice
                         : isTree
-                            ? 'Folder library - in place'
-                            : '${_kindLabel(source.kind)} - ${source.baseUrl ?? source.kind}',
+                            ? context.l10n.sourceSubtitleFolderInPlace
+                            : '${_kindLabel(context, source.kind)} - ${source.baseUrl ?? source.kind}',
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -167,7 +166,7 @@ class _SourcesSheet extends ConsumerWidget {
                         if (!isLocal)
                           IconButton(
                             icon: const Icon(AppIcons.delete),
-                            tooltip: 'Remove source',
+                            tooltip: context.l10n.sourceRemoveTooltip,
                             onPressed: () => _remove(context, ref, source),
                           ),
                       ],
@@ -188,8 +187,8 @@ class _SourcesSheet extends ConsumerWidget {
             if (!sources.any((s) => s.kind == SourceKind.local.name))
               AppListRow(
                 icon: AppIcons.sourceLocal,
-                title: 'Local files',
-                subtitle: 'Import comics from this device',
+                title: context.l10n.onboardingLocalTitle,
+                subtitle: context.l10n.sourceLocalImportSubtitle,
                 onTap: () async {
                   final service = ref.read(importServiceProvider);
                   final id = await service.ensureLocalSource();
@@ -208,21 +207,21 @@ class _SourcesSheet extends ConsumerWidget {
                   const <RemovableVolume>[])
                 AppListRow(
                   icon: AppIcons.sdCard,
-                  title: 'Use ${volume.description}',
-                  subtitle: 'Read comics from the card, in place',
+                  title: context.l10n.sourceUseCard(volume.description),
+                  subtitle: context.l10n.sourceUseCardSubtitle,
                   onTap: () =>
                       _addFolder(context, ref, initialUri: volume.initialUri),
                 ),
               AppListRow(
                 icon: AppIcons.sourceFolder,
-                title: 'Add folder library',
-                subtitle: 'Read comics from a folder, in place',
+                title: context.l10n.sourceAddFolder,
+                subtitle: context.l10n.sourceAddFolderSubtitle,
                 onTap: () => _addFolder(context, ref),
               ),
             ],
             AppListRow(
               icon: AppIcons.add,
-              title: 'Add a source',
+              title: context.l10n.sourceAddSource,
               onTap: () {
                 Navigator.of(context).pop();
                 context.push('/onboarding');

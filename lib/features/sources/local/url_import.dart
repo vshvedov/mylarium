@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../data/local/import_service.dart';
 import 'import_controller.dart';
 
@@ -40,7 +41,7 @@ class _UrlImportDialogState extends ConsumerState<UrlImportDialog> {
   Future<void> _submit() async {
     final url = Uri.tryParse(_urlController.text.trim());
     if (url == null || !url.hasScheme || url.host.isEmpty) {
-      setState(() => _error = 'Enter a valid URL');
+      setState(() => _error = context.l10n.urlImportInvalid);
       return;
     }
     setState(() => _error = null);
@@ -54,7 +55,7 @@ class _UrlImportDialogState extends ConsumerState<UrlImportDialog> {
   Widget build(BuildContext context) {
     final busy = ref.watch(importControllerProvider) is ImportRunActive;
     return AlertDialog(
-      title: const Text('Import from URL'),
+      title: Text(context.l10n.urlImportTitle),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,11 +82,13 @@ class _UrlImportDialogState extends ConsumerState<UrlImportDialog> {
       actions: [
         TextButton(
           onPressed: busy ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: busy ? null : _submit,
-          child: Text(busy ? 'Importing...' : 'Import'),
+          child: Text(busy
+              ? context.l10n.urlImportBusy
+              : context.l10n.urlImportAction),
         ),
       ],
     );

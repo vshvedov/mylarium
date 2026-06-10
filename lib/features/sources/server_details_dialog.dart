@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../data/source/content_source.dart';
@@ -35,9 +36,9 @@ class ServerDetailsDialog extends ConsumerWidget {
             ),
             error: (_, _) => _Frame(
               sourceId: sourceId,
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Text('Could not load server details.'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(context.l10n.serverDetailsLoadError),
               ),
             ),
             data: (d) => _Body(details: d, sourceId: sourceId),
@@ -68,7 +69,7 @@ class _Frame extends ConsumerWidget {
           children: [
             TextButton.icon(
               icon: const Icon(AppIcons.refresh, size: 18),
-              label: const Text('Refresh'),
+              label: Text(context.l10n.refresh),
               onPressed: () {
                 ref.invalidate(serverDetailsProvider(sourceId));
                 ref.invalidate(sourceReachableProvider(sourceId));
@@ -77,7 +78,7 @@ class _Frame extends ConsumerWidget {
             const SizedBox(width: 4),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+              child: Text(context.l10n.close),
             ),
           ],
         ),
@@ -102,37 +103,44 @@ class _Body extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final f = details.facts;
 
+    final l10n = context.l10n;
     final sections = <Widget>[
-      _section(context, 'Connection', [
-        if (details.baseUrl.isNotEmpty) (label: 'URL', value: details.baseUrl),
+      _section(context, l10n.serverSectionConnection, [
+        if (details.baseUrl.isNotEmpty)
+          (label: l10n.serverRowUrl, value: details.baseUrl),
       ]),
     ];
 
     if (details.online) {
-      sections.add(_section(context, 'Server', [
-        if (f.version != null) (label: 'Version', value: f.version!),
+      sections.add(_section(context, l10n.serverSectionServer, [
+        if (f.version != null) (label: l10n.serverRowVersion, value: f.version!),
         ...f.extra,
       ]));
-      sections.add(_section(context, 'Account', [
-        if (f.account != null) (label: 'User', value: f.account!),
+      sections.add(_section(context, l10n.serverSectionAccount, [
+        if (f.account != null) (label: l10n.serverRowUser, value: f.account!),
         if (f.roles.isNotEmpty)
-          (label: 'Roles', value: (f.roles.toList()..sort()).join(', ')),
+          (
+            label: l10n.serverRowRoles,
+            value: (f.roles.toList()..sort()).join(', ')
+          ),
       ]));
-      sections.add(_section(context, 'Content', [
+      sections.add(_section(context, l10n.serverSectionContent, [
         if (f.libraryNames.isNotEmpty)
           (
-            label: 'Libraries',
+            label: l10n.serverRowLibraries,
             value:
                 '${f.libraryNames.length} (${f.libraryNames.take(3).join(', ')}${f.libraryNames.length > 3 ? '...' : ''})'
           ),
-        if (f.totalSeries != null) (label: 'Series', value: '${f.totalSeries}'),
-        if (f.totalBooks != null) (label: 'Books', value: '${f.totalBooks}'),
+        if (f.totalSeries != null)
+          (label: l10n.serverRowSeries, value: '${f.totalSeries}'),
+        if (f.totalBooks != null)
+          (label: l10n.serverRowBooks, value: '${f.totalBooks}'),
       ]));
     } else {
       sections.add(Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 8),
         child: Text(
-          'Server unreachable. Check your connection and try Refresh.',
+          l10n.serverUnreachableBody,
           style: TextStyle(color: scheme.error),
         ),
       ));
@@ -154,7 +162,9 @@ class _Body extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  details.label.isEmpty ? 'Server' : details.label,
+                  details.label.isEmpty
+                      ? context.l10n.serverSectionServer
+                      : details.label,
                   style: Theme.of(context).textTheme.titleMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -250,7 +260,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'SYNC',
+            context.l10n.syncSectionTitle,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                   letterSpacing: 0.8,
@@ -260,17 +270,13 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
           if (status.pending > 0)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                status.pending == 1
-                    ? '1 update waiting to sync'
-                    : '${status.pending} updates waiting to sync',
-              ),
+              child: Text(context.l10n.syncUpdatesWaiting(status.pending)),
             ),
           if (status.failed > 0)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Text(
-                status.failed == 1 ? '1 failed' : '${status.failed} failed',
+                context.l10n.syncFailedCount(status.failed),
                 style: TextStyle(color: scheme.error),
               ),
             ),
@@ -278,7 +284,7 @@ class _SyncSectionState extends ConsumerState<_SyncSection> {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: _retrying ? null : _retry,
-              child: const Text('Retry now'),
+              child: Text(context.l10n.syncRetryNow),
             ),
           ),
         ],
@@ -311,7 +317,7 @@ class _StatusPill extends StatelessWidget {
             decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
           const SizedBox(width: 6),
-          Text(online ? 'Online' : 'Offline',
+          Text(online ? context.l10n.statusOnline : context.l10n.statusOffline,
               style: TextStyle(color: color, fontWeight: FontWeight.w600)),
         ],
       ),

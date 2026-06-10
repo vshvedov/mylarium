@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -29,7 +30,7 @@ class StorageScreen extends ConsumerWidget {
     final cache = ref.watch(offlineCacheManagerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Storage')),
+      appBar: AppBar(title: Text(context.l10n.storageTitle)),
       body: StreamBuilder<AppSetting>(
         stream: db.watchSettings(),
         builder: (context, settingsSnap) {
@@ -52,22 +53,19 @@ class StorageScreen extends ConsumerWidget {
                 children: [
                   if (settings != null) ...[
                     SwitchListTile(
-                      title: const Text('Auto-download on open'),
-                      subtitle: const Text(
-                          'Cache chapters you open (within the size limit)'),
+                      title: Text(context.l10n.storageAutoDownload),
+                      subtitle: Text(context.l10n.storageAutoDownloadSubtitle),
                       value: settings.autoCacheEnabled,
                       onChanged: (v) => db.updateAutoCacheEnabled(v),
                     ),
                     SwitchListTile(
-                      title: const Text('Auto-download on Wi-Fi only'),
+                      title: Text(context.l10n.storageAutoDownloadWifi),
                       value: settings.downloadWifiOnly,
                       onChanged: (v) => db.updateDownloadWifiOnly(v),
                     ),
                     SwitchListTile(
-                      title: const Text('Delete on read'),
-                      subtitle: const Text(
-                          'Remove a downloaded chapter once you finish it '
-                          '(manual downloads are kept)'),
+                      title: Text(context.l10n.storageDeleteOnRead),
+                      subtitle: Text(context.l10n.storageDeleteOnReadSubtitle),
                       value: settings.deleteOnRead ?? false,
                       onChanged: (v) => db.updateDeleteOnRead(v),
                     ),
@@ -84,7 +82,7 @@ class StorageScreen extends ConsumerWidget {
                   const Divider(),
                   ListTile(
                     dense: true,
-                    title: const Text('Auto-cache'),
+                    title: Text(context.l10n.storageAutoCache),
                     trailing:
                         Text('${_fmtBytes(autoTotal)} / ${_fmtBytes(cap)}'),
                   ),
@@ -95,7 +93,7 @@ class StorageScreen extends ConsumerWidget {
                     ),
                   ),
                   if (auto.isEmpty)
-                    const _EmptyRow('No auto-cached chapters.')
+                    _EmptyRow(context.l10n.storageNoAutoCache)
                   else
                     for (final e in auto)
                       ListTile(
@@ -107,7 +105,7 @@ class StorageScreen extends ConsumerWidget {
                           children: [
                             IconButton(
                               icon: const Icon(AppIcons.download),
-                              tooltip: 'Keep (move to Downloads)',
+                              tooltip: context.l10n.storageKeepTooltip,
                               onPressed: () => ref
                                   .read(downloadManagerProvider)
                                   .enqueueBook(e.asset.sourceId, e.asset.bookId,
@@ -124,13 +122,12 @@ class StorageScreen extends ConsumerWidget {
                   const Divider(),
                   ListTile(
                     dense: true,
-                    title: const Text('Downloads'),
-                    subtitle:
-                        const Text('Kept until you remove them (no limit)'),
+                    title: Text(context.l10n.storageDownloads),
+                    subtitle: Text(context.l10n.storageDownloadsSubtitle),
                     trailing: Text(_fmtBytes(dlTotal)),
                   ),
                   if (downloads.isEmpty)
-                    const _EmptyRow('No downloaded chapters.')
+                    _EmptyRow(context.l10n.storageNoDownloads)
                   else
                     for (final e in downloads)
                       ListTile(
@@ -163,7 +160,7 @@ class _CapControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final gib = (capBytes / (1024 * 1024 * 1024)).round().clamp(1, 50);
     return ListTile(
-      title: const Text('Auto-cache limit'),
+      title: Text(context.l10n.storageAutoCacheLimit),
       subtitle: Slider(
         min: 1,
         max: 50,
@@ -187,7 +184,8 @@ class _BookCapControl extends StatelessWidget {
   final int capMb;
   final void Function(int mb) onChanged;
 
-  static String _label(int mb) => mb == 0 ? 'No limit' : '$mb MB';
+  static String _label(BuildContext context, int mb) =>
+      mb == 0 ? context.l10n.storageNoLimit : '$mb MB';
 
   /// The slider index for [mb]: 0 maps to the trailing "No limit" stop; an
   /// off-grid value (never written by this control) snaps to the nearest stop
@@ -204,23 +202,22 @@ class _BookCapControl extends StatelessWidget {
   Widget build(BuildContext context) {
     final index = _indexFor(capMb);
     return ListTile(
-      title: const Text('Per-book limit'),
+      title: Text(context.l10n.storagePerBookLimit),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Skip auto-downloading chapters larger than this. '
-              'Manual downloads are not limited.'),
+          Text(context.l10n.storagePerBookLimitSubtitle),
           Slider(
             min: 0,
             max: (_stops.length - 1).toDouble(),
             divisions: _stops.length - 1,
-            label: _label(_stops[index]),
+            label: _label(context, _stops[index]),
             value: index.toDouble(),
             onChanged: (v) => onChanged(_stops[v.round()]),
           ),
         ],
       ),
-      trailing: Text(_label(capMb)),
+      trailing: Text(_label(context, capMb)),
     );
   }
 }

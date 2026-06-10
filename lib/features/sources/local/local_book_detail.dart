@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../core/db/database.dart';
 import '../../library/library_browse_controllers.dart'
@@ -31,7 +32,7 @@ class LocalBookDetailScreen extends ConsumerWidget {
         appBar: AppBar(),
         body: comicAsync.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : const Center(child: Text('This comic was removed.')),
+            : Center(child: Text(context.l10n.localComicRemoved)),
       );
     }
     final theme = Theme.of(context);
@@ -60,17 +61,17 @@ class LocalBookDetailScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           Text(comic.series, style: theme.textTheme.titleMedium),
           const SizedBox(height: 12),
-          _Fact('Number', comic.number),
-          _Fact('Pages', '${comic.pagesCount}'),
+          _Fact(context.l10n.factNumber, comic.number),
+          _Fact(context.l10n.factPages, '${comic.pagesCount}'),
           if (comic.sizeBytes != null)
-            _Fact('Size', _formatBytes(comic.sizeBytes!)),
+            _Fact(context.l10n.factSize, _formatBytes(comic.sizeBytes!)),
           _Fact(
-              'Reading direction',
+              context.l10n.factReadingDirection,
               comic.readingDirection == 'rtl'
-                  ? 'Right to left'
-                  : 'Left to right'),
+                  ? context.l10n.readingDirectionRtl
+                  : context.l10n.readingDirectionLtr),
           _Fact(
-              'Imported',
+              context.l10n.factImported,
               _formatDate(
                   DateTime.fromMillisecondsSinceEpoch(comic.importedAt))),
           const SizedBox(height: 24),
@@ -82,7 +83,7 @@ class LocalBookDetailScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               icon: Icon(AppIcons.delete, color: theme.colorScheme.error),
-              label: const Text('Remove from library'),
+              label: Text(context.l10n.localRemoveFromLibrary),
               onPressed: () => _confirmRemove(context, ref, comic),
             ),
           ],
@@ -99,17 +100,16 @@ class LocalBookDetailScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove this comic?'),
-        content: const Text(
-            'The imported copy is deleted from this device. Reading history is kept.'),
+        title: Text(context.l10n.localRemoveTitle),
+        content: Text(context.l10n.localRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remove'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),
@@ -139,10 +139,10 @@ class _ReadButton extends ConsumerWidget {
     final inProgress =
         !completed && state != null && state.currentPage > 0;
     final label = completed
-        ? 'Read again'
+        ? context.l10n.readAgain
         : inProgress
-            ? 'Continue reading'
-            : 'Read';
+            ? context.l10n.continueReading
+            : context.l10n.read;
     return FilledButton.icon(
       icon: const Icon(AppIcons.read),
       label: Text(label),

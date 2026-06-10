@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 
 /// The home-screen rows, in their default top-to-bottom order. The order of this
@@ -18,16 +19,19 @@ enum HomeRailKind {
 }
 
 extension HomeRailKindMeta on HomeRailKind {
-  /// The row header title.
-  String get title => switch (this) {
-        HomeRailKind.pinned => 'Pinned',
-        HomeRailKind.keepReading => 'Keep reading',
-        HomeRailKind.recentlyAddedChapters => 'Recently added chapters',
-        HomeRailKind.recentlyAddedSeries => 'Recently added series',
-        HomeRailKind.recentlyUpdatedSeries => 'Recently updated series',
-        HomeRailKind.downloaded => 'Downloaded',
-        HomeRailKind.recentlyRead => 'Recently read',
-      };
+  /// The localized row header title.
+  String title(BuildContext context) {
+    final l10n = context.l10n;
+    return switch (this) {
+      HomeRailKind.pinned => l10n.railPinned,
+      HomeRailKind.keepReading => l10n.railKeepReading,
+      HomeRailKind.recentlyAddedChapters => l10n.railRecentlyAddedChapters,
+      HomeRailKind.recentlyAddedSeries => l10n.railRecentlyAddedSeries,
+      HomeRailKind.recentlyUpdatedSeries => l10n.railRecentlyUpdatedSeries,
+      HomeRailKind.downloaded => l10n.railDownloaded,
+      HomeRailKind.recentlyRead => l10n.railRecentlyRead,
+    };
+  }
 
   /// The row header icon.
   IconData get icon => switch (this) {

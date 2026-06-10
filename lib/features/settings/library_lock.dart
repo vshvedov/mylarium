@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_loading.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,12 +19,13 @@ class LibraryLockScreen extends ConsumerWidget {
     final lock = ref.watch(appLockProvider).valueOrNull ?? AppLockState.empty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Library locks')),
+      appBar: AppBar(title: Text(context.l10n.settingsLibraryLocks)),
       body: libraries.when(
         loading: () => const AppLoadingIndicator(),
-        error: (e, _) => Center(child: Text('Could not load libraries: $e')),
+        error: (e, _) =>
+            Center(child: Text(context.l10n.libraryLockLoadError('$e'))),
         data: (libs) => libs.isEmpty
-            ? const Center(child: Text('No libraries.'))
+            ? Center(child: Text(context.l10n.libraryLockNoLibraries))
             : ListView(
                 children: [
                   for (final lib in libs)
@@ -34,8 +36,7 @@ class LibraryLockScreen extends ConsumerWidget {
                             : AppIcons.lockOpen,
                       ),
                       title: Text(lib.name),
-                      subtitle: const Text(
-                          'Hide this library until unlocked with biometric/PIN'),
+                      subtitle: Text(context.l10n.libraryLockSubtitle),
                       value: lock.isLocked(lib.id),
                       // Locking is immediate; unlocking prompts for auth and only
                       // takes effect on success (otherwise the watched state keeps
@@ -45,7 +46,10 @@ class LibraryLockScreen extends ConsumerWidget {
                         if (v) {
                           notifier.lock(lib.id);
                         } else {
-                          notifier.unlock(lib.id, libraryName: lib.name);
+                          notifier.unlock(
+                            lib.id,
+                            reason: context.l10n.unlockLibraryReason(lib.name),
+                          );
                         }
                       },
                     ),

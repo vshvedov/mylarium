@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/l10n.dart';
 import 'reachability.dart';
 import 'server_details_dialog.dart';
 
@@ -25,10 +26,10 @@ class SourceStatusButton extends ConsumerWidget {
     return IconButton(
       tooltip: switch (reachable) {
         AsyncData(:final value) => value
-            ? 'Server online - tap for details'
-            : 'Server unreachable - tap for details',
-        AsyncError() => 'Server unreachable - tap for details',
-        _ => 'Checking server...',
+            ? context.l10n.serverOnlineTooltip
+            : context.l10n.serverUnreachableTooltip,
+        AsyncError() => context.l10n.serverUnreachableTooltip,
+        _ => context.l10n.serverCheckingTooltip,
       },
       onPressed: () => showDialog<void>(
         context: context,

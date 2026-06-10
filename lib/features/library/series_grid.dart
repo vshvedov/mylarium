@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/adaptive_layout.dart';
@@ -38,14 +39,16 @@ class SeriesGridScreen extends ConsumerStatefulWidget {
     super.key,
     required this.sourceId,
     this.libraryId,
-    this.title = 'Library',
+    this.title,
     this.onSelectSeries,
     this.embedded = false,
   });
 
   final String sourceId;
   final String? libraryId;
-  final String title;
+
+  /// App-bar title. When null, falls back to the localized "Library".
+  final String? title;
   final void Function(String seriesId)? onSelectSeries;
   final bool embedded;
 
@@ -103,7 +106,7 @@ class _SeriesGridScreenState extends ConsumerState<SeriesGridScreen> {
     if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title ?? context.l10n.libraryFallbackName),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.search),
@@ -152,10 +155,10 @@ class SeriesGridBody extends StatelessWidget {
     final list = items ?? const <SeriesRow>[];
     if (list.isEmpty) {
       if (!syncComplete) return const AppLoadingIndicator();
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(48),
-          child: Text('No series here yet.'),
+          padding: const EdgeInsets.all(48),
+          child: Text(context.l10n.localNoSeries),
         ),
       );
     }
@@ -264,7 +267,7 @@ class SortButton extends ConsumerWidget {
     return PopupMenuButton<BrowseSort>(
       icon: const Icon(AppIcons.sort),
       initialValue: sort,
-      tooltip: 'Sort',
+      tooltip: context.l10n.sortTooltip,
       onSelected: (v) =>
           ref.read(browseSortProvider(sourceId).notifier).state = v,
       itemBuilder: (_) => [
@@ -284,7 +287,7 @@ class SortButton extends ConsumerWidget {
                 ),
                 Flexible(
                   child: Text(
-                    s.label,
+                    s.localizedLabel(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -305,11 +308,13 @@ class BrowseShell extends ConsumerWidget {
   const BrowseShell({
     super.key,
     required this.sourceId,
-    this.title = 'All series',
+    this.title,
   });
 
   final String sourceId;
-  final String title;
+
+  /// App-bar title. When null, falls back to the localized "All series".
+  final String? title;
 
   /// Below this width [AdaptiveLayout] hides the detail pane and shows only the
   /// master grid, so a tap must push the detail route instead of selecting into
@@ -320,7 +325,7 @@ class BrowseShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(title ?? context.l10n.allSeries),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.search),
@@ -400,7 +405,7 @@ class _SelectSeriesPlaceholder extends StatelessWidget {
           Icon(AppIcons.browse, size: 40, color: scheme.onSurfaceVariant),
           const SizedBox(height: 12),
           Text(
-            'Select a series',
+            context.l10n.selectSeries,
             style: TextStyle(color: scheme.onSurfaceVariant),
           ),
         ],

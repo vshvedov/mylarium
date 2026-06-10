@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../core/db/database.dart';
 import '../../library/library_browse_controllers.dart'
@@ -43,8 +44,9 @@ class LocalHomeBody extends ConsumerWidget {
           Expanded(
             child: FilledButton.icon(
               icon: const Icon(AppIcons.importComics),
-              label: Text(
-                  run is ImportRunActive ? 'Importing...' : 'Import comics'),
+              label: Text(run is ImportRunActive
+                  ? context.l10n.importBusy
+                  : context.l10n.importComics),
               onPressed:
                   run is ImportRunActive ? null : () => _import(context, ref),
             ),
@@ -53,7 +55,7 @@ class LocalHomeBody extends ConsumerWidget {
           // Split affordance: the small companion to "Import comics" that
           // takes a pasted URL instead of opening the OS picker.
           IconButton.filledTonal(
-            tooltip: 'Import from URL',
+            tooltip: context.l10n.urlImportTitle,
             icon: const Icon(AppIcons.link),
             onPressed: run is ImportRunActive
                 ? null
@@ -63,7 +65,7 @@ class LocalHomeBody extends ConsumerWidget {
           Expanded(
             child: OutlinedButton.icon(
               icon: const Icon(AppIcons.sourceLocal),
-              label: const Text('Browse all'),
+              label: Text(context.l10n.homeBrowseAll),
               onPressed: () => context.push('/local-browse/$sourceId'),
             ),
           ),
@@ -80,13 +82,13 @@ class LocalHomeBody extends ConsumerWidget {
         children: [
           actions,
           const SizedBox(height: 8),
-          const SkeletonRail(
-            title: 'Keep reading',
+          SkeletonRail(
+            title: context.l10n.railKeepReading,
             height: kHeroRailHeight,
             tileWidth: kHeroRailTileWidth,
           ),
-          const SkeletonRail(
-            title: 'Recently imported',
+          SkeletonRail(
+            title: context.l10n.localRailRecentlyImported,
             height: _localRailHeight,
             tileWidth: _localTileWidth,
           ),
@@ -111,7 +113,7 @@ class LocalHomeBody extends ConsumerWidget {
           // page), matching the server-source home rail. Hero treatment:
           // larger tiles plus the page-progress footer.
           LocalComicsRail(
-            title: 'Keep reading',
+            title: context.l10n.railKeepReading,
             sourceId: sourceId,
             comics: keepReading,
             openReader: true,
@@ -119,7 +121,7 @@ class LocalHomeBody extends ConsumerWidget {
           ),
         if (recent.isNotEmpty)
           LocalComicsRail(
-            title: 'Recently imported',
+            title: context.l10n.localRailRecentlyImported,
             sourceId: sourceId,
             comics: recent,
           ),
@@ -258,11 +260,11 @@ class _EmptyLibrary extends StatelessWidget {
             Icon(AppIcons.sourceLocal,
                 size: 56, color: theme.colorScheme.outline),
             const SizedBox(height: 16),
-            Text('No comics yet', style: theme.textTheme.titleLarge),
+            Text(context.l10n.localEmptyTitle,
+                style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              'Import CBZ or CBR files from this device. '
-              'Imported comics are copied in and always readable.',
+              context.l10n.localEmptyBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium,
             ),
@@ -272,12 +274,14 @@ class _EmptyLibrary extends StatelessWidget {
               children: [
                 FilledButton.icon(
                   icon: const Icon(AppIcons.importComics),
-                  label: Text(busy ? 'Importing...' : 'Import comics'),
+                  label: Text(busy
+                      ? context.l10n.importBusy
+                      : context.l10n.importComics),
                   onPressed: busy ? null : onImport,
                 ),
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
-                  tooltip: 'Import from URL',
+                  tooltip: context.l10n.urlImportTitle,
                   icon: const Icon(AppIcons.link),
                   onPressed: busy ? null : onImportUrl,
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -68,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
           if (isDeviceSource)
             IconButton(
               icon: const Icon(AppIcons.sources),
-              tooltip: 'Sources',
+              tooltip: context.l10n.sourcesTitle,
               onPressed: () => showSourcesSheet(context),
             ),
           IconButton(
@@ -78,19 +79,19 @@ class HomeScreen extends ConsumerWidget {
           if (!isDeviceSource)
             IconButton(
               icon: const Icon(AppIcons.browse),
-              tooltip: 'Browse all',
+              tooltip: context.l10n.homeBrowseAll,
               onPressed: sourceId == null || !resolved
                   ? null
                   : () => context.push('/browse/$sourceId'),
             ),
           IconButton(
             icon: const Icon(AppIcons.gallery),
-            tooltip: 'Gallery',
+            tooltip: context.l10n.galleryTitle,
             onPressed: () => context.push('/gallery'),
           ),
           IconButton(
             icon: const Icon(AppIcons.stats),
-            tooltip: 'Reading stats',
+            tooltip: context.l10n.statsTitle,
             onPressed: () => context.push('/stats'),
           ),
           IconButton(
@@ -138,18 +139,18 @@ class HomeScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Appearance',
+                Text(context.l10n.appearanceTitle,
                     style: Theme.of(sheetContext).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 Consumer(
                   builder: (context, ref, _) {
                     final mode = ref.watch(themeControllerProvider);
                     return AppSegmentedToggle<AppThemeMode>(
-                      segments: const [
-                        AppSegment(AppThemeMode.light, 'Light'),
-                        AppSegment(AppThemeMode.dark, 'Dark'),
-                        AppSegment(AppThemeMode.system, 'Auto'),
-                        AppSegment(AppThemeMode.eink, 'E-ink'),
+                      segments: [
+                        AppSegment(AppThemeMode.light, context.l10n.themeLight),
+                        AppSegment(AppThemeMode.dark, context.l10n.themeDark),
+                        AppSegment(AppThemeMode.system, context.l10n.themeAuto),
+                        AppSegment(AppThemeMode.eink, context.l10n.themeEink),
                       ],
                       selected: mode,
                       onChanged: (m) =>
@@ -160,8 +161,8 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 AppListRow(
                   icon: AppIcons.options,
-                  title: 'Settings',
-                  subtitle: 'Home rows and more',
+                  title: context.l10n.settingsTitle,
+                  subtitle: context.l10n.homeSettingsSubtitle,
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     context.push('/settings');
@@ -175,7 +176,7 @@ class HomeScreen extends ConsumerWidget {
                       children: [
                         AppListRow(
                           icon: AppIcons.libraries,
-                          title: 'Libraries',
+                          title: context.l10n.librariesTitle,
                           enabled: sourceId != null,
                           onTap: sourceId == null
                               ? null
@@ -186,7 +187,7 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         AppListRow(
                           icon: AppIcons.collections,
-                          title: 'Collections & read lists',
+                          title: context.l10n.collectionsAndReadListsTitle,
                           enabled: sourceId != null,
                           onTap: sourceId == null
                               ? null
@@ -201,7 +202,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 AppListRow(
                   icon: AppIcons.storage,
-                  title: 'Storage',
+                  title: context.l10n.storageTitle,
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     context.push('/settings/storage');
@@ -217,8 +218,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 AppListRow(
                   icon: AppIcons.sources,
-                  title: 'Sources',
-                  subtitle: 'Switch, add, or remove servers',
+                  title: context.l10n.sourcesTitle,
+                  subtitle: context.l10n.homeSourcesSubtitle,
                   onTap: () {
                     Navigator.of(sheetContext).pop();
                     showSourcesSheet(context);
@@ -335,7 +336,7 @@ class _ServerHomeBody extends ConsumerWidget {
       final Widget child;
       if (items == null) {
         child = SkeletonRail(
-          title: kind.title,
+          title: kind.title(context),
           icon: kind.icon,
           height: height,
           tileWidth: tileWidth,
@@ -344,7 +345,7 @@ class _ServerHomeBody extends ConsumerWidget {
         child = const SizedBox.shrink();
       } else {
         child = Rail(
-          title: kind.title,
+          title: kind.title(context),
           icon: kind.icon,
           height: height,
           tileWidth: tileWidth,
@@ -405,11 +406,11 @@ class _NoSource extends StatelessWidget {
             children: [
               const Icon(AppIcons.noSource, size: 48),
               const SizedBox(height: 12),
-              const Text('No source connected.'),
+              Text(context.l10n.homeNoSource),
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: () => context.push('/onboarding'),
-                child: const Text('Connect a server'),
+                child: Text(context.l10n.homeConnectServer),
               ),
             ],
           ),
@@ -421,8 +422,8 @@ class _EmptyHome extends StatelessWidget {
   const _EmptyHome();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: Text('Nothing to show yet. Pull to refresh.')),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.all(48),
+        child: Center(child: Text(context.l10n.homeEmpty)),
       );
 }

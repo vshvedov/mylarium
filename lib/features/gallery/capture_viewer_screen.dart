@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_loading.dart';
@@ -30,13 +31,13 @@ class CaptureViewerScreen extends ConsumerWidget {
       backgroundColor: tokens.readerBackground,
       appBar: AppBar(
         backgroundColor: tokens.readerBackground,
-        title: capture == null ? null : Text(_caption(capture)),
+        title: capture == null ? null : Text(_caption(context, capture)),
         actions: [
           if (capture != null) _ExportButton(capture: capture),
           if (capture != null)
             IconButton(
               icon: const Icon(AppIcons.delete),
-              tooltip: 'Delete capture',
+              tooltip: context.l10n.captureDeleteTooltip,
               onPressed: () => _confirmDelete(context, ref),
             ),
         ],
@@ -44,9 +45,9 @@ class CaptureViewerScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const AppLoadingIndicator(),
         error: (_, _) =>
-            const Center(child: Text('This capture is no longer available.')),
+            Center(child: Text(context.l10n.captureUnavailable)),
         data: (capture) => capture == null
-            ? const Center(child: Text('This capture is no longer available.'))
+            ? Center(child: Text(context.l10n.captureUnavailable))
             : _Viewer(capture: capture),
       ),
     );
@@ -57,15 +58,15 @@ class CaptureViewerScreen extends ConsumerWidget {
       context: context,
       barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (_) => AlertDialog(
-        title: const Text('Delete capture?'),
+        title: Text(context.l10n.galleryDeleteTitle),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -79,7 +80,8 @@ class CaptureViewerScreen extends ConsumerWidget {
 /// Header caption for a viewed capture: the chapter (book) title alone. The
 /// series and page number are intentionally omitted so the long chapter name
 /// gets the full width before truncating.
-String _caption(Capture c) => c.bookTitle ?? 'Untitled';
+String _caption(BuildContext context, Capture c) =>
+    c.bookTitle ?? context.l10n.galleryUntitled;
 
 /// Header action that exports the capture (Photos on mobile, a save dialog on
 /// desktop) and reports the outcome via a snackbar. Owns an in-flight flag so a
@@ -99,23 +101,23 @@ class _ExportButtonState extends ConsumerState<_ExportButton> {
   @override
   Widget build(BuildContext context) => IconButton(
         icon: const Icon(AppIcons.export),
-        tooltip: 'Export',
+        tooltip: context.l10n.captureExport,
         onPressed: _exporting ? null : _run,
       );
 
   Future<void> _run() async {
     setState(() => _exporting = true);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final result =
         await ref.read(captureExporterProvider).export(widget.capture);
     if (!mounted) return;
     setState(() => _exporting = false);
     final message = switch (result) {
-      CaptureExportResult.savedToPhotos => 'Saved to Photos',
-      CaptureExportResult.savedToFile => 'Saved',
-      CaptureExportResult.permissionDenied =>
-        'Photos access denied. Enable it in Settings.',
-      CaptureExportResult.failed => 'Could not export capture.',
+      CaptureExportResult.savedToPhotos => l10n.captureSavedToPhotos,
+      CaptureExportResult.savedToFile => l10n.captureSavedToFile,
+      CaptureExportResult.permissionDenied => l10n.capturePermissionDenied,
+      CaptureExportResult.failed => l10n.captureExportFailed,
       CaptureExportResult.cancelled => null,
     };
     if (message != null) {
@@ -149,7 +151,7 @@ class _Viewer extends StatelessWidget {
                     Icon(AppIcons.brokenImage,
                         size: 44, color: scheme.onSurfaceVariant),
                     const SizedBox(height: 12),
-                    const Text('This snippet image is missing.'),
+                    Text(context.l10n.captureImageMissing),
                   ],
                 ),
               ),
@@ -188,7 +190,7 @@ class _GoToPageButton extends ConsumerWidget {
       width: double.infinity,
       child: FilledButton.icon(
         icon: const Icon(AppIcons.read),
-        label: const Text('Go to page'),
+        label: Text(context.l10n.captureGoToPage),
         // Preview mode: revisiting the captured page never moves reading
         // progress backward.
         onPressed: () => context.push(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/adaptive_layout.dart';
@@ -33,11 +34,11 @@ class LocalBrowseShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Local files'),
+        title: Text(context.l10n.onboardingLocalTitle),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.importComics),
-            tooltip: 'Import comics',
+            tooltip: context.l10n.importComics,
             onPressed: () async {
               final result = await ref
                   .read(importControllerProvider.notifier)
@@ -97,10 +98,10 @@ class _LocalSeriesGrid extends ConsumerWidget {
         ref.watch(localSeriesProvider(sourceId)).valueOrNull ??
             const <LocalSeriesRaw>[];
     if (groups.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(48),
-          child: Text('No series here yet.'),
+          padding: const EdgeInsets.all(48),
+          child: Text(context.l10n.localNoSeries),
         ),
       );
     }
@@ -120,7 +121,7 @@ class _LocalSeriesGrid extends ConsumerWidget {
           ownerType: 'book',
           ownerId: g.coverComicId,
           title: g.series,
-          subtitle: g.booksCount == 1 ? '1 book' : '${g.booksCount} books',
+          subtitle: context.l10n.bookCount(g.booksCount),
           stacked: g.booksCount > 1,
           onTap: () {
             final select = onSelectSeries;
@@ -166,7 +167,7 @@ class LocalSeriesDetailScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           sliver: SliverToBoxAdapter(
             child: Text(
-              books.length == 1 ? '1 book' : '${books.length} books',
+              context.l10n.bookCount(books.length),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -254,7 +255,7 @@ class _SelectSeriesPlaceholder extends StatelessWidget {
           Icon(AppIcons.browse, size: 40, color: scheme.onSurfaceVariant),
           const SizedBox(height: 12),
           Text(
-            'Select a series',
+            context.l10n.selectSeries,
             style: TextStyle(color: scheme.onSurfaceVariant),
           ),
         ],

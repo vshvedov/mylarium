@@ -1,7 +1,9 @@
+import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:flutter_riverpod/flutter_riverpod.dart'
     show Ref, StateProvider, StreamProvider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../core/db/database.dart';
 import '../../core/network/content_exception.dart';
@@ -28,7 +30,17 @@ enum BrowseSort {
   mostBooks('Most books');
 
   const BrowseSort(this.label);
+
+  /// English label, retained for non-UI/debug use; the UI uses
+  /// [localizedLabel].
   final String label;
+
+  /// Localized menu label.
+  String localizedLabel(BuildContext context) => switch (this) {
+        BrowseSort.titleAsc => context.l10n.sortTitleAsc,
+        BrowseSort.titleDesc => context.l10n.sortTitleDesc,
+        BrowseSort.mostBooks => context.l10n.sortMostBooks,
+      };
 
   /// Whether the underlying title query runs descending.
   bool get titleDescending => this == titleDesc;

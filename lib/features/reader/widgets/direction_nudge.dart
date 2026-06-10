@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 
 /// First-open reading-direction nudge: a small dismissible pill shown when a
@@ -34,7 +35,7 @@ class DirectionNudge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Reading manga? Try right-to-left',
+              context.l10n.nudgeMangaPrompt,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: scheme.onInverseSurface,
                   ),
@@ -47,12 +48,12 @@ class DirectionNudge extends StatelessWidget {
                 // 44px minimum touch target (WCAG).
                 minimumSize: const Size(44, 44),
               ),
-              child: const Text('Right-to-left'),
+              child: Text(context.l10n.nudgeRightToLeft),
             ),
             IconButton(
               icon: const Icon(AppIcons.close, size: 18),
               color: scheme.onInverseSurface,
-              tooltip: 'Dismiss',
+              tooltip: context.l10n.dismiss,
               // IconButton's default 48x48 constraints cover the 44px target.
               onPressed: onDismiss,
             ),

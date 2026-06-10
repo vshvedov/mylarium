@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../../app/widgets/app_bottom_sheet.dart';
@@ -61,7 +62,7 @@ class _ItemMenu extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           AppListRow(
-            title: pinned ? 'Unpin' : 'Pin',
+            title: pinned ? context.l10n.unpin : context.l10n.pin,
             icon: pinned ? AppIcons.unpin : AppIcons.pin,
             trailing: const SizedBox.shrink(),
             onTap: () async {
@@ -76,7 +77,7 @@ class _ItemMenu extends ConsumerWidget {
             },
           ),
           AppListRow(
-            title: 'Mark as not read',
+            title: context.l10n.markAsNotRead,
             icon: AppIcons.markUnread,
             trailing: const SizedBox.shrink(),
             onTap: () async {
@@ -96,7 +97,7 @@ class _ItemMenu extends ConsumerWidget {
           ),
           if (ownerType == 'book')
             AppListRow(
-              title: 'Preview',
+              title: context.l10n.preview,
               icon: AppIcons.preview,
               trailing: const SizedBox.shrink(),
               onTap: () {

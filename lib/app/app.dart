@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mylarium/l10n/gen/app_localizations.dart';
 
 import 'router.dart';
 import 'theme/app_theme.dart';
@@ -31,6 +32,8 @@ class MylariumApp extends ConsumerWidget {
       highContrastTheme: withTransitions(hcLight, pt),
       highContrastDarkTheme: withTransitions(hcDark, pt),
       themeMode: toThemeMode(mode),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(appRouterProvider),
       builder: (context, child) => reduce
           ? MediaQuery(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_card.dart';
@@ -32,11 +33,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
     final async = ref.watch(statsSummaryProvider(_period));
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reading stats'),
+        title: Text(context.l10n.statsTitle),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.share),
-            tooltip: 'Year in review',
+            tooltip: context.l10n.statsYearInReview,
             onPressed: () => _openWrap(context),
           ),
         ],
@@ -44,14 +45,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       body: async.when(
         loading: () => const AppLoadingIndicator(),
         error: (_, _) =>
-            const Center(child: Text('Could not load your stats.')),
+            Center(child: Text(context.l10n.statsLoadError)),
         data: (s) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
             AppSegmentedToggle<StatsPeriod>(
               segments: [
                 for (final p in StatsPeriod.values)
-                  AppSegment(p, p.label),
+                  AppSegment(p, p.localizedLabel(context)),
               ],
               selected: _period,
               onChanged: (v) => setState(() => _period = v),
@@ -69,7 +70,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       _KpiGrid(summary: s),
       const SizedBox(height: 20),
       _Section(
-        title: 'Pages over time',
+        title: context.l10n.statsPagesOverTime,
         icon: AppIcons.trend,
         child: BarChart(
           data: [
@@ -79,42 +80,43 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
         ),
       ),
       _Section(
-        title: 'Daily activity',
+        title: context.l10n.statsDailyActivity,
         icon: AppIcons.heatmap,
-        trailing: '${s.streakDays} day streak',
+        trailing: context.l10n.statsDayStreak(s.streakDays),
         child: Heatmap(pagesByDay: s.heatmap),
       ),
       _Section(
-        title: 'By series',
+        title: context.l10n.statsBySeries,
         icon: AppIcons.libraries,
         child: _BreakdownList(rows: s.bySeries),
       ),
       _Section(
-        title: 'By genre',
+        title: context.l10n.statsByGenre,
         icon: AppIcons.browse,
-        footnote: 'Genres overlap, so these can total more than 100%.',
+        footnote: context.l10n.statsByGenreFootnote,
         child: _BreakdownList(rows: s.byGenre),
       ),
       _Section(
-        title: 'By publisher',
+        title: context.l10n.statsByPublisher,
         icon: AppIcons.sources,
         child: _BreakdownList(rows: s.byPublisher),
       ),
       _Section(
-        title: 'By format',
+        title: context.l10n.statsByFormat,
         icon: AppIcons.read,
         child: _BreakdownList(rows: s.byFormat),
       ),
       _Section(
-        title: 'Milestones',
+        title: context.l10n.statsMilestones,
         icon: AppIcons.badge,
         child: _BadgeStrip(summary: s),
       ),
       const SizedBox(height: 8),
       Text(
-        'Total reading time '
-        '${formatReadingDuration(Duration(seconds: s.totalSeconds))} '
-        'across ${s.sessionCount} sessions.',
+        context.l10n.statsTotalReadingTime(
+          formatReadingDuration(Duration(seconds: s.totalSeconds)),
+          s.sessionCount,
+        ),
         style: Theme.of(context).textTheme.bodySmall,
       ),
     ];
@@ -174,7 +176,7 @@ class _KpiGrid extends StatelessWidget {
       children: [
         _Kpi(
           icon: AppIcons.pages,
-          label: 'Pages',
+          label: context.l10n.kpiPages,
           value: '${summary.totalPages}',
           delta: c == null ? null : summary.totalPages - c.totalPages,
         ),
@@ -182,7 +184,7 @@ class _KpiGrid extends StatelessWidget {
           icon: AppIcons.clock,
           // Short label: the unit lives in the value ('24 min' / '1.5 h') and
           // the KPI tile is narrow on phones.
-          label: 'Time',
+          label: context.l10n.kpiTime,
           value: formatReadingDuration(
             Duration(seconds: summary.totalSeconds),
           ),
@@ -190,13 +192,13 @@ class _KpiGrid extends StatelessWidget {
         ),
         _Kpi(
           icon: AppIcons.read,
-          label: 'Books',
+          label: context.l10n.kpiBooks,
           value: '${summary.booksCompleted}',
           delta: c == null ? null : summary.booksCompleted - c.booksCompleted,
         ),
         _Kpi(
           icon: AppIcons.streak,
-          label: 'Streak',
+          label: context.l10n.kpiStreak,
           value: '${summary.streakDays}d',
           delta: null,
         ),
@@ -331,6 +333,17 @@ class _Section extends StatelessWidget {
   }
 }
 
+/// Maps a breakdown bucket key to a localized label. Most keys are real data
+/// (a series, publisher, genre, or format name) and pass through unchanged;
+/// only the special English placeholder buckets produced by the stats layer
+/// ("Unknown series", "Unknown", "Other") are translated.
+String _breakdownLabel(BuildContext context, String key) => switch (key) {
+      'Unknown series' => context.l10n.statsUnknownSeries,
+      'Unknown' => context.l10n.statsUnknown,
+      'Other' => context.l10n.statsOther,
+      _ => key,
+    };
+
 class _BreakdownList extends StatelessWidget {
   const _BreakdownList({required this.rows});
   final List<Breakdown> rows;
@@ -338,7 +351,8 @@ class _BreakdownList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return Text('No data yet.', style: Theme.of(context).textTheme.bodySmall);
+      return Text(context.l10n.statsNoData,
+          style: Theme.of(context).textTheme.bodySmall);
     }
     final shown = rows.take(6).toList();
     final top = shown.first.pages == 0 ? 1 : shown.first.pages;
@@ -353,7 +367,7 @@ class _BreakdownList extends StatelessWidget {
                 Expanded(
                   flex: 3,
                   child: Text(
-                    r.key,
+                    _breakdownLabel(context, r.key),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -416,7 +430,7 @@ class _BadgeStrip extends StatelessWidget {
                 SizedBox(
                   width: 64,
                   child: Text(
-                    b.label,
+                    b.localizedLabel(context),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall,
                     maxLines: 2,
@@ -443,12 +457,12 @@ class _EmptyStats extends StatelessWidget {
           const Icon(AppIcons.stats, size: 44),
           const SizedBox(height: 12),
           Text(
-            'No reading yet in this period.',
+            context.l10n.statsEmptyTitle,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 4),
           Text(
-            'Open a book and your stats will appear here.',
+            context.l10n.statsEmptyBody,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

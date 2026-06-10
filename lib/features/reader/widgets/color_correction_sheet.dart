@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/widgets/app_loading.dart';
 import '../../../app/widgets/app_segmented_toggle.dart';
@@ -62,8 +63,8 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
             ),
             error: (_, _) => Padding(
               padding: const EdgeInsets.all(24),
-              child:
-                  Text('Color correction unavailable', style: text.bodyMedium),
+              child: Text(context.l10n.colorCorrectionUnavailable,
+                  style: text.bodyMedium),
             ),
             data: (s) => _body(context, s),
           ),
@@ -82,7 +83,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
       children: [
         Row(
           children: [
-            Text('Color correction', style: text.titleMedium),
+            Text(context.l10n.readerColorCorrection, style: text.titleMedium),
             const Spacer(),
             // The switch toggles the CURRENTLY selected scope's correction; it
             // and the scope selector stay enabled so each scope can be turned
@@ -105,7 +106,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _slider(
-                  label: 'Brightness',
+                  label: context.l10n.colorBrightness,
                   value: _dragBrightness ?? editing.brightness,
                   min: -1,
                   max: 1,
@@ -120,7 +121,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                   },
                 ),
                 _slider(
-                  label: 'Contrast',
+                  label: context.l10n.colorContrast,
                   value: _dragContrast ?? editing.contrast,
                   min: -1,
                   max: 1,
@@ -135,7 +136,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                   },
                 ),
                 _slider(
-                  label: 'Gamma',
+                  label: context.l10n.colorGamma,
                   value: _dragGamma ?? editing.gamma,
                   min: 0.4,
                   max: 2.5,
@@ -150,7 +151,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                   },
                 ),
                 const SizedBox(height: 12),
-                Text('Tone', style: text.labelMedium),
+                Text(context.l10n.colorTone, style: text.labelMedium),
                 const SizedBox(height: 6),
                 _modeSelector(editing),
                 const SizedBox(height: 12),
@@ -163,8 +164,8 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                     Flexible(
                       child: FilterChip(
                         avatar: const Icon(AppIcons.colorCorrection, size: 18),
-                        label: const Text(
-                          'Auto (white point)',
+                        label: Text(
+                          context.l10n.colorAutoWhitePoint,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -176,7 +177,7 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
                     TextButton.icon(
                       onPressed: _controller.reset,
                       icon: const Icon(AppIcons.refresh, size: 18),
-                      label: const Text('Reset'),
+                      label: Text(context.l10n.reset),
                     ),
                   ],
                 ),
@@ -195,9 +196,10 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
     final hasSeries = widget.seriesId.isNotEmpty;
     return AppSegmentedToggle<ColorScopeKind>(
       segments: [
-        const AppSegment(ColorScopeKind.book, 'Chapter'),
-        if (hasSeries) const AppSegment(ColorScopeKind.series, 'Series'),
-        const AppSegment(ColorScopeKind.global, 'Global'),
+        AppSegment(ColorScopeKind.book, context.l10n.colorScopeChapter),
+        if (hasSeries)
+          AppSegment(ColorScopeKind.series, context.l10n.colorScopeSeries),
+        AppSegment(ColorScopeKind.global, context.l10n.colorScopeGlobal),
       ],
       selected: s.editingScope,
       onChanged: _controller.setScope,
@@ -206,11 +208,11 @@ class _ColorCorrectionSheetState extends ConsumerState<ColorCorrectionSheet> {
 
   Widget _modeSelector(ColorAdjustments editing) {
     return AppSegmentedToggle<ColorMode>(
-      segments: const [
-        AppSegment(ColorMode.none, 'None'),
-        AppSegment(ColorMode.grayscale, 'Gray'),
-        AppSegment(ColorMode.sepia, 'Sepia'),
-        AppSegment(ColorMode.invert, 'Invert'),
+      segments: [
+        AppSegment(ColorMode.none, context.l10n.colorModeNone),
+        AppSegment(ColorMode.grayscale, context.l10n.colorModeGray),
+        AppSegment(ColorMode.sepia, context.l10n.colorModeSepia),
+        AppSegment(ColorMode.invert, context.l10n.colorModeInvert),
       ],
       selected: editing.mode,
       onChanged: (m) => _controller.commit(editing.copyWith(mode: m)),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/app_theme.dart' show AppHaptics;
 import '../../../app/theme/design_tokens.dart';
@@ -99,7 +100,7 @@ class SourceOptionCard extends StatelessWidget {
       return Semantics(
         button: false,
         enabled: false,
-        label: '$title, coming soon',
+        label: context.l10n.sourceComingSoonSemantic(title),
         child: card,
       );
     }
@@ -126,7 +127,7 @@ class _SoonChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
-          'Soon',
+          context.l10n.sourceSoonChip,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: scheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,

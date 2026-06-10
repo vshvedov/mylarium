@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/widgets/app_bottom_sheet.dart';
 import '../../../data/local/import_service.dart';
+import 'import_reason_text.dart';
 
 /// Shows the per-file outcome of an import batch. The list itself is a plain
 /// widget ([ImportResultsList]) so it can be tested and embedded; the static
@@ -44,7 +46,7 @@ class ImportResultsList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
           child: Text(
-            '${imported.length} imported',
+            context.l10n.importImportedCount(imported.length),
             style: theme.textTheme.titleMedium,
           ),
         ),
@@ -57,7 +59,8 @@ class ImportResultsList extends StatelessWidget {
         if (skipped.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-            child: Text('Skipped', style: theme.textTheme.titleMedium),
+            child: Text(context.l10n.importSkipped,
+                style: theme.textTheme.titleMedium),
           ),
           for (final f in skipped)
             ListTile(
@@ -66,7 +69,9 @@ class ImportResultsList extends StatelessWidget {
                   color: theme.colorScheme.error),
               title:
                   Text(f.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: f.reason == null ? null : Text(f.reason!),
+              subtitle: f.reason == null
+                  ? null
+                  : Text(localizedImportReason(context, f.reason!)),
             ),
         ],
         const SizedBox(height: 12),

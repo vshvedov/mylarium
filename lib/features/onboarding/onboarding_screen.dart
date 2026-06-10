@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/brand_mark.dart';
@@ -61,7 +62,7 @@ class OnboardingScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your comics and manga, beautifully offline.',
+                  context.l10n.onboardingTagline,
                   textAlign: TextAlign.center,
                   style: text.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -71,7 +72,7 @@ class OnboardingScreen extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 10),
                   child: Text(
-                    'Choose a source',
+                    context.l10n.onboardingChooseSource,
                     style: text.labelLarge?.copyWith(
                       color: scheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
@@ -81,21 +82,21 @@ class OnboardingScreen extends ConsumerWidget {
                 SourceOptionCard(
                   icon: AppIcons.sourceKomga,
                   title: 'Komga',
-                  subtitle: 'Connect to your self-hosted server',
+                  subtitle: context.l10n.onboardingKomgaSubtitle,
                   onTap: () => context.push('/onboarding/komga'),
                 ),
                 const SizedBox(height: 12),
                 SourceOptionCard(
                   icon: AppIcons.sourceKavita,
                   title: 'Kavita',
-                  subtitle: 'Another self-hosted library server',
+                  subtitle: context.l10n.onboardingKavitaSubtitle,
                   onTap: () => context.push('/onboarding/kavita'),
                 ),
                 const SizedBox(height: 12),
                 SourceOptionCard(
                   icon: AppIcons.sourceLocal,
-                  title: 'Local files',
-                  subtitle: 'Read comics stored on this device',
+                  title: context.l10n.onboardingLocalTitle,
+                  subtitle: context.l10n.onboardingLocalSubtitle,
                   onTap: () async {
                     final service = ref.read(importServiceProvider);
                     final id = await service.ensureLocalSource();
@@ -105,8 +106,7 @@ class OnboardingScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'More sources are on the way. You can add or switch '
-                  'sources anytime in Settings.',
+                  context.l10n.onboardingMoreSourcesHint,
                   textAlign: TextAlign.center,
                   style: text.bodySmall?.copyWith(
                     color: scheme.onSurfaceVariant,

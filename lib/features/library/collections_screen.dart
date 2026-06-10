@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_list_row.dart';
@@ -26,25 +27,29 @@ class CollectionsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Collections & read lists'),
+        title: Text(context.l10n.collectionsAndReadListsTitle),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(AppIcons.add),
-            tooltip: 'New',
+            tooltip: context.l10n.collectionsNew,
             onSelected: (mode) => _createNew(context, ref, mode),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'collection', child: Text('New collection')),
-              PopupMenuItem(value: 'readlist', child: Text('New read list')),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                  value: 'collection',
+                  child: Text(context.l10n.collectionsNewCollection)),
+              PopupMenuItem(
+                  value: 'readlist',
+                  child: Text(context.l10n.collectionsNewReadList)),
             ],
           ),
         ],
       ),
       body: ListView(
         children: [
-          _Header(label: 'Collections'),
+          _Header(label: context.l10n.collectionsHeader),
           ...switch (collections) {
             AsyncData(:final value) when value.isEmpty => [
-                const _Empty(label: 'No collections.'),
+                _Empty(label: context.l10n.collectionsEmpty),
               ],
             AsyncData(:final value) => [
                 for (final c in value)
@@ -53,20 +58,20 @@ class CollectionsScreen extends ConsumerWidget {
                     child: AppListRow(
                       icon: AppIcons.collections,
                       title: c.name,
-                      subtitle: '${c.seriesIds.length} series',
+                      subtitle: context.l10n.seriesCount(c.seriesIds.length),
                       onTap: () =>
                           context.push('/collection/$sourceId/${c.id}'),
                     ),
                   ),
               ],
-            AsyncError() => [const _Empty(label: 'Could not load collections.')],
+            AsyncError() => [_Empty(label: context.l10n.collectionsLoadError)],
             _ => [const _Loading()],
           },
           const Divider(),
-          _Header(label: 'Read lists'),
+          _Header(label: context.l10n.readListsHeader),
           ...switch (readLists) {
             AsyncData(:final value) when value.isEmpty => [
-                const _Empty(label: 'No read lists.'),
+                _Empty(label: context.l10n.readListsEmpty),
               ],
             AsyncData(:final value) => [
                 for (final r in value)
@@ -75,12 +80,12 @@ class CollectionsScreen extends ConsumerWidget {
                     child: AppListRow(
                       icon: AppIcons.readList,
                       title: r.name,
-                      subtitle: '${r.bookIds.length} books',
+                      subtitle: context.l10n.bookCount(r.bookIds.length),
                       onTap: () => context.push('/readlist/$sourceId/${r.id}'),
                     ),
                   ),
               ],
-            AsyncError() => [const _Empty(label: 'Could not load read lists.')],
+            AsyncError() => [_Empty(label: context.l10n.readListsLoadError)],
             _ => [const _Loading()],
           },
         ],
@@ -112,12 +117,12 @@ class CollectionDetailScreen extends ConsumerWidget {
         .firstOrNull
         ?.name;
     return Scaffold(
-      appBar: AppBar(title: Text(name ?? 'Collection')),
+      appBar: AppBar(title: Text(name ?? context.l10n.collectionFallbackName)),
       body: series.when(
         loading: () => const _Loading(),
-        error: (e, _) => _Empty(label: 'Could not load: $e'),
+        error: (e, _) => _Empty(label: context.l10n.collectionLoadError('$e')),
         data: (list) => list.isEmpty
-            ? const _Empty(label: 'Empty collection.')
+            ? _Empty(label: context.l10n.collectionEmpty)
             : GridView.builder(
                 padding: const EdgeInsets.all(12),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -132,7 +137,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                   return GestureDetector(
                     onLongPress: () => _confirmRemove(
                       context,
-                      title: 'Remove from collection?',
+                      title: context.l10n.removeFromCollectionTitle,
                       label: s.title,
                       onRemove: () async {
                         final repo = await ref
@@ -179,12 +184,12 @@ class ReadListDetailScreen extends ConsumerWidget {
         .firstOrNull
         ?.name;
     return Scaffold(
-      appBar: AppBar(title: Text(name ?? 'Read list')),
+      appBar: AppBar(title: Text(name ?? context.l10n.readListFallbackName)),
       body: books.when(
         loading: () => const _Loading(),
-        error: (e, _) => _Empty(label: 'Could not load: $e'),
+        error: (e, _) => _Empty(label: context.l10n.collectionLoadError('$e')),
         data: (list) => list.isEmpty
-            ? const _Empty(label: 'Empty read list.')
+            ? _Empty(label: context.l10n.readListEmpty)
             : GridView.builder(
                 padding: const EdgeInsets.all(12),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -199,7 +204,7 @@ class ReadListDetailScreen extends ConsumerWidget {
                   return GestureDetector(
                     onLongPress: () => _confirmRemove(
                       context,
-                      title: 'Remove from read list?',
+                      title: context.l10n.removeFromReadListTitle,
                       label: b.title,
                       onRemove: () async {
                         final repo =
@@ -236,7 +241,9 @@ Future<void> _createNew(
 ) async {
   final name = await promptName(
     context,
-    title: mode == 'collection' ? 'New collection' : 'New read list',
+    title: mode == 'collection'
+        ? context.l10n.collectionsNewCollection
+        : context.l10n.collectionsNewReadList,
   );
   if (name == null) return;
   try {
@@ -251,8 +258,8 @@ Future<void> _createNew(
     }
   } on ContentException {
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Could not create $name.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.collectionCreateError(name))));
     }
   }
 }
@@ -273,11 +280,11 @@ Future<void> _confirmRemove(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Remove'),
+          child: Text(context.l10n.remove),
         ),
       ],
     ),
@@ -287,8 +294,8 @@ Future<void> _confirmRemove(
     await onRemove();
   } on ContentException {
     if (context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Could not remove.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.collectionRemoveError)));
     }
   }
 }

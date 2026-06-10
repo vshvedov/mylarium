@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/cover_palette.dart';
 import '../../../app/theme/design_tokens.dart';
@@ -164,7 +165,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
               IconButton(
                 icon: const Icon(AppIcons.prevChapter),
                 iconSize: 20,
-                tooltip: 'Previous book',
+                tooltip: context.l10n.readerPreviousBook,
                 onPressed: widget.neighbors.hasPrev
                     ? () => widget.onOpenBook(widget.neighbors.prevId!)
                     : null,
@@ -206,7 +207,7 @@ class _ReaderChromeState extends ConsumerState<ReaderChrome> {
               IconButton(
                 icon: const Icon(AppIcons.nextChapter),
                 iconSize: 20,
-                tooltip: 'Next book',
+                tooltip: context.l10n.readerNextBook,
                 onPressed: widget.neighbors.hasNext
                     ? () => widget.onOpenBook(widget.neighbors.nextId!)
                     : null,
@@ -257,21 +258,23 @@ class _JumpToPageDialogState extends State<_JumpToPageDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Go to page'),
+        title: Text(context.l10n.readerGoToPage),
         content: TextField(
           controller: _controller,
           autofocus: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(hintText: '1 - ${widget.count}'),
+          decoration: InputDecoration(
+              hintText: context.l10n.readerPageRangeHint(widget.count)),
           onSubmitted: (_) => _submit(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
-          FilledButton(onPressed: _submit, child: const Text('Go')),
+          FilledButton(
+              onPressed: _submit, child: Text(context.l10n.readerGo)),
         ],
       );
 }
@@ -368,7 +371,9 @@ class _TopBar extends StatelessWidget {
               Icon(
                 offline ? AppIcons.offline : AppIcons.streaming,
                 size: 18,
-                semanticLabel: offline ? 'Reading offline' : 'Streaming',
+                semanticLabel: offline
+                    ? context.l10n.readerReadingOffline
+                    : context.l10n.readerStreaming,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -385,7 +390,7 @@ class _TopBar extends StatelessWidget {
                 onSelected: (m) => onSettings(settings.copyWith(mode: m)),
                 itemBuilder: (_) => [
                   for (final m in ReadingMode.values)
-                    PopupMenuItem(value: m, child: Text(_modeLabel(m))),
+                    PopupMenuItem(value: m, child: Text(_modeLabel(context, m))),
                 ],
               ),
               PopupMenuButton<FitMode>(
@@ -394,7 +399,7 @@ class _TopBar extends StatelessWidget {
                 onSelected: (f) => onSettings(settings.copyWith(fit: f)),
                 itemBuilder: (_) => [
                   for (final f in FitMode.values)
-                    PopupMenuItem(value: f, child: Text(_fitLabel(f))),
+                    PopupMenuItem(value: f, child: Text(_fitLabel(context, f))),
                 ],
               ),
               PopupMenuButton<String>(
@@ -425,61 +430,63 @@ class _TopBar extends StatelessWidget {
                 itemBuilder: (_) => [
                   // Capture, direction, and the double-page nudge live here
                   // (not as bar icons) to keep the top bar uncluttered.
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'capture',
                     child: Row(
                       children: [
-                        Icon(AppIcons.capture, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(AppIcons.capture, size: 18),
+                        const SizedBox(width: 8),
                         Flexible(
-                          child: Text('Capture page',
+                          child: Text(context.l10n.readerCapturePage,
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                       ],
                     ),
                   ),
                   if (onToggleDirection != null)
-                    const PopupMenuItem<String>(
+                    PopupMenuItem<String>(
                       value: 'direction',
                       child: Row(
                         children: [
-                          Icon(AppIcons.readingDirection, size: 18),
-                          SizedBox(width: 8),
+                          const Icon(AppIcons.readingDirection, size: 18),
+                          const SizedBox(width: 8),
                           Flexible(
-                          child: Text('Toggle reading direction',
+                          child: Text(context.l10n.readerToggleDirection,
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                         ],
                       ),
                     ),
                   if (onNudge != null)
-                    _check('nudge', 'Shift spread by one page', nudged),
-                  _check('invert', 'Invert taps', settings.invertTaps),
-                  _check('doubleTap', 'Double-tap zoom',
+                    _check(context, 'nudge', context.l10n.readerShiftSpread,
+                        nudged),
+                  _check(context, 'invert', context.l10n.readerInvertTaps,
+                      settings.invertTaps),
+                  _check(context, 'doubleTap', context.l10n.readerDoubleTapZoom,
                       settings.doubleTapZoom),
-                  _check('animate', 'Animate page turn',
+                  _check(context, 'animate', context.l10n.readerAnimatePageTurn,
                       settings.animatePageTurn),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'quality',
                     child: Row(
                       children: [
-                        Icon(AppIcons.options, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(AppIcons.options, size: 18),
+                        const SizedBox(width: 8),
                         Flexible(
-                          child: Text('Image quality',
+                          child: Text(context.l10n.readerImageQuality,
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                       ],
                     ),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'color',
                     child: Row(
                       children: [
-                        Icon(AppIcons.colorCorrection, size: 18),
-                        SizedBox(width: 8),
+                        const Icon(AppIcons.colorCorrection, size: 18),
+                        const SizedBox(width: 8),
                         Flexible(
-                          child: Text('Color correction',
+                          child: Text(context.l10n.readerColorCorrection,
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                       ],
@@ -494,7 +501,8 @@ class _TopBar extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<String> _check(String value, String label, bool on) =>
+  PopupMenuItem<String> _check(
+          BuildContext context, String value, String label, bool on) =>
       PopupMenuItem<String>(
         value: value,
         child: Row(
@@ -509,17 +517,23 @@ class _TopBar extends StatelessWidget {
       );
 }
 
-String _modeLabel(ReadingMode m) => switch (m) {
-      ReadingMode.pagedLtr => 'Paged (LTR)',
-      ReadingMode.pagedRtl => 'Paged (RTL)',
-      ReadingMode.webtoon => 'Webtoon',
-      ReadingMode.webtoonGaps => 'Webtoon (gaps)',
-      ReadingMode.doublePage => 'Double page',
-    };
+String _modeLabel(BuildContext context, ReadingMode m) {
+  final l10n = context.l10n;
+  return switch (m) {
+    ReadingMode.pagedLtr => l10n.readerModePagedLtr,
+    ReadingMode.pagedRtl => l10n.readerModePagedRtl,
+    ReadingMode.webtoon => l10n.readerModeWebtoon,
+    ReadingMode.webtoonGaps => l10n.readerModeWebtoonGaps,
+    ReadingMode.doublePage => l10n.readerModeDoublePage,
+  };
+}
 
-String _fitLabel(FitMode f) => switch (f) {
-      FitMode.width => 'Fit width',
-      FitMode.height => 'Fit height',
-      FitMode.screen => 'Fit screen',
-      FitMode.original => 'Original',
-    };
+String _fitLabel(BuildContext context, FitMode f) {
+  final l10n = context.l10n;
+  return switch (f) {
+    FitMode.width => l10n.readerFitWidth,
+    FitMode.height => l10n.readerFitHeight,
+    FitMode.screen => l10n.readerFitScreen,
+    FitMode.original => l10n.readerFitOriginal,
+  };
+}

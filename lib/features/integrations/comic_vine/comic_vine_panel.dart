@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../data/comicvine/comic_vine_api.dart' show ComicVineApiError;
 import '../../library/widgets/detail_header.dart' show HeroAction, HeroActionStyle;
@@ -41,16 +42,17 @@ class ComicVineDetailsPanel extends ConsumerWidget {
   }
 }
 
-String _errorMessage(Object error) {
+String _errorMessage(BuildContext context, Object error) {
+  final l10n = context.l10n;
   if (error is ComicVineApiError) {
     if (error.isInvalidKey) {
-      return 'Comic Vine rejected the API key. Check it in settings.';
+      return l10n.comicVineInvalidKey;
     }
     if (error.isRateLimited) {
-      return 'Comic Vine rate limit reached. Try again later.';
+      return l10n.comicVineRateLimited;
     }
   }
-  return 'Could not load Comic Vine details.';
+  return l10n.comicVineLoadError;
 }
 
 class _VolumeSection extends ConsumerWidget {
@@ -73,7 +75,7 @@ class _VolumeSection extends ConsumerWidget {
           error: (e, _) => e is ComicVineOffline
               ? const SizedBox.shrink()
               : ComicVineErrorView(
-                  message: _errorMessage(e),
+                  message: _errorMessage(context, e),
                   onRetry: () => ref.invalidate(provider),
                 ),
         );
@@ -99,7 +101,7 @@ class _IssueSection extends ConsumerWidget {
           error: (e, _) => e is ComicVineOffline
               ? const SizedBox.shrink()
               : ComicVineErrorView(
-                  message: _errorMessage(e),
+                  message: _errorMessage(context, e),
                   onRetry: () => ref.invalidate(provider),
                 ),
         );
@@ -113,11 +115,10 @@ class _ConnectPlaceholder extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => _DashedPanel(
     icon: AppIcons.sources,
     accent: true,
-    title: 'Comic Vine details',
-    body: 'Connect Comic Vine to pull in descriptions, characters, creators '
-        'and more for this title.',
+    title: context.l10n.comicVineDetailsTitle,
+    body: context.l10n.comicVineConnectBody,
     action: HeroAction(
-      label: 'Add API key',
+      label: context.l10n.comicVineAddApiKey,
       icon: AppIcons.add,
       style: HeroActionStyle.ghost,
       compact: true,
@@ -127,7 +128,7 @@ class _ConnectPlaceholder extends ConsumerWidget {
       onPressed: () =>
           ref.read(comicVineKeyControllerProvider).setDismissed(true),
       child: Text(
-        'Never show again',
+        context.l10n.comicVineNeverShow,
         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     ),

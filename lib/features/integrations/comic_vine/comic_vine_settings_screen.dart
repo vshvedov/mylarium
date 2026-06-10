@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/widgets/app_button.dart';
 import '../../../app/widgets/app_text_field.dart';
@@ -33,9 +34,8 @@ class _ComicVineSettingsScreenState
     if (key.isEmpty) return;
     await ref.read(comicVineKeyControllerProvider).save(key);
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Comic Vine connected')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.comicVineConnected)));
     Navigator.maybePop(context);
   }
 
@@ -43,9 +43,8 @@ class _ComicVineSettingsScreenState
     await ref.read(comicVineKeyControllerProvider).clear();
     _controller.clear();
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Comic Vine disconnected')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.comicVineDisconnected)));
   }
 
   @override
@@ -66,17 +65,14 @@ class _ComicVineSettingsScreenState
           padding: const EdgeInsets.all(20),
           children: [
             Text(
-              'Optional. Comic Vine adds rich details (descriptions, characters, '
-              'creators and more) to series and issues. It is off until you add '
-              'a key, and only then are titles sent to Comic Vine to look them '
-              'up. Your key is stored in the device keychain.',
+              context.l10n.comicVineDescription,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Get a free key at comicvine.gamespot.com/api',
+              context.l10n.comicVineGetKey,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -84,8 +80,8 @@ class _ComicVineSettingsScreenState
             const SizedBox(height: 20),
             AppTextField(
               controller: _controller,
-              label: 'API key',
-              hint: 'Paste your Comic Vine API key',
+              label: context.l10n.connectApiKeyLabel,
+              hint: context.l10n.comicVineKeyHint,
               prefixIcon: AppIcons.lock,
               obscureText: true,
               autofocus: !connected,
@@ -93,12 +89,15 @@ class _ComicVineSettingsScreenState
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 20),
-            AppButton(label: 'Save', icon: AppIcons.check, onPressed: _save),
+            AppButton(
+                label: context.l10n.save,
+                icon: AppIcons.check,
+                onPressed: _save),
             if (connected) ...[
               const SizedBox(height: 8),
               AppButton(
                 kind: AppButtonKind.text,
-                label: 'Disconnect',
+                label: context.l10n.comicVineDisconnect,
                 icon: AppIcons.delete,
                 onPressed: _clear,
               ),
@@ -106,10 +105,8 @@ class _ComicVineSettingsScreenState
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Show on detail pages'),
-              subtitle: const Text(
-                'Turn off to hide the Comic Vine section everywhere.',
-              ),
+              title: Text(context.l10n.comicVineShowOnDetail),
+              subtitle: Text(context.l10n.comicVineShowOnDetailSubtitle),
               value:
                   !(ref.watch(comicVineDismissedProvider).valueOrNull ?? false),
               onChanged: (show) => ref

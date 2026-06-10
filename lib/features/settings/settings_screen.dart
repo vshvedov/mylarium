@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
@@ -28,7 +29,7 @@ class SettingsScreen extends ConsumerWidget {
           icon: const Icon(AppIcons.back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Settings'),
+        title: Text(context.l10n.settingsTitle),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -41,29 +42,28 @@ class SettingsScreen extends ConsumerWidget {
               const EphemeralStorageBanner(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
-                child:
-                    Text('Library access', style: theme.textTheme.titleMedium),
+                child: Text(context.l10n.settingsLibraryAccess,
+                    style: theme.textTheme.titleMedium),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                 child: AppListRow(
                   icon: AppIcons.lock,
-                  title: 'Library locks',
-                  subtitle: 'Hide libraries behind Face ID / passcode',
+                  title: context.l10n.settingsLibraryLocks,
+                  subtitle: context.l10n.settingsLibraryLocksSubtitle,
                   onTap: () => context.push('/settings/library-lock'),
                 ),
               ),
               const Divider(height: 24, indent: 20, endIndent: 20),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                child: Text('Reading', style: theme.textTheme.titleMedium),
+                child: Text(context.l10n.settingsReading,
+                    style: theme.textTheme.titleMedium),
               ),
               SwitchListTile(
                 secondary: const Icon(AppIcons.nextChapter),
-                title: const Text('Auto-advance'),
-                subtitle: const Text(
-                  'Load the next chapter automatically at the end of a book',
-                ),
+                title: Text(context.l10n.settingsAutoAdvance),
+                subtitle: Text(context.l10n.settingsAutoAdvanceSubtitle),
                 value:
                     ref.watch(autoAdvanceEnabledProvider).valueOrNull ?? false,
                 onChanged: (v) =>
@@ -72,12 +72,13 @@ class SettingsScreen extends ConsumerWidget {
               const Divider(height: 24, indent: 20, endIndent: 20),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                child: Text('Home screen rows', style: theme.textTheme.titleMedium),
+                child: Text(context.l10n.settingsHomeRows,
+                    style: theme.textTheme.titleMedium),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                 child: Text(
-                  'Drag to reorder. Toggle to show or hide a row.',
+                  context.l10n.settingsHomeRowsHint,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -108,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                   child: TextButton.icon(
                     onPressed: controller.resetToDefault,
                     icon: const Icon(AppIcons.refresh, size: 18),
-                    label: const Text('Reset to default'),
+                    label: Text(context.l10n.settingsResetToDefault),
                   ),
                 ),
               ),
@@ -122,8 +123,8 @@ class SettingsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                       child: AppListRow(
                         icon: AppIcons.info,
-                        title: 'Diagnostics',
-                        subtitle: 'GPU and rendering info',
+                        title: context.l10n.settingsDiagnostics,
+                        subtitle: context.l10n.settingsDiagnosticsSubtitle,
                         onTap: () => context.push('/settings/diagnostics'),
                       ),
                     ),
@@ -179,7 +180,7 @@ class _RailRow extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                item.kind.title,
+                item.kind.title(context),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: item.visible
                           ? scheme.onSurface

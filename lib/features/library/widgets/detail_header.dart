@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/cover_palette.dart';
@@ -87,7 +88,7 @@ class HeroPinButton extends ConsumerWidget {
             iconSize: 20,
             color: _heroChipIcon(eink, scheme),
             icon: Icon(pinned ? AppIcons.pinFill : AppIcons.pin),
-            tooltip: pinned ? 'Unpin' : 'Pin',
+            tooltip: pinned ? context.l10n.unpin : context.l10n.pin,
             onPressed: () => ref.read(appDatabaseProvider).setPinned(
                   sourceId,
                   ownerType,

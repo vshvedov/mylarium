@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../core/platform/render_capabilities.dart';
 
@@ -21,19 +22,24 @@ class DiagnosticsScreen extends ConsumerWidget {
     final size = media.size;
     final dpr = media.devicePixelRatio;
 
+    final l10n = context.l10n;
     final rows = <(String, String)>[
-      ('GPU max texture size', '$maxTex px'),
-      ('Probe status', probed ? 'probed' : 'fallback (probing or unsupported)'),
-      ('Focused page cap', '${focusTextureCap(maxTex)} px'),
-      ('Reader sampling', 'FilterQuality.high'),
-      ('Platform', Platform.operatingSystem),
-      ('Logical screen', '${size.width.round()} x ${size.height.round()} pt'),
-      ('Device pixel ratio', dpr.toStringAsFixed(2)),
+      (l10n.diagGpuMaxTexture, '$maxTex px'),
       (
-        'Screen pixels',
+        l10n.diagProbeStatus,
+        probed ? 'probed' : 'fallback (probing or unsupported)'
+      ),
+      (l10n.diagFocusedPageCap, '${focusTextureCap(maxTex)} px'),
+      (l10n.diagReaderSampling, 'FilterQuality.high'),
+      (l10n.diagPlatform, Platform.operatingSystem),
+      (l10n.diagLogicalScreen,
+          '${size.width.round()} x ${size.height.round()} pt'),
+      (l10n.diagDevicePixelRatio, dpr.toStringAsFixed(2)),
+      (
+        l10n.diagScreenPixels,
         '${(size.width * dpr).round()} x ${(size.height * dpr).round()} px'
       ),
-      ('Logical CPUs', '${Platform.numberOfProcessors}'),
+      (l10n.diagLogicalCpus, '${Platform.numberOfProcessors}'),
     ];
 
     return Scaffold(
@@ -42,7 +48,7 @@ class DiagnosticsScreen extends ConsumerWidget {
           icon: const Icon(AppIcons.back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Diagnostics'),
+        title: Text(context.l10n.settingsDiagnostics),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),

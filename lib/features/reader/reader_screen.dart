@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/error_text.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../core/archive/archive_reader.dart';
-import '../../core/network/content_exception.dart';
 import '../../core/platform/render_capabilities.dart';
 import '../../core/platform/system_ui.dart';
 import '../gallery/gallery_controller.dart';
@@ -81,14 +82,14 @@ class ReaderScreen extends ConsumerWidget {
       body: async.when(
         loading: () => const AppLoadingIndicator(),
         error: (e, _) => _ErrorState(
-          title: 'Could not open this book',
-          detail: friendlyError(e),
+          title: context.l10n.readerOpenError,
+          detail: localizedFriendlyError(context, e),
           onRetry: () => ref.invalidate(
             readerControllerProvider(sourceId, bookId, preview),
           ),
         ),
         data: (data) => _readerPageCount(data) == 0
-            ? const _ErrorState(title: 'This book has no pages')
+            ? _ErrorState(title: context.l10n.readerNoPages)
             // Key on bookId so navigating to a sibling chapter (pushReplacement to
             // the same route with a different bookId) tears down and recreates the
             // reader state (PageController, page index, session recorder).
@@ -639,10 +640,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// if the series is uncached, or the page position as a last resort (e.g. an
   /// offline book with no cached title). The page count still lives in the
   /// bottom scrubber, so the top bar leads with the series/chapter name.
-  String _chromeTitle(int pageCount) {
+  String _chromeTitle(BuildContext context, int pageCount) {
     final chapter = widget.data.title.trim();
     final series = widget.data.seriesTitle?.trim();
-    if (chapter.isEmpty) return 'Page ${_page + 1} of $pageCount';
+    if (chapter.isEmpty) {
+      return context.l10n.readerPageOfCount(_page + 1, pageCount);
+    }
     if (series != null && series.isNotEmpty) return '$series · $chapter';
     return chapter;
   }
@@ -664,6 +667,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     if (_capture.saving) return;
     final messenger = ScaffoldMessenger.of(context);
     final navContext = context;
+    final l10n = context.l10n;
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final pending = _capture.save(
       crop: () => cropBoundaryToPng(
@@ -691,20 +695,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     switch (outcome) {
       case CaptureSaveOutcome.captureFailed:
         messenger.showSnackBar(
-          const SnackBar(content: Text('Could not capture this page.')),
+          SnackBar(content: Text(l10n.readerCaptureFailed)),
         );
       case CaptureSaveOutcome.saveFailed:
         messenger.showSnackBar(
-          const SnackBar(content: Text('Could not save capture.')),
+          SnackBar(content: Text(l10n.readerCaptureSaveFailed)),
         );
       case CaptureSaveOutcome.saved:
         messenger.showSnackBar(SnackBar(
-          content: const Text('Saved to Gallery'),
+          content: Text(l10n.readerCaptureSaved),
           // Auto-dismiss the capture confirmation after a short timeout so it does
           // not linger over the page; still long enough to tap "View".
           duration: const Duration(seconds: 3),
           action: SnackBarAction(
-            label: 'View',
+            label: l10n.readerCaptureView,
             onPressed: () => navContext.push('/gallery'),
           ),
         ));
@@ -926,7 +930,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         Positioned.fill(
           child: ReaderChrome(
             visible: _chrome,
-            title: _chromeTitle(source.pageCount),
+            title: _chromeTitle(context, source.pageCount),
             sourceId: widget.sourceId,
             bookId: widget.bookId,
             offline: widget.data.source is OfflinePages,
@@ -1051,7 +1055,7 @@ class _ErrorState extends StatelessWidget {
                     AppButton(
                       kind: AppButtonKind.tonal,
                       icon: AppIcons.refresh,
-                      label: 'Try again',
+                      label: context.l10n.tryAgain,
                       onPressed: onRetry,
                     ),
                   ],

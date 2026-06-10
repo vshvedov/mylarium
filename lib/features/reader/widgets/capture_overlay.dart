@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../../app/l10n.dart';
+
 import '../../../app/theme/design_tokens.dart';
 
 /// Minimum side (logical px) before a marquee selection is savable.
@@ -152,7 +154,7 @@ class _CaptureOverlayState extends State<CaptureOverlay> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'Drag to select an area, or capture the whole page.',
+                      context.l10n.captureHint,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             color: scheme.onPrimary,
@@ -214,7 +216,7 @@ class _ActionBar extends StatelessWidget {
             children: [
               TextButton(
                 onPressed: busy ? null : onCancel,
-                child: const Text('Cancel'),
+                child: Text(context.l10n.cancel),
               ),
               // The trailing pair is the only flex child, so the whole-page
               // label keeps its intrinsic width when it fits and ellipsizes
@@ -226,8 +228,8 @@ class _ActionBar extends StatelessWidget {
                     Flexible(
                       child: TextButton(
                         onPressed: onWholePage,
-                        child: const Text(
-                          'Whole page',
+                        child: Text(
+                          context.l10n.captureWholePage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -236,7 +238,7 @@ class _ActionBar extends StatelessWidget {
                     const SizedBox(width: 8),
                     FilledButton(
                       onPressed: savable ? onSave : null,
-                      child: const Text('Save'),
+                      child: Text(context.l10n.save),
                     ),
                   ],
                 ),

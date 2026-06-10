@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import 'badges.dart';
@@ -46,7 +47,7 @@ class WrapCard extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  '$year in review',
+                  context.l10n.wrapYearInReview('$year'),
                   style: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -55,19 +56,23 @@ class WrapCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          _BigStat(value: '${summary.totalPages}', label: 'pages read'),
+          _BigStat(
+              value: '${summary.totalPages}',
+              label: context.l10n.wrapPagesRead),
           const SizedBox(height: 12),
           _BigStat(
             value: formatReadingDuration(
               Duration(seconds: summary.totalSeconds),
             ),
-            label: 'time reading',
+            label: context.l10n.wrapTimeReading,
           ),
           const SizedBox(height: 12),
-          _BigStat(value: '${summary.booksCompleted}', label: 'books finished'),
+          _BigStat(
+              value: '${summary.booksCompleted}',
+              label: context.l10n.wrapBooksFinished),
           if (topGenre != null) ...[
             const SizedBox(height: 12),
-            _BigStat(value: topGenre, label: 'top genre'),
+            _BigStat(value: topGenre, label: context.l10n.wrapTopGenre),
           ],
           if (earned.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -78,7 +83,7 @@ class WrapCard extends StatelessWidget {
                 for (final b in earned)
                   Chip(
                     avatar: Icon(b.icon, size: 16, color: scheme.primary),
-                    label: Text(b.label),
+                    label: Text(b.localizedLabel(context)),
                     visualDensity: VisualDensity.compact,
                   ),
               ],

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/app_button.dart';
@@ -88,7 +89,7 @@ class _ReaderSeamState extends State<ReaderSeam> {
               child: IconButton(
                 icon: const Icon(AppIcons.close),
                 color: scheme.onSurface,
-                tooltip: 'Dismiss',
+                tooltip: context.l10n.dismiss,
                 onPressed: () {
                   _cancelCountdown();
                   widget.onDismiss();
@@ -102,7 +103,7 @@ class _ReaderSeamState extends State<ReaderSeam> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Finished',
+                      context.l10n.seamFinished,
                       style: theme.textTheme.labelLarge
                           ?.copyWith(color: scheme.onSurfaceVariant),
                     ),
@@ -116,7 +117,7 @@ class _ReaderSeamState extends State<ReaderSeam> {
                           ?.copyWith(color: scheme.onSurface),
                     ),
                     const SizedBox(height: 24),
-                    ..._actions(theme, scheme),
+                    ..._actions(context, theme, scheme),
                   ],
                 ),
               ),
@@ -127,11 +128,13 @@ class _ReaderSeamState extends State<ReaderSeam> {
     );
   }
 
-  List<Widget> _actions(ThemeData theme, ColorScheme scheme) {
+  List<Widget> _actions(
+      BuildContext context, ThemeData theme, ColorScheme scheme) {
+    final l10n = context.l10n;
     if (!widget.neighbors.hasNext) {
       return [
         Text(
-          'Last in this series',
+          l10n.seamLastInSeries,
           style: theme.textTheme.bodyMedium
               ?.copyWith(color: scheme.onSurfaceVariant),
         ),
@@ -142,27 +145,27 @@ class _ReaderSeamState extends State<ReaderSeam> {
     if (_counting) {
       return [
         Text(
-          'Up next: $nextLabel',
+          l10n.seamUpNext(nextLabel),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
         ),
         const SizedBox(height: 16),
         AppButton(
           icon: AppIcons.nextChapter,
-          label: 'Read now',
+          label: l10n.seamReadNow,
           onPressed: openNext,
         ),
         const SizedBox(height: 8),
         TextButton(
           onPressed: _cancelCountdown,
-          child: const Text('Cancel auto-advance'),
+          child: Text(l10n.seamCancelAutoAdvance),
         ),
       ];
     }
     return [
       AppButton(
         icon: AppIcons.nextChapter,
-        label: 'Next: $nextLabel',
+        label: l10n.seamNext(nextLabel),
         onPressed: openNext,
       ),
     ];

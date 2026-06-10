@@ -1,0 +1,1066 @@
+{
+  "@@locale": "en",
+
+  "storageUnavailableTitle": "Storage unavailable",
+  "@storageUnavailableTitle": {
+    "description": "Title of the banner shown when the on-disk database could not be opened and the app fell back to in-memory storage."
+  },
+  "storageUnavailableBody": "Mylarium could not open its local storage and is running in memory only. Anything you connect or read will be lost when the app closes. Try restarting; if this keeps happening, check that the device has free space.",
+  "@storageUnavailableBody": {
+    "description": "Body text of the ephemeral-storage warning banner."
+  },
+  "routeNotFound": "Route not found: {uri}",
+  "@routeNotFound": {
+    "description": "Fallback shown by the router when no route matches.",
+    "placeholders": {
+      "uri": { "type": "String" }
+    }
+  },
+
+  "onboardingTagline": "Your comics and manga, beautifully offline.",
+  "@onboardingTagline": {
+    "description": "Subtitle on the first-run welcome screen."
+  },
+  "onboardingChooseSource": "Choose a source",
+  "@onboardingChooseSource": {
+    "description": "Section header above the source picker on onboarding."
+  },
+  "onboardingKomgaSubtitle": "Connect to your self-hosted server",
+  "@onboardingKomgaSubtitle": {
+    "description": "Subtitle of the Komga source option card."
+  },
+  "onboardingKavitaSubtitle": "Another self-hosted library server",
+  "@onboardingKavitaSubtitle": {
+    "description": "Subtitle of the Kavita source option card."
+  },
+  "onboardingLocalTitle": "Local files",
+  "@onboardingLocalTitle": {
+    "description": "Title of the local-files source option card."
+  },
+  "onboardingLocalSubtitle": "Read comics stored on this device",
+  "@onboardingLocalSubtitle": {
+    "description": "Subtitle of the local-files source option card."
+  },
+  "onboardingMoreSourcesHint": "More sources are on the way. You can add or switch sources anytime in Settings.",
+  "@onboardingMoreSourcesHint": {
+    "description": "Footer note below the source picker on onboarding."
+  },
+  "sourceComingSoonSemantic": "{title}, coming soon",
+  "@sourceComingSoonSemantic": {
+    "description": "Screen-reader label for a disabled coming-soon source card.",
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "sourceSoonChip": "Soon",
+  "@sourceSoonChip": {
+    "description": "Chip shown on a coming-soon source card."
+  },
+
+  "connectServerUrlLabel": "Server URL",
+  "@connectServerUrlLabel": {
+    "description": "Text field label for a server URL on the connect screens."
+  },
+  "connectApiKeyLabel": "API key",
+  "@connectApiKeyLabel": {
+    "description": "Label for the API key field / auth method on the connect screens."
+  },
+  "connectPasswordLabel": "Password",
+  "@connectPasswordLabel": {
+    "description": "Label for the password field / auth method on the connect screens."
+  },
+  "connectUsernameLabel": "Username",
+  "@connectUsernameLabel": {
+    "description": "Label for the username field on the connect screens."
+  },
+  "connectAction": "Connect",
+  "@connectAction": {
+    "description": "Primary button label on the connect screens."
+  },
+  "connectBusy": "Connecting...",
+  "@connectBusy": {
+    "description": "Primary button label while a connection attempt is in progress."
+  },
+  "connectUnreachable": "Could not reach the server. Check the URL and your network.",
+  "@connectUnreachable": {
+    "description": "Connect error: the server could not be reached."
+  },
+  "connectTlsError": "The server security certificate could not be verified.",
+  "@connectTlsError": {
+    "description": "Connect error: the TLS certificate could not be verified."
+  },
+
+  "komgaConnectTitle": "Connect to Komga",
+  "@komgaConnectTitle": {
+    "description": "Title of the Komga connect screen."
+  },
+  "komgaConnectSubtitle": "Point Mylarium at your server and sign in.",
+  "@komgaConnectSubtitle": {
+    "description": "Subtitle of the Komga connect screen."
+  },
+  "komgaConnectInvalidUrl": "Enter a valid server URL (for example https://komga.example.com).",
+  "@komgaConnectInvalidUrl": {
+    "description": "Komga connect error: the entered URL is invalid."
+  },
+  "komgaConnectUnauthorized": "Incorrect credentials.",
+  "@komgaConnectUnauthorized": {
+    "description": "Komga connect error: credentials were rejected."
+  },
+  "komgaConnectMissingRoles": "Your Komga account is missing the {roles} role. Ask your server admin to enable it.",
+  "@komgaConnectMissingRoles": {
+    "description": "Komga connect error: the account lacks required roles.",
+    "placeholders": {
+      "roles": { "type": "String" }
+    }
+  },
+  "komgaConnectVersionTooOld": "This server{version} is too old for API keys. Use a username and password instead.",
+  "@komgaConnectVersionTooOld": {
+    "description": "Komga connect error: server too old for API keys. The version placeholder is an already-formatted parenthesised version string or empty.",
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+
+  "kavitaConnectTitle": "Connect to Kavita",
+  "@kavitaConnectTitle": {
+    "description": "Title of the Kavita connect screen."
+  },
+  "kavitaConnectSubtitle": "Point Mylarium at your server and paste your API key.",
+  "@kavitaConnectSubtitle": {
+    "description": "Subtitle of the Kavita connect screen."
+  },
+  "kavitaConnectApiKeyHint": "Find your API key in Kavita under Settings, Account, 3rd Party Clients.",
+  "@kavitaConnectApiKeyHint": {
+    "description": "Helper text under the Kavita API key field."
+  },
+  "kavitaConnectInvalidUrl": "Enter a valid server URL (for example https://kavita.example.com).",
+  "@kavitaConnectInvalidUrl": {
+    "description": "Kavita connect error: the entered URL is invalid."
+  },
+  "kavitaConnectUnauthorized": "That API key was not accepted.",
+  "@kavitaConnectUnauthorized": {
+    "description": "Kavita connect error: the API key was rejected."
+  },
+  "kavitaConnectMissingRoles": "Your Kavita account is missing the {roles} role. Ask your server admin to enable it.",
+  "@kavitaConnectMissingRoles": {
+    "description": "Kavita connect error: the account lacks required roles.",
+    "placeholders": {
+      "roles": { "type": "String" }
+    }
+  },
+  "kavitaConnectVersionUnsupported": "This server{version} is not supported.",
+  "@kavitaConnectVersionUnsupported": {
+    "description": "Kavita connect error: server version not supported. The version placeholder is an already-formatted parenthesised version string or empty.",
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+
+  "sourcesTitle": "Sources",
+  "@sourcesTitle": {
+    "description": "Title used for the Sources sheet, button tooltips, and rows."
+  },
+  "galleryTitle": "Gallery",
+  "@galleryTitle": {
+    "description": "Title of the gallery screen and its home tooltip."
+  },
+  "statsTitle": "Reading stats",
+  "@statsTitle": {
+    "description": "Title of the reading-stats screen and its home tooltip."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the settings screen and its home row."
+  },
+  "storageTitle": "Storage",
+  "@storageTitle": {
+    "description": "Title of the storage screen and its home/settings rows."
+  },
+  "librariesTitle": "Libraries",
+  "@librariesTitle": {
+    "description": "Title of the libraries list."
+  },
+  "collectionsAndReadListsTitle": "Collections & read lists",
+  "@collectionsAndReadListsTitle": {
+    "description": "Home row title leading to collections and read lists."
+  },
+  "appearanceTitle": "Appearance",
+  "@appearanceTitle": {
+    "description": "Header of the appearance/theme section in the home settings sheet."
+  },
+  "themeLight": "Light",
+  "@themeLight": { "description": "Light theme toggle label." },
+  "themeDark": "Dark",
+  "@themeDark": { "description": "Dark theme toggle label." },
+  "themeAuto": "Auto",
+  "@themeAuto": { "description": "System (auto) theme toggle label." },
+  "themeEink": "E-ink",
+  "@themeEink": { "description": "E-ink theme toggle label." },
+  "homeBrowseAll": "Browse all",
+  "@homeBrowseAll": {
+    "description": "Tooltip for the browse-all action on home."
+  },
+  "homeSettingsSubtitle": "Home rows and more",
+  "@homeSettingsSubtitle": {
+    "description": "Subtitle of the Settings row in the home settings sheet."
+  },
+  "homeSourcesSubtitle": "Switch, add, or remove servers",
+  "@homeSourcesSubtitle": {
+    "description": "Subtitle of the Sources row in the home settings sheet."
+  },
+  "homeNoSource": "No source connected.",
+  "@homeNoSource": {
+    "description": "Empty state when no source is connected."
+  },
+  "homeConnectServer": "Connect a server",
+  "@homeConnectServer": {
+    "description": "Button to start onboarding when no source is connected."
+  },
+  "homeEmpty": "Nothing to show yet. Pull to refresh.",
+  "@homeEmpty": {
+    "description": "Shown when every home rail resolved empty."
+  },
+  "railPinned": "Pinned",
+  "@railPinned": { "description": "Home rail title: pinned items." },
+  "railKeepReading": "Keep reading",
+  "@railKeepReading": { "description": "Home rail title: keep reading / on deck." },
+  "railRecentlyAddedChapters": "Recently added chapters",
+  "@railRecentlyAddedChapters": { "description": "Home rail title: recently added chapters." },
+  "railRecentlyAddedSeries": "Recently added series",
+  "@railRecentlyAddedSeries": { "description": "Home rail title: recently added series." },
+  "railRecentlyUpdatedSeries": "Recently updated series",
+  "@railRecentlyUpdatedSeries": { "description": "Home rail title: recently updated series." },
+  "railDownloaded": "Downloaded",
+  "@railDownloaded": { "description": "Home rail title: downloaded items." },
+  "railRecentlyRead": "Recently read",
+  "@railRecentlyRead": { "description": "Home rail title: recently read items." },
+
+  "cancel": "Cancel",
+  "@cancel": { "description": "Generic Cancel button." },
+  "remove": "Remove",
+  "@remove": { "description": "Generic Remove button." },
+  "close": "Close",
+  "@close": { "description": "Generic Close button." },
+  "refresh": "Refresh",
+  "@refresh": { "description": "Generic Refresh button." },
+
+  "sourcesEmpty": "No sources connected yet.",
+  "@sourcesEmpty": { "description": "Empty state in the sources sheet." },
+  "sourceKindFolderLibrary": "Folder library",
+  "@sourceKindFolderLibrary": { "description": "Kind label for a folder (SAF tree) source." },
+  "sourceSubtitleOnDevice": "On this device",
+  "@sourceSubtitleOnDevice": { "description": "Subtitle for the local-files source row." },
+  "sourceSubtitleFolderInPlace": "Folder library - in place",
+  "@sourceSubtitleFolderInPlace": { "description": "Subtitle for an in-place folder source row." },
+  "sourceRemoveTooltip": "Remove source",
+  "@sourceRemoveTooltip": { "description": "Tooltip on the remove-source icon button." },
+  "sourceRemoveTitle": "Remove {label}?",
+  "@sourceRemoveTitle": {
+    "description": "Title of the remove-source confirmation dialog.",
+    "placeholders": { "label": { "type": "String" } }
+  },
+  "sourceRemoveFolderBody": "This forgets the folder library. The files on the card or folder are untouched, and reading history is kept.",
+  "@sourceRemoveFolderBody": { "description": "Body of the remove-folder confirmation dialog." },
+  "sourceRemoveServerBody": "This disconnects the source and deletes its stored credentials. Downloaded files for this source are removed by storage cleanup.",
+  "@sourceRemoveServerBody": { "description": "Body of the remove-server confirmation dialog." },
+  "sourceLocalImportSubtitle": "Import comics from this device",
+  "@sourceLocalImportSubtitle": { "description": "Subtitle of the local-files add row in the sources sheet." },
+  "sourceUseCard": "Use {card}",
+  "@sourceUseCard": {
+    "description": "Row title for using a detected removable volume as a library.",
+    "placeholders": { "card": { "type": "String" } }
+  },
+  "sourceUseCardSubtitle": "Read comics from the card, in place",
+  "@sourceUseCardSubtitle": { "description": "Subtitle of the use-card source row." },
+  "sourceAddFolder": "Add folder library",
+  "@sourceAddFolder": { "description": "Row to add a folder-tree library source." },
+  "sourceAddFolderSubtitle": "Read comics from a folder, in place",
+  "@sourceAddFolderSubtitle": { "description": "Subtitle of the add-folder source row." },
+  "sourceAddSource": "Add a source",
+  "@sourceAddSource": { "description": "Row to add another source (opens onboarding)." },
+
+  "serverOnlineTooltip": "Server online - tap for details",
+  "@serverOnlineTooltip": { "description": "Tooltip on the app-bar status dot when the server is online." },
+  "serverUnreachableTooltip": "Server unreachable - tap for details",
+  "@serverUnreachableTooltip": { "description": "Tooltip on the app-bar status dot when the server is unreachable." },
+  "serverCheckingTooltip": "Checking server...",
+  "@serverCheckingTooltip": { "description": "Tooltip on the app-bar status dot while checking reachability." },
+  "serverDetailsLoadError": "Could not load server details.",
+  "@serverDetailsLoadError": { "description": "Error shown when server details fail to load." },
+  "serverUnreachableBody": "Server unreachable. Check your connection and try Refresh.",
+  "@serverUnreachableBody": { "description": "Body shown in the details dialog when the server is offline." },
+  "serverSectionConnection": "Connection",
+  "@serverSectionConnection": { "description": "Server details section header (rendered uppercased)." },
+  "serverSectionServer": "Server",
+  "@serverSectionServer": { "description": "Server details section header and fallback server name (rendered uppercased as a header)." },
+  "serverSectionAccount": "Account",
+  "@serverSectionAccount": { "description": "Server details section header (rendered uppercased)." },
+  "serverSectionContent": "Content",
+  "@serverSectionContent": { "description": "Server details section header (rendered uppercased)." },
+  "serverRowUrl": "URL",
+  "@serverRowUrl": { "description": "Server details row label: URL." },
+  "serverRowVersion": "Version",
+  "@serverRowVersion": { "description": "Server details row label: Version." },
+  "serverRowUser": "User",
+  "@serverRowUser": { "description": "Server details row label: User." },
+  "serverRowRoles": "Roles",
+  "@serverRowRoles": { "description": "Server details row label: Roles." },
+  "serverRowLibraries": "Libraries",
+  "@serverRowLibraries": { "description": "Server details row label: Libraries." },
+  "serverRowSeries": "Series",
+  "@serverRowSeries": { "description": "Server details row label: Series." },
+  "serverRowBooks": "Books",
+  "@serverRowBooks": { "description": "Server details row label: Books." },
+  "statusOnline": "Online",
+  "@statusOnline": { "description": "Status pill text when online." },
+  "statusOffline": "Offline",
+  "@statusOffline": { "description": "Status pill text when offline." },
+  "syncSectionTitle": "SYNC",
+  "@syncSectionTitle": { "description": "Sync section header in the server details dialog." },
+  "syncUpdatesWaiting": "{count, plural, =1{1 update waiting to sync} other{{count} updates waiting to sync}}",
+  "@syncUpdatesWaiting": {
+    "description": "Count of pending write-backs waiting to sync.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "syncFailedCount": "{count, plural, =1{1 failed} other{{count} failed}}",
+  "@syncFailedCount": {
+    "description": "Count of failed write-backs.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "syncRetryNow": "Retry now",
+  "@syncRetryNow": { "description": "Button to retry failed sync write-backs." },
+
+  "bookCount": "{count, plural, =1{1 book} other{{count} books}}",
+  "@bookCount": {
+    "description": "Count of books in a series or library.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "read": "Read",
+  "@read": { "description": "Read action for a book that has no progress yet." },
+  "readAgain": "Read again",
+  "@readAgain": { "description": "Read action for a completed book (re-read)." },
+  "continueReading": "Continue reading",
+  "@continueReading": { "description": "Read action for a book with saved progress." },
+  "selectSeries": "Select a series",
+  "@selectSeries": { "description": "Placeholder in the two-pane browse detail when nothing is selected." },
+
+  "importComics": "Import comics",
+  "@importComics": { "description": "Action to import comics from this device." },
+  "importBusy": "Importing...",
+  "@importBusy": { "description": "Import action label while an import runs." },
+  "importImportedCount": "{count, plural, =1{1 imported} other{{count} imported}}",
+  "@importImportedCount": {
+    "description": "Header counting imported files in the results sheet.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "importSkipped": "Skipped",
+  "@importSkipped": { "description": "Header for skipped files in the import results sheet." },
+  "importReasonOversize": "File is larger than {mb} MB",
+  "@importReasonOversize": {
+    "description": "Import skip reason when a file exceeds the size limit. mb is the configured limit in megabytes.",
+    "placeholders": { "mb": { "type": "String" } }
+  },
+  "importReasonHttpsOnly": "Only https URLs are supported",
+  "@importReasonHttpsOnly": { "description": "Import skip reason: only https URLs are accepted." },
+  "importReasonUrlUnreachable": "Could not reach the URL",
+  "@importReasonUrlUnreachable": { "description": "Import skip reason: the URL could not be reached." },
+  "importReasonNotArchiveUrl": "Not a comic archive URL",
+  "@importReasonNotArchiveUrl": { "description": "Import skip reason: the URL is not a comic archive." },
+  "importReasonDownloadFailed": "Download failed",
+  "@importReasonDownloadFailed": { "description": "Import skip reason: the download failed." },
+  "importReasonFileNotFound": "File not found",
+  "@importReasonFileNotFound": { "description": "Import skip reason: the file could not be found." },
+  "importReasonNotArchive": "Not a comic archive",
+  "@importReasonNotArchive": { "description": "Import skip reason: the file is not a comic archive." },
+  "importReasonAlreadyImported": "Already imported",
+  "@importReasonAlreadyImported": { "description": "Import skip reason: the file is a duplicate." },
+
+  "urlImportTitle": "Import from URL",
+  "@urlImportTitle": { "description": "Title of the import-from-URL dialog and its tooltip." },
+  "urlImportInvalid": "Enter a valid URL",
+  "@urlImportInvalid": { "description": "Inline error when the entered URL is invalid." },
+  "urlImportBusy": "Importing...",
+  "@urlImportBusy": { "description": "URL import button label while importing." },
+  "urlImportAction": "Import",
+  "@urlImportAction": { "description": "URL import confirm button." },
+
+  "localRailRecentlyImported": "Recently imported",
+  "@localRailRecentlyImported": { "description": "Local home rail title: recently imported." },
+  "railRecentlyAddedShort": "Recently added",
+  "@railRecentlyAddedShort": { "description": "Folder home rail title: recently added." },
+  "localEmptyTitle": "No comics yet",
+  "@localEmptyTitle": { "description": "Empty-library title on the local home." },
+  "localEmptyBody": "Import CBZ or CBR files from this device. Imported comics are copied in and always readable.",
+  "@localEmptyBody": { "description": "Empty-library body on the local home." },
+  "localNoSeries": "No series here yet.",
+  "@localNoSeries": { "description": "Empty state for the local series grid." },
+  "localComicRemoved": "This comic was removed.",
+  "@localComicRemoved": { "description": "Shown on the local book detail when the comic no longer exists." },
+  "localRemoveFromLibrary": "Remove from library",
+  "@localRemoveFromLibrary": { "description": "Button to remove an imported comic." },
+  "localRemoveTitle": "Remove this comic?",
+  "@localRemoveTitle": { "description": "Title of the remove-imported-comic dialog." },
+  "localRemoveBody": "The imported copy is deleted from this device. Reading history is kept.",
+  "@localRemoveBody": { "description": "Body of the remove-imported-comic dialog." },
+
+  "factNumber": "Number",
+  "@factNumber": { "description": "Book fact label: issue/chapter number." },
+  "factPages": "Pages",
+  "@factPages": { "description": "Book fact label: page count." },
+  "factSize": "Size",
+  "@factSize": { "description": "Book fact label: file size." },
+  "factReadingDirection": "Reading direction",
+  "@factReadingDirection": { "description": "Book fact label: reading direction." },
+  "factImported": "Imported",
+  "@factImported": { "description": "Book fact label: import date." },
+  "readingDirectionRtl": "Right to left",
+  "@readingDirectionRtl": { "description": "Reading direction value: right to left." },
+  "readingDirectionLtr": "Left to right",
+  "@readingDirectionLtr": { "description": "Reading direction value: left to right." },
+
+  "folderScanning": "Scanning...",
+  "@folderScanning": { "description": "Folder rescan button label while scanning." },
+  "folderRescan": "Rescan folder",
+  "@folderRescan": { "description": "Folder rescan button label." },
+  "folderScanAction": "Scan folder",
+  "@folderScanAction": { "description": "Empty-folder scan button label." },
+  "folderScanProgress": "{scanned} scanned, {added} added",
+  "@folderScanProgress": {
+    "description": "Folder scan progress strip; an optional ' - current file name' suffix is appended outside this string.",
+    "placeholders": {
+      "scanned": { "type": "int" },
+      "added": { "type": "int" }
+    }
+  },
+  "folderOfflineBody": "This folder is not reachable. The card may be ejected or access was revoked. Reading from cached pages still works.",
+  "@folderOfflineBody": { "description": "Offline banner body on the folder home." },
+  "folderReconnect": "Reconnect",
+  "@folderReconnect": { "description": "Button to re-pick an unreachable folder tree." },
+  "folderEmptyTitle": "Nothing scanned yet",
+  "@folderEmptyTitle": { "description": "Empty-folder title on the folder home." },
+  "folderEmptyBody": "Scan this folder to find CBZ and CBR comics. Files stay where they are; nothing is copied in.",
+  "@folderEmptyBody": { "description": "Empty-folder body on the folder home." },
+
+  "dismiss": "Dismiss",
+  "@dismiss": { "description": "Generic dismiss tooltip/action." },
+  "save": "Save",
+  "@save": { "description": "Generic Save button." },
+  "reset": "Reset",
+  "@reset": { "description": "Generic Reset button." },
+  "tryAgain": "Try again",
+  "@tryAgain": { "description": "Generic retry button." },
+
+  "errorNotFound": "The server could not find this item. It may have been removed.",
+  "@errorNotFound": { "description": "Friendly error: item not found." },
+  "errorSessionExpired": "Your session may have expired. Reconnect the source in Settings.",
+  "@errorSessionExpired": { "description": "Friendly error: auth expired / forbidden." },
+  "errorUnreachable": "Can not reach the server. Check your connection and try again.",
+  "@errorUnreachable": { "description": "Friendly error: server unreachable." },
+  "errorTls": "The secure connection to the server failed.",
+  "@errorTls": { "description": "Friendly error: TLS failure." },
+  "errorServerGeneric": "Something went wrong talking to the server.",
+  "@errorServerGeneric": { "description": "Friendly error: generic server error." },
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": { "description": "Friendly error: generic non-transport error." },
+
+  "readerPageLoadError": "Could not load this page",
+  "@readerPageLoadError": { "description": "Shown in place of a page that failed to load." },
+  "readerOpenError": "Could not open this book",
+  "@readerOpenError": { "description": "Error title when a book fails to open." },
+  "readerNoPages": "This book has no pages",
+  "@readerNoPages": { "description": "Error title when a book has zero pages." },
+  "readerPreviousBook": "Previous book",
+  "@readerPreviousBook": { "description": "Tooltip for the previous-chapter button." },
+  "readerNextBook": "Next book",
+  "@readerNextBook": { "description": "Tooltip for the next-chapter button." },
+  "readerGoToPage": "Go to page",
+  "@readerGoToPage": { "description": "Title of the jump-to-page dialog." },
+  "readerGo": "Go",
+  "@readerGo": { "description": "Confirm button in the jump-to-page dialog." },
+  "readerPageRangeHint": "1 - {count}",
+  "@readerPageRangeHint": {
+    "description": "Hint showing the valid page range in the jump-to-page field.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "readerPageOfCount": "Page {page} of {total}",
+  "@readerPageOfCount": {
+    "description": "Fallback reader title when no chapter title is known.",
+    "placeholders": {
+      "page": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "readerReadingOffline": "Reading offline",
+  "@readerReadingOffline": { "description": "Semantic label for the offline indicator in the reader top bar." },
+  "readerStreaming": "Streaming",
+  "@readerStreaming": { "description": "Semantic label for the streaming indicator in the reader top bar." },
+  "readerCapturePage": "Capture page",
+  "@readerCapturePage": { "description": "Reader options menu: enter page capture mode." },
+  "readerToggleDirection": "Toggle reading direction",
+  "@readerToggleDirection": { "description": "Reader options menu: flip reading direction." },
+  "readerShiftSpread": "Shift spread by one page",
+  "@readerShiftSpread": { "description": "Reader options menu: nudge the double-page spread by one page." },
+  "readerInvertTaps": "Invert taps",
+  "@readerInvertTaps": { "description": "Reader options menu: invert tap zones." },
+  "readerDoubleTapZoom": "Double-tap zoom",
+  "@readerDoubleTapZoom": { "description": "Reader options menu: toggle double-tap zoom." },
+  "readerAnimatePageTurn": "Animate page turn",
+  "@readerAnimatePageTurn": { "description": "Reader options menu: toggle page-turn animation." },
+  "readerImageQuality": "Image quality",
+  "@readerImageQuality": { "description": "Reader options menu / sheet title for image quality." },
+  "readerColorCorrection": "Color correction",
+  "@readerColorCorrection": { "description": "Reader options menu / sheet title for color correction." },
+  "readerModePagedLtr": "Paged (LTR)",
+  "@readerModePagedLtr": { "description": "Reading mode: left-to-right paged." },
+  "readerModePagedRtl": "Paged (RTL)",
+  "@readerModePagedRtl": { "description": "Reading mode: right-to-left paged." },
+  "readerModeWebtoon": "Webtoon",
+  "@readerModeWebtoon": { "description": "Reading mode: webtoon (gapless vertical)." },
+  "readerModeWebtoonGaps": "Webtoon (gaps)",
+  "@readerModeWebtoonGaps": { "description": "Reading mode: webtoon with gaps." },
+  "readerModeDoublePage": "Double page",
+  "@readerModeDoublePage": { "description": "Reading mode: double page spread." },
+  "readerFitWidth": "Fit width",
+  "@readerFitWidth": { "description": "Fit mode: fit to width." },
+  "readerFitHeight": "Fit height",
+  "@readerFitHeight": { "description": "Fit mode: fit to height." },
+  "readerFitScreen": "Fit screen",
+  "@readerFitScreen": { "description": "Fit mode: fit to screen." },
+  "readerFitOriginal": "Original",
+  "@readerFitOriginal": { "description": "Fit mode: original size." },
+
+  "readerCaptureFailed": "Could not capture this page.",
+  "@readerCaptureFailed": { "description": "Snackbar when capturing a page fails." },
+  "readerCaptureSaveFailed": "Could not save capture.",
+  "@readerCaptureSaveFailed": { "description": "Snackbar when saving a capture fails." },
+  "readerCaptureSaved": "Saved to Gallery",
+  "@readerCaptureSaved": { "description": "Snackbar confirming a capture was saved." },
+  "readerCaptureView": "View",
+  "@readerCaptureView": { "description": "Snackbar action to view a saved capture in the gallery." },
+  "captureHint": "Drag to select an area, or capture the whole page.",
+  "@captureHint": { "description": "Instructional hint in the capture overlay." },
+  "captureWholePage": "Whole page",
+  "@captureWholePage": { "description": "Capture overlay: capture the whole page." },
+
+  "nudgeMangaPrompt": "Reading manga? Try right-to-left",
+  "@nudgeMangaPrompt": { "description": "First-open reading-direction nudge prompt." },
+  "nudgeRightToLeft": "Right-to-left",
+  "@nudgeRightToLeft": { "description": "Nudge action to switch to right-to-left reading." },
+
+  "seamFinished": "Finished",
+  "@seamFinished": { "description": "End-of-book seam: book finished label." },
+  "seamLastInSeries": "Last in this series",
+  "@seamLastInSeries": { "description": "End-of-book seam: no next book in the series." },
+  "seamUpNext": "Up next: {title}",
+  "@seamUpNext": {
+    "description": "End-of-book seam: the next book during auto-advance countdown.",
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "seamReadNow": "Read now",
+  "@seamReadNow": { "description": "End-of-book seam: open the next book immediately." },
+  "seamCancelAutoAdvance": "Cancel auto-advance",
+  "@seamCancelAutoAdvance": { "description": "End-of-book seam: stop the auto-advance countdown." },
+  "seamNext": "Next: {title}",
+  "@seamNext": {
+    "description": "End-of-book seam: open the next book (no countdown).",
+    "placeholders": { "title": { "type": "String" } }
+  },
+
+  "colorCorrectionUnavailable": "Color correction unavailable",
+  "@colorCorrectionUnavailable": { "description": "Shown when the color-correction settings fail to load." },
+  "colorBrightness": "Brightness",
+  "@colorBrightness": { "description": "Color correction slider: brightness." },
+  "colorContrast": "Contrast",
+  "@colorContrast": { "description": "Color correction slider: contrast." },
+  "colorGamma": "Gamma",
+  "@colorGamma": { "description": "Color correction slider: gamma." },
+  "colorTone": "Tone",
+  "@colorTone": { "description": "Color correction: tone-mode section label." },
+  "colorAutoWhitePoint": "Auto (white point)",
+  "@colorAutoWhitePoint": { "description": "Color correction: auto white-point toggle." },
+  "colorScopeChapter": "Chapter",
+  "@colorScopeChapter": { "description": "Color correction scope: this chapter." },
+  "colorScopeSeries": "Series",
+  "@colorScopeSeries": { "description": "Color correction scope: this series." },
+  "colorScopeGlobal": "Global",
+  "@colorScopeGlobal": { "description": "Color correction scope: global." },
+  "colorModeNone": "None",
+  "@colorModeNone": { "description": "Color tone mode: none." },
+  "colorModeGray": "Gray",
+  "@colorModeGray": { "description": "Color tone mode: grayscale." },
+  "colorModeSepia": "Sepia",
+  "@colorModeSepia": { "description": "Color tone mode: sepia." },
+  "colorModeInvert": "Invert",
+  "@colorModeInvert": { "description": "Color tone mode: invert." },
+
+  "qualitySmart": "Smart",
+  "@qualitySmart": { "description": "Image quality: smart auto-ceiling switch." },
+  "qualitySmartSubtitle": "Mylarium picks the sharpest quality your device can handle",
+  "@qualitySmartSubtitle": { "description": "Subtitle for the smart image-quality switch." },
+  "qualitySmoother": "Smoother",
+  "@qualitySmoother": { "description": "Image quality slider low end label." },
+  "qualitySharper": "Sharper",
+  "@qualitySharper": { "description": "Image quality slider high end label." },
+  "qualitySharperHint": "Sharper looks crisper but uses more memory.",
+  "@qualitySharperHint": { "description": "Hint under the image-quality slider." },
+
+  "settingsLibraryAccess": "Library access",
+  "@settingsLibraryAccess": { "description": "Settings section header for library access." },
+  "settingsLibraryLocks": "Library locks",
+  "@settingsLibraryLocks": { "description": "Settings row / lock screen title for library locks." },
+  "settingsLibraryLocksSubtitle": "Hide libraries behind Face ID / passcode",
+  "@settingsLibraryLocksSubtitle": { "description": "Subtitle for the library-locks settings row." },
+  "settingsReading": "Reading",
+  "@settingsReading": { "description": "Settings section header for reading options." },
+  "settingsAutoAdvance": "Auto-advance",
+  "@settingsAutoAdvance": { "description": "Auto-advance setting title." },
+  "settingsAutoAdvanceSubtitle": "Load the next chapter automatically at the end of a book",
+  "@settingsAutoAdvanceSubtitle": { "description": "Subtitle for the auto-advance setting." },
+  "settingsHomeRows": "Home screen rows",
+  "@settingsHomeRows": { "description": "Settings section header for the home rows editor." },
+  "settingsHomeRowsHint": "Drag to reorder. Toggle to show or hide a row.",
+  "@settingsHomeRowsHint": { "description": "Helper text for the home rows editor." },
+  "settingsResetToDefault": "Reset to default",
+  "@settingsResetToDefault": { "description": "Button to reset the home rows to default." },
+  "settingsDiagnostics": "Diagnostics",
+  "@settingsDiagnostics": { "description": "Diagnostics screen title and settings row." },
+  "settingsDiagnosticsSubtitle": "GPU and rendering info",
+  "@settingsDiagnosticsSubtitle": { "description": "Subtitle for the diagnostics settings row." },
+
+  "libraryLockLoadError": "Could not load libraries: {error}",
+  "@libraryLockLoadError": {
+    "description": "Error when the libraries list fails to load.",
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "libraryLockNoLibraries": "No libraries.",
+  "@libraryLockNoLibraries": { "description": "Empty state on the library-lock screen." },
+  "libraryLockSubtitle": "Hide this library until unlocked with biometric/PIN",
+  "@libraryLockSubtitle": { "description": "Subtitle of a library row on the lock screen." },
+  "libraryFallbackName": "Library",
+  "@libraryFallbackName": { "description": "Fallback title when a library has no name." },
+  "libraryLockedMessage": "This library is locked",
+  "@libraryLockedMessage": { "description": "Message on the locked-library gate." },
+  "unlock": "Unlock",
+  "@unlock": { "description": "Unlock action." },
+  "unlockLibraryReason": "Unlock \"{name}\"",
+  "@unlockLibraryReason": {
+    "description": "Reason text shown in the OS biometric/PIN prompt when unlocking a named library.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+
+  "diagGpuMaxTexture": "GPU max texture size",
+  "@diagGpuMaxTexture": { "description": "Diagnostics label: GPU max texture size." },
+  "diagProbeStatus": "Probe status",
+  "@diagProbeStatus": { "description": "Diagnostics label: GPU probe status." },
+  "diagFocusedPageCap": "Focused page cap",
+  "@diagFocusedPageCap": { "description": "Diagnostics label: focused page decode cap." },
+  "diagReaderSampling": "Reader sampling",
+  "@diagReaderSampling": { "description": "Diagnostics label: reader image sampling." },
+  "diagPlatform": "Platform",
+  "@diagPlatform": { "description": "Diagnostics label: operating system." },
+  "diagLogicalScreen": "Logical screen",
+  "@diagLogicalScreen": { "description": "Diagnostics label: logical screen size." },
+  "diagDevicePixelRatio": "Device pixel ratio",
+  "@diagDevicePixelRatio": { "description": "Diagnostics label: device pixel ratio." },
+  "diagScreenPixels": "Screen pixels",
+  "@diagScreenPixels": { "description": "Diagnostics label: physical screen pixels." },
+  "diagLogicalCpus": "Logical CPUs",
+  "@diagLogicalCpus": { "description": "Diagnostics label: logical CPU count." },
+
+  "storageAutoDownload": "Auto-download on open",
+  "@storageAutoDownload": { "description": "Storage setting: auto-download chapters on open." },
+  "storageAutoDownloadSubtitle": "Cache chapters you open (within the size limit)",
+  "@storageAutoDownloadSubtitle": { "description": "Subtitle for the auto-download setting." },
+  "storageAutoDownloadWifi": "Auto-download on Wi-Fi only",
+  "@storageAutoDownloadWifi": { "description": "Storage setting: restrict auto-download to Wi-Fi." },
+  "storageDeleteOnRead": "Delete on read",
+  "@storageDeleteOnRead": { "description": "Storage setting: delete a chapter once finished." },
+  "storageDeleteOnReadSubtitle": "Remove a downloaded chapter once you finish it (manual downloads are kept)",
+  "@storageDeleteOnReadSubtitle": { "description": "Subtitle for the delete-on-read setting." },
+  "storageAutoCacheLimit": "Auto-cache limit",
+  "@storageAutoCacheLimit": { "description": "Storage setting: total auto-cache size limit." },
+  "storagePerBookLimit": "Per-book limit",
+  "@storagePerBookLimit": { "description": "Storage setting: per-book auto-cache ceiling." },
+  "storagePerBookLimitSubtitle": "Skip auto-downloading chapters larger than this. Manual downloads are not limited.",
+  "@storagePerBookLimitSubtitle": { "description": "Subtitle for the per-book limit setting." },
+  "storageNoLimit": "No limit",
+  "@storageNoLimit": { "description": "Per-book limit value: no limit." },
+  "storageAutoCache": "Auto-cache",
+  "@storageAutoCache": { "description": "Storage pool header: auto-cached (evictable)." },
+  "storageNoAutoCache": "No auto-cached chapters.",
+  "@storageNoAutoCache": { "description": "Empty state for the auto-cache pool." },
+  "storageKeepTooltip": "Keep (move to Downloads)",
+  "@storageKeepTooltip": { "description": "Tooltip to promote an auto-cached chapter to a permanent download." },
+  "storageDownloads": "Downloads",
+  "@storageDownloads": { "description": "Storage pool header: manual downloads (permanent)." },
+  "storageDownloadsSubtitle": "Kept until you remove them (no limit)",
+  "@storageDownloadsSubtitle": { "description": "Subtitle for the downloads pool." },
+  "storageNoDownloads": "No downloaded chapters.",
+  "@storageNoDownloads": { "description": "Empty state for the downloads pool." },
+
+  "create": "Create",
+  "@create": { "description": "Generic Create button." },
+  "pin": "Pin",
+  "@pin": { "description": "Pin action." },
+  "unpin": "Unpin",
+  "@unpin": { "description": "Unpin action." },
+  "preview": "Preview",
+  "@preview": { "description": "Open the reader without recording progress." },
+  "markRead": "Mark read",
+  "@markRead": { "description": "Mark a book as read." },
+  "markUnread": "Mark unread",
+  "@markUnread": { "description": "Mark a book as unread." },
+  "markAsNotRead": "Mark as not read",
+  "@markAsNotRead": { "description": "Context-menu action to mark an item not read." },
+  "markSeriesRead": "Mark series read",
+  "@markSeriesRead": { "description": "Mark an entire series as read." },
+  "markSeriesUnread": "Mark series unread",
+  "@markSeriesUnread": { "description": "Mark an entire series as unread." },
+  "download": "Download",
+  "@download": { "description": "Download a book for offline." },
+  "downloading": "Downloading...",
+  "@downloading": { "description": "Shown while a download is in progress." },
+  "retryDownload": "Retry download",
+  "@retryDownload": { "description": "Retry a failed download." },
+  "downloaded": "Downloaded",
+  "@downloaded": { "description": "Status: a manual download is present." },
+  "savedOffline": "Saved offline",
+  "@savedOffline": { "description": "Status: the book is auto-cached offline." },
+  "keep": "Keep",
+  "@keep": { "description": "Promote an auto-cached book to a permanent download." },
+  "downloadSeries": "Download series",
+  "@downloadSeries": { "description": "Download all chapters of a series." },
+  "downloadRemaining": "Download remaining ({downloaded}/{total})",
+  "@downloadRemaining": {
+    "description": "Download the not-yet-cached chapters of a series.",
+    "placeholders": {
+      "downloaded": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "stopDownloading": "Stop downloading ({downloaded}/{total})",
+  "@stopDownloading": {
+    "description": "Cancel an in-flight series download.",
+    "placeholders": {
+      "downloaded": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "removeDownloads": "Remove downloads",
+  "@removeDownloads": { "description": "Remove all downloaded chapters of a series." },
+  "addToCollection": "Add to collection",
+  "@addToCollection": { "description": "Add a series to a collection." },
+  "addToReadList": "Add to read list",
+  "@addToReadList": { "description": "Add a book to a read list." },
+
+  "bookFallbackName": "Book",
+  "@bookFallbackName": { "description": "Fallback title when a book has no title." },
+  "seriesFallbackName": "Series",
+  "@seriesFallbackName": { "description": "Fallback title when a series has no title." },
+  "bookNumberPill": "No. {number}",
+  "@bookNumberPill": {
+    "description": "Detail pill showing a book's issue/chapter number.",
+    "placeholders": { "number": { "type": "String" } }
+  },
+  "pagesPill": "{count} pages",
+  "@pagesPill": {
+    "description": "Detail pill showing a book's page count.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "readPill": "Read",
+  "@readPill": { "description": "Detail pill marking a book as fully read." },
+  "percentReadPill": "{percent}% read",
+  "@percentReadPill": {
+    "description": "Detail pill showing read progress percent.",
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "pageProgress": "p. {page} of {total}",
+  "@pageProgress": {
+    "description": "Page-progress caption under a cover.",
+    "placeholders": {
+      "page": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "seriesCount": "{count, plural, =1{1 series} other{{count} series}}",
+  "@seriesCount": {
+    "description": "Count of series in a collection.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "sortTooltip": "Sort",
+  "@sortTooltip": { "description": "Tooltip for the sort menu button." },
+  "sortTitleAsc": "Title A-Z",
+  "@sortTitleAsc": { "description": "Sort option: title ascending." },
+  "sortTitleDesc": "Title Z-A",
+  "@sortTitleDesc": { "description": "Sort option: title descending." },
+  "sortMostBooks": "Most books",
+  "@sortMostBooks": { "description": "Sort option: most books first." },
+  "allSeries": "All series",
+  "@allSeries": { "description": "Default browse-shell title." },
+
+  "searchHint": "Search series",
+  "@searchHint": { "description": "Search field hint." },
+  "searchPrompt": "Search series by title.",
+  "@searchPrompt": { "description": "Empty search state before a query is entered." },
+  "searchNoResults": "No results.",
+  "@searchNoResults": { "description": "No results found for a search." },
+  "searchFailed": "Search failed: {error}",
+  "@searchFailed": {
+    "description": "Search error message.",
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "searchSortRelevance": "Relevance",
+  "@searchSortRelevance": { "description": "Search sort: relevance." },
+  "searchSortRecentlyAdded": "Recently added",
+  "@searchSortRecentlyAdded": { "description": "Search sort: recently added." },
+  "searchSortRecentlyUpdated": "Recently updated",
+  "@searchSortRecentlyUpdated": { "description": "Search sort: recently updated." },
+  "statusOngoing": "Ongoing",
+  "@statusOngoing": { "description": "Series status: ongoing." },
+  "statusEnded": "Ended",
+  "@statusEnded": { "description": "Series status: ended." },
+  "statusHiatus": "Hiatus",
+  "@statusHiatus": { "description": "Series status: hiatus." },
+  "statusAbandoned": "Abandoned",
+  "@statusAbandoned": { "description": "Series status: abandoned." },
+  "readStatusUnread": "Unread",
+  "@readStatusUnread": { "description": "Read status filter: unread." },
+  "readStatusInProgress": "In progress",
+  "@readStatusInProgress": { "description": "Read status filter: in progress." },
+  "readStatusRead": "Read",
+  "@readStatusRead": { "description": "Read status filter: read." },
+
+  "metaBy": "By",
+  "@metaBy": { "description": "Metadata label: authors." },
+  "metaReleased": "Released",
+  "@metaReleased": { "description": "Metadata label: release date." },
+  "metaLastRead": "Last read",
+  "@metaLastRead": { "description": "Metadata label: last read date." },
+  "metaPublisher": "Publisher",
+  "@metaPublisher": { "description": "Metadata label: publisher." },
+  "metaAgeRating": "Age rating",
+  "@metaAgeRating": { "description": "Metadata label: age rating." },
+  "metaLanguage": "Language",
+  "@metaLanguage": { "description": "Metadata label: language." },
+  "metaLinks": "Links",
+  "@metaLinks": { "description": "Metadata label: external links." },
+
+  "collectionsNew": "New",
+  "@collectionsNew": { "description": "Tooltip for the new collection/read-list menu." },
+  "collectionsNewCollection": "New collection",
+  "@collectionsNewCollection": { "description": "Create a new collection." },
+  "collectionsNewReadList": "New read list",
+  "@collectionsNewReadList": { "description": "Create a new read list." },
+  "collectionsHeader": "Collections",
+  "@collectionsHeader": { "description": "Section header for collections." },
+  "collectionsEmpty": "No collections.",
+  "@collectionsEmpty": { "description": "Empty state for collections." },
+  "collectionsLoadError": "Could not load collections.",
+  "@collectionsLoadError": { "description": "Error loading collections." },
+  "readListsHeader": "Read lists",
+  "@readListsHeader": { "description": "Section header for read lists." },
+  "readListsEmpty": "No read lists.",
+  "@readListsEmpty": { "description": "Empty state for read lists." },
+  "readListsLoadError": "Could not load read lists.",
+  "@readListsLoadError": { "description": "Error loading read lists." },
+  "collectionFallbackName": "Collection",
+  "@collectionFallbackName": { "description": "Fallback title for a collection." },
+  "collectionEmpty": "Empty collection.",
+  "@collectionEmpty": { "description": "Empty state for a collection's contents." },
+  "readListFallbackName": "Read list",
+  "@readListFallbackName": { "description": "Fallback title for a read list." },
+  "readListEmpty": "Empty read list.",
+  "@readListEmpty": { "description": "Empty state for a read list's contents." },
+  "collectionLoadError": "Could not load: {error}",
+  "@collectionLoadError": {
+    "description": "Error loading a collection or read list's contents.",
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "removeFromCollectionTitle": "Remove from collection?",
+  "@removeFromCollectionTitle": { "description": "Confirm removing a series from a collection." },
+  "removeFromReadListTitle": "Remove from read list?",
+  "@removeFromReadListTitle": { "description": "Confirm removing a book from a read list." },
+  "collectionCreateError": "Could not create {name}.",
+  "@collectionCreateError": {
+    "description": "Error creating a collection or read list.",
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "collectionRemoveError": "Could not remove.",
+  "@collectionRemoveError": { "description": "Error removing an item or membership." },
+  "collectionAddError": "Could not add.",
+  "@collectionAddError": { "description": "Error adding a membership." },
+  "noCollectionsYet": "No collections yet.",
+  "@noCollectionsYet": { "description": "Empty state in the add-to-collection sheet." },
+  "noReadListsYet": "No read lists yet.",
+  "@noReadListsYet": { "description": "Empty state in the add-to-read-list sheet." },
+  "nameHint": "Name",
+  "@nameHint": { "description": "Hint for the collection/read-list name field." },
+
+  "delete": "Delete",
+  "@delete": { "description": "Generic Delete button." },
+
+  "statsYearInReview": "Year in review",
+  "@statsYearInReview": { "description": "Tooltip for the year-in-review action on stats." },
+  "statsLoadError": "Could not load your stats.",
+  "@statsLoadError": { "description": "Error when stats fail to load." },
+  "statsPeriodMonth": "Month",
+  "@statsPeriodMonth": { "description": "Stats period: month." },
+  "statsPeriodYear": "Year",
+  "@statsPeriodYear": { "description": "Stats period: year." },
+  "statsPeriodAllTime": "All time",
+  "@statsPeriodAllTime": { "description": "Stats period: all time." },
+  "statsPagesOverTime": "Pages over time",
+  "@statsPagesOverTime": { "description": "Stats section: pages over time chart." },
+  "statsDailyActivity": "Daily activity",
+  "@statsDailyActivity": { "description": "Stats section: daily activity heatmap." },
+  "statsDayStreak": "{count} day streak",
+  "@statsDayStreak": {
+    "description": "Trailing label showing the current reading streak.",
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "statsBySeries": "By series",
+  "@statsBySeries": { "description": "Stats section: breakdown by series." },
+  "statsByGenre": "By genre",
+  "@statsByGenre": { "description": "Stats section: breakdown by genre." },
+  "statsByGenreFootnote": "Genres overlap, so these can total more than 100%.",
+  "@statsByGenreFootnote": { "description": "Footnote for the by-genre breakdown." },
+  "statsByPublisher": "By publisher",
+  "@statsByPublisher": { "description": "Stats section: breakdown by publisher." },
+  "statsByFormat": "By format",
+  "@statsByFormat": { "description": "Stats section: breakdown by format." },
+  "statsMilestones": "Milestones",
+  "@statsMilestones": { "description": "Stats section: milestone badges." },
+  "statsNoData": "No data yet.",
+  "@statsNoData": { "description": "Empty state for a stats breakdown list." },
+  "statsTotalReadingTime": "Total reading time {duration} across {sessions} sessions.",
+  "@statsTotalReadingTime": {
+    "description": "Summary line of total reading time and session count. Duration is a pre-formatted string.",
+    "placeholders": {
+      "duration": { "type": "String" },
+      "sessions": { "type": "int" }
+    }
+  },
+  "statsUnknownSeries": "Unknown series",
+  "@statsUnknownSeries": { "description": "Breakdown bucket: series with no known title." },
+  "statsUnknown": "Unknown",
+  "@statsUnknown": { "description": "Breakdown bucket: unknown publisher." },
+  "statsOther": "Other",
+  "@statsOther": { "description": "Breakdown bucket: other/long-tail grouping." },
+  "statsEmptyTitle": "No reading yet in this period.",
+  "@statsEmptyTitle": { "description": "Empty-stats title." },
+  "statsEmptyBody": "Open a book and your stats will appear here.",
+  "@statsEmptyBody": { "description": "Empty-stats body." },
+
+  "kpiPages": "Pages",
+  "@kpiPages": { "description": "KPI label: pages read." },
+  "kpiTime": "Time",
+  "@kpiTime": { "description": "KPI label: time spent reading." },
+  "kpiBooks": "Books",
+  "@kpiBooks": { "description": "KPI label: books completed." },
+  "kpiStreak": "Streak",
+  "@kpiStreak": { "description": "KPI label: streak length." },
+
+  "badgeFirstBook": "First book",
+  "@badgeFirstBook": { "description": "Milestone badge: first book." },
+  "badgeTenBooks": "10 books",
+  "@badgeTenBooks": { "description": "Milestone badge: 10 books." },
+  "badgeFiftyBooks": "50 books",
+  "@badgeFiftyBooks": { "description": "Milestone badge: 50 books." },
+  "badgeHundredBooks": "100 books",
+  "@badgeHundredBooks": { "description": "Milestone badge: 100 books." },
+  "badgeWeekStreak": "7 day streak",
+  "@badgeWeekStreak": { "description": "Milestone badge: 7 day streak." },
+  "badgeMonthStreak": "30 day streak",
+  "@badgeMonthStreak": { "description": "Milestone badge: 30 day streak." },
+  "badgeThousandPages": "1,000 pages",
+  "@badgeThousandPages": { "description": "Milestone badge: 1,000 pages." },
+  "badgeTenThousandPages": "10,000 pages",
+  "@badgeTenThousandPages": { "description": "Milestone badge: 10,000 pages." },
+
+  "wrapYearInReview": "{year} in review",
+  "@wrapYearInReview": {
+    "description": "Header of the year-in-review wrap card. Year is a pre-formatted string.",
+    "placeholders": { "year": { "type": "String" } }
+  },
+  "wrapPagesRead": "pages read",
+  "@wrapPagesRead": { "description": "Wrap card stat label: pages read." },
+  "wrapTimeReading": "time reading",
+  "@wrapTimeReading": { "description": "Wrap card stat label: time reading." },
+  "wrapBooksFinished": "books finished",
+  "@wrapBooksFinished": { "description": "Wrap card stat label: books finished." },
+  "wrapTopGenre": "top genre",
+  "@wrapTopGenre": { "description": "Wrap card stat label: top genre." },
+
+  "galleryLoadError": "Could not load the gallery.",
+  "@galleryLoadError": { "description": "Error when the gallery fails to load." },
+  "galleryEmpty": "No captures yet.",
+  "@galleryEmpty": { "description": "Empty state for the gallery." },
+  "galleryUntitled": "Untitled",
+  "@galleryUntitled": { "description": "Fallback caption for a capture with no chapter title." },
+  "galleryDeleteTitle": "Delete capture?",
+  "@galleryDeleteTitle": { "description": "Confirm deleting a capture." },
+  "captureUnavailable": "This capture is no longer available.",
+  "@captureUnavailable": { "description": "Shown when a capture cannot be loaded." },
+  "captureImageMissing": "This snippet image is missing.",
+  "@captureImageMissing": { "description": "Shown when a capture's image file is missing." },
+  "captureDeleteTooltip": "Delete capture",
+  "@captureDeleteTooltip": { "description": "Tooltip for the delete-capture action." },
+  "captureExport": "Export",
+  "@captureExport": { "description": "Tooltip for the export-capture action." },
+  "captureGoToPage": "Go to page",
+  "@captureGoToPage": { "description": "Jump to the page a capture was taken from." },
+  "captureSavedToPhotos": "Saved to Photos",
+  "@captureSavedToPhotos": { "description": "Snackbar: capture exported to Photos." },
+  "captureSavedToFile": "Saved",
+  "@captureSavedToFile": { "description": "Snackbar: capture saved to a file." },
+  "capturePermissionDenied": "Photos access denied. Enable it in Settings.",
+  "@capturePermissionDenied": { "description": "Snackbar: Photos permission denied on export." },
+  "captureExportFailed": "Could not export capture.",
+  "@captureExportFailed": { "description": "Snackbar: capture export failed." },
+
+  "retry": "Retry",
+  "@retry": { "description": "Generic retry button." },
+
+  "comicVineConnected": "Comic Vine connected",
+  "@comicVineConnected": { "description": "Snackbar after connecting Comic Vine." },
+  "comicVineDisconnected": "Comic Vine disconnected",
+  "@comicVineDisconnected": { "description": "Snackbar after disconnecting Comic Vine." },
+  "comicVineDescription": "Optional. Comic Vine adds rich details (descriptions, characters, creators and more) to series and issues. It is off until you add a key, and only then are titles sent to Comic Vine to look them up. Your key is stored in the device keychain.",
+  "@comicVineDescription": { "description": "Explanatory text on the Comic Vine settings screen." },
+  "comicVineGetKey": "Get a free key at comicvine.gamespot.com/api",
+  "@comicVineGetKey": { "description": "Where to get a Comic Vine API key." },
+  "comicVineKeyHint": "Paste your Comic Vine API key",
+  "@comicVineKeyHint": { "description": "Hint for the Comic Vine API key field." },
+  "comicVineDisconnect": "Disconnect",
+  "@comicVineDisconnect": { "description": "Disconnect (clear) the Comic Vine key." },
+  "comicVineShowOnDetail": "Show on detail pages",
+  "@comicVineShowOnDetail": { "description": "Toggle to show the Comic Vine section on detail pages." },
+  "comicVineShowOnDetailSubtitle": "Turn off to hide the Comic Vine section everywhere.",
+  "@comicVineShowOnDetailSubtitle": { "description": "Subtitle for the show-on-detail toggle." },
+  "comicVineInvalidKey": "Comic Vine rejected the API key. Check it in settings.",
+  "@comicVineInvalidKey": { "description": "Error when the Comic Vine API key is rejected." },
+  "comicVineRateLimited": "Comic Vine rate limit reached. Try again later.",
+  "@comicVineRateLimited": { "description": "Error when the Comic Vine rate limit is hit." },
+  "comicVineLoadError": "Could not load Comic Vine details.",
+  "@comicVineLoadError": { "description": "Generic Comic Vine load error." },
+  "comicVineDetailsTitle": "Comic Vine details",
+  "@comicVineDetailsTitle": { "description": "Title of the Comic Vine connect placeholder." },
+  "comicVineConnectBody": "Connect Comic Vine to pull in descriptions, characters, creators and more for this title.",
+  "@comicVineConnectBody": { "description": "Body of the Comic Vine connect placeholder." },
+  "comicVineAddApiKey": "Add API key",
+  "@comicVineAddApiKey": { "description": "Action to add a Comic Vine API key." },
+  "comicVineNeverShow": "Never show again",
+  "@comicVineNeverShow": { "description": "Dismiss the Comic Vine section permanently." },
+  "comicVineCharacters": "Characters",
+  "@comicVineCharacters": { "description": "Comic Vine section: characters." },
+  "comicVineCreators": "Creators",
+  "@comicVineCreators": { "description": "Comic Vine section: creators." },
+  "comicVineStoryArcs": "Story arcs",
+  "@comicVineStoryArcs": { "description": "Comic Vine section: story arcs." },
+  "comicVineMore": "+{count} more",
+  "@comicVineMore": {
+    "description": "Overflow chip for additional Comic Vine characters.",
+    "placeholders": { "count": { "type": "int" } }
+  }
+}

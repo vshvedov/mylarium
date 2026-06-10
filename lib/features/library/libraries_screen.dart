@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/app_theme.dart' show kSeed;
 import '../../app/theme/design_tokens.dart';
@@ -25,10 +26,11 @@ class LibrariesScreen extends ConsumerWidget {
     final lock = ref.watch(appLockProvider).valueOrNull ?? AppLockState.empty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Libraries')),
+      appBar: AppBar(title: Text(context.l10n.librariesTitle)),
       body: libraries.when(
         loading: () => const AppLoadingIndicator(),
-        error: (e, _) => Center(child: Text('Could not load libraries: $e')),
+        error: (e, _) =>
+            Center(child: Text(context.l10n.libraryLockLoadError('$e'))),
         data: (libs) => ListView(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           children: [
@@ -74,17 +76,19 @@ class LibraryGridScreen extends ConsumerWidget {
 
     if (lock.isLocked(libraryId)) {
       return _LockedLibraryView(
-        name: name ?? 'Library',
-        onUnlock: () => ref
-            .read(appLockProvider.notifier)
-            .unlock(libraryId, libraryName: name),
+        name: name ?? context.l10n.libraryFallbackName,
+        onUnlock: () => ref.read(appLockProvider.notifier).unlock(
+              libraryId,
+              reason: context.l10n
+                  .unlockLibraryReason(name ?? context.l10n.libraryFallbackName),
+            ),
       );
     }
 
     return SeriesGridScreen(
       sourceId: sourceId,
       libraryId: libraryId,
-      title: name ?? 'Library',
+      title: name ?? context.l10n.libraryFallbackName,
     );
   }
 }
@@ -178,14 +182,14 @@ class _LockedLibraryView extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'This library is locked',
+                    context.l10n.libraryLockedMessage,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
                   ),
                   const SizedBox(height: 28),
                   HeroAction(
-                    label: 'Unlock',
+                    label: context.l10n.unlock,
                     icon: AppIcons.lockOpen,
                     compact: true,
                     onPressed: onUnlock,

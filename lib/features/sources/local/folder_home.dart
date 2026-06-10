@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../../core/db/database.dart';
@@ -43,7 +44,9 @@ class FolderHomeBody extends ConsumerWidget {
               Expanded(
                 child: FilledButton.icon(
                   icon: const Icon(AppIcons.refresh),
-                  label: Text(scanning ? 'Scanning...' : 'Rescan folder'),
+                  label: Text(scanning
+                      ? context.l10n.folderScanning
+                      : context.l10n.folderRescan),
                   onPressed: scanning || online == false
                       ? null
                       : () => ref
@@ -56,7 +59,7 @@ class FolderHomeBody extends ConsumerWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(AppIcons.sourceLocal),
-                  label: const Text('Browse all'),
+                  label: Text(context.l10n.homeBrowseAll),
                   onPressed: () => context.push('/local-browse/$sourceId'),
                 ),
               ),
@@ -73,7 +76,7 @@ class FolderHomeBody extends ConsumerWidget {
           ),
         if (keepReading.isNotEmpty)
           LocalComicsRail(
-            title: 'Keep reading',
+            title: context.l10n.railKeepReading,
             sourceId: sourceId,
             comics: keepReading,
             openReader: true,
@@ -81,7 +84,7 @@ class FolderHomeBody extends ConsumerWidget {
           ),
         if (recent.isNotEmpty)
           LocalComicsRail(
-            title: 'Recently added',
+            title: context.l10n.railRecentlyAddedShort,
             sourceId: sourceId,
             comics: recent,
           ),
@@ -112,8 +115,8 @@ class _ScanProgressStrip extends ConsumerWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              '${p.scanned} scanned, ${p.added} added'
-              '${p.currentName == null ? '' : ' - ${p.currentName}'}',
+              context.l10n.folderScanProgress(p.scanned, p.added) +
+                  (p.currentName == null ? '' : ' - ${p.currentName}'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall,
@@ -123,7 +126,7 @@ class _ScanProgressStrip extends ConsumerWidget {
             onPressed: () => ref
                 .read(folderScanControllerProvider(sourceId).notifier)
                 .cancel(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
         ],
       ),
@@ -152,14 +155,13 @@ class _OfflineBanner extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'This folder is not reachable. The card may be ejected or '
-                  'access was revoked. Reading from cached pages still works.',
+                  context.l10n.folderOfflineBody,
                   style: theme.textTheme.bodySmall,
                 ),
               ),
               TextButton(
                 onPressed: () => _relink(context, ref),
-                child: const Text('Reconnect'),
+                child: Text(context.l10n.folderReconnect),
               ),
             ],
           ),
@@ -197,18 +199,18 @@ class _EmptyFolder extends StatelessWidget {
         children: [
           Icon(AppIcons.sourceLocal, size: 56, color: theme.colorScheme.outline),
           const SizedBox(height: 16),
-          Text('Nothing scanned yet', style: theme.textTheme.titleLarge),
+          Text(context.l10n.folderEmptyTitle,
+              style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Text(
-            'Scan this folder to find CBZ and CBR comics. Files stay where '
-            'they are; nothing is copied in.',
+            context.l10n.folderEmptyBody,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
             icon: const Icon(AppIcons.refresh),
-            label: const Text('Scan folder'),
+            label: Text(context.l10n.folderScanAction),
             onPressed: online ? onScan : null,
           ),
         ],

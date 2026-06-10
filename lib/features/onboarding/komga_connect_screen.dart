@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_button.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
@@ -53,23 +54,21 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
         );
   }
 
-  String _errorFor(ConnectionResult r) => switch (r) {
-        ConnInvalidUrl() =>
-          'Enter a valid server URL (for example https://komga.example.com).',
-        ConnUnreachable() =>
-          'Could not reach the server. Check the URL and your network.',
-        ConnUnauthorized() => 'Incorrect credentials.',
-        ConnMissingRoles(:final missing) =>
-          'Your Komga account is missing the ${missing.join(' and ')} '
-              'role. Ask your server admin to enable it.',
-        ConnVersionTooOldForApiKey(:final version) =>
-          'This server${version == null ? '' : ' (v$version)'} is too old for '
-              'API keys. Use a username and password instead.',
-        ConnTlsError() =>
-          'The server security certificate could not be verified.',
-        ConnUnknown(:final message) => message,
-        ConnSuccess() => '',
-      };
+  String _errorFor(BuildContext context, ConnectionResult r) {
+    final l10n = context.l10n;
+    return switch (r) {
+      ConnInvalidUrl() => l10n.komgaConnectInvalidUrl,
+      ConnUnreachable() => l10n.connectUnreachable,
+      ConnUnauthorized() => l10n.komgaConnectUnauthorized,
+      ConnMissingRoles(:final missing) =>
+        l10n.komgaConnectMissingRoles(missing.join(' and ')),
+      ConnVersionTooOldForApiKey(:final version) => l10n
+          .komgaConnectVersionTooOld(version == null ? '' : ' (v$version)'),
+      ConnTlsError() => l10n.connectTlsError,
+      ConnUnknown(:final message) => message,
+      ConnSuccess() => '',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,8 +85,9 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
 
     final busy = state.isLoading;
     final result = state.valueOrNull;
-    final error =
-        (result == null || result is ConnSuccess) ? null : _errorFor(result);
+    final error = (result == null || result is ConnSuccess)
+        ? null
+        : _errorFor(context, result);
 
     return Scaffold(
       appBar: AppBar(
@@ -110,13 +110,13 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                 const Center(child: BrandMark(size: 56)),
                 const SizedBox(height: 18),
                 Text(
-                  'Connect to Komga',
+                  context.l10n.komgaConnectTitle,
                   textAlign: TextAlign.center,
                   style: text.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Point Mylarium at your server and sign in.',
+                  context.l10n.komgaConnectSubtitle,
                   textAlign: TextAlign.center,
                   style: text.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -124,7 +124,7 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                 ),
                 const SizedBox(height: 28),
                 AppTextField(
-                  label: 'Server URL',
+                  label: context.l10n.connectServerUrlLabel,
                   controller: _url,
                   enabled: !busy,
                   keyboardType: TextInputType.url,
@@ -133,9 +133,9 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                 ),
                 const SizedBox(height: 18),
                 AppSegmentedToggle<AuthMethod>(
-                  segments: const [
-                    AppSegment(AuthMethod.apiKey, 'API key'),
-                    AppSegment(AuthMethod.basic, 'Password'),
+                  segments: [
+                    AppSegment(AuthMethod.apiKey, context.l10n.connectApiKeyLabel),
+                    AppSegment(AuthMethod.basic, context.l10n.connectPasswordLabel),
                   ],
                   selected: _method,
                   enabled: !busy,
@@ -144,7 +144,7 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                 const SizedBox(height: 18),
                 if (_method == AuthMethod.apiKey)
                   AppTextField(
-                    label: 'API key',
+                    label: context.l10n.connectApiKeyLabel,
                     controller: _apiKey,
                     enabled: !busy,
                     obscureText: true,
@@ -152,13 +152,13 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                   )
                 else ...[
                   AppTextField(
-                    label: 'Username',
+                    label: context.l10n.connectUsernameLabel,
                     controller: _username,
                     enabled: !busy,
                   ),
                   const SizedBox(height: 14),
                   AppTextField(
-                    label: 'Password',
+                    label: context.l10n.connectPasswordLabel,
                     controller: _password,
                     enabled: !busy,
                     obscureText: true,
@@ -173,7 +173,9 @@ class _KomgaConnectScreenState extends ConsumerState<KomgaConnectScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: AppButton(
-                    label: busy ? 'Connecting...' : 'Connect',
+                    label: busy
+                        ? context.l10n.connectBusy
+                        : context.l10n.connectAction,
                     onPressed: busy ? null : _connect,
                   ),
                 ),

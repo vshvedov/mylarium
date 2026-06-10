@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/design_tokens.dart';
 import '../../../app/widgets/app_loading.dart';
@@ -21,7 +22,7 @@ Future<String?> promptName(BuildContext context, {required String title}) {
       content: AppTextField(
         controller: controller,
         autofocus: true,
-        hint: 'Name',
+        hint: context.l10n.nameHint,
         textInputAction: TextInputAction.done,
         onSubmitted: (_) =>
             Navigator.pop(context, controller.text.trim()),
@@ -29,11 +30,11 @@ Future<String?> promptName(BuildContext context, {required String title}) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, controller.text.trim()),
-          child: const Text('Create'),
+          child: Text(context.l10n.create),
         ),
       ],
     ),
@@ -79,7 +80,9 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _isCollection ? 'Add to collection' : 'Add to read list';
+    final title = _isCollection
+        ? context.l10n.addToCollection
+        : context.l10n.addToReadList;
     final entries = _isCollection
         ? ref.watch(collectionsProvider).maybeWhen(
               data: (cs) => [
@@ -108,7 +111,9 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
             ),
             ListTile(
               leading: const Icon(AppIcons.add),
-              title: Text(_isCollection ? 'New collection' : 'New read list'),
+              title: Text(_isCollection
+                  ? context.l10n.collectionsNewCollection
+                  : context.l10n.collectionsNewReadList),
               onTap: _create,
             ),
             const Divider(height: 1),
@@ -122,8 +127,8 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
                 padding: const EdgeInsets.all(24),
                 child: Center(
                   child: Text(_isCollection
-                      ? 'No collections yet.'
-                      : 'No read lists yet.'),
+                      ? context.l10n.noCollectionsYet
+                      : context.l10n.noReadListsYet),
                 ),
               )
             else
@@ -149,7 +154,9 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
   Future<void> _create() async {
     final name = await promptName(
       context,
-      title: _isCollection ? 'New collection' : 'New read list',
+      title: _isCollection
+          ? context.l10n.collectionsNewCollection
+          : context.l10n.collectionsNewReadList,
     );
     if (name == null || !mounted) return;
     try {
@@ -163,7 +170,7 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
         ref.invalidate(readListsProvider);
       }
     } on ContentException {
-      _snack('Could not create $name.');
+      if (mounted) _snack(context.l10n.collectionCreateError(name));
     }
   }
 
@@ -194,8 +201,12 @@ class _SheetBodyState extends ConsumerState<_SheetBody> {
         ref.invalidate(readListsProvider);
       }
     } on ContentException {
-      if (mounted) setState(() => _override.remove(id));
-      _snack(add ? 'Could not add.' : 'Could not remove.');
+      if (mounted) {
+        setState(() => _override.remove(id));
+        _snack(add
+            ? context.l10n.collectionAddError
+            : context.l10n.collectionRemoveError);
+      }
     }
   }
 

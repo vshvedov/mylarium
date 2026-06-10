@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_loading.dart';
@@ -74,12 +75,12 @@ class SeriesDetailScreen extends ConsumerWidget {
                       sourceId: sourceId,
                       ownerType: 'series',
                       ownerId: seriesId,
-                      title: series?.title ?? 'Series',
+                      title: series?.title ?? context.l10n.seriesFallbackName,
                       pills: [
                         if (status != null && status.isNotEmpty)
-                          DetailPill(_titleCase(status)),
+                          DetailPill(_seriesStatusLabel(context, status)),
                         if (count > 0)
-                          DetailPill(count == 1 ? '1 book' : '$count books'),
+                          DetailPill(context.l10n.bookCount(count)),
                       ],
                       actions: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,7 +93,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           HeroAction(
-                            label: 'Add to collection',
+                            label: context.l10n.addToCollection,
                             icon: AppIcons.collections,
                             style: HeroActionStyle.ghost,
                             onPressed: () => AddToCollectionSheet.show(
@@ -121,7 +122,7 @@ class SeriesDetailScreen extends ConsumerWidget {
                       details: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          DetailMetadata.series(dto),
+                          DetailMetadata.series(context, dto),
                           const SizedBox(height: 18),
                           RatingRow(
                             value: rating,
@@ -217,6 +218,18 @@ class SeriesDetailScreen extends ConsumerWidget {
   }
 }
 
+/// Localized label for a series status code (e.g. "ONGOING"). Known Komga
+/// statuses map to localized strings; anything else falls back to a plain
+/// title-cased form so an unexpected value still renders.
+String _seriesStatusLabel(BuildContext context, String code) =>
+    switch (code.toUpperCase()) {
+      'ONGOING' => context.l10n.statusOngoing,
+      'ENDED' => context.l10n.statusEnded,
+      'HIATUS' => context.l10n.statusHiatus,
+      'ABANDONED' => context.l10n.statusAbandoned,
+      _ => _titleCase(code),
+    };
+
 String _titleCase(String s) =>
     s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
 
@@ -236,7 +249,9 @@ class _MarkSeriesControl extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => HeroAction(
-        label: completed ? 'Mark series unread' : 'Mark series read',
+        label: completed
+            ? context.l10n.markSeriesUnread
+            : context.l10n.markSeriesRead,
         icon: completed ? AppIcons.markUnread : AppIcons.markRead,
         style: HeroActionStyle.ghost,
         onPressed: empty
@@ -272,7 +287,7 @@ class _SeriesDownloadControl extends ConsumerWidget {
 
     if (total > 0 && downloaded >= total) {
       return HeroAction(
-        label: 'Remove downloads',
+        label: context.l10n.removeDownloads,
         icon: AppIcons.delete,
         style: HeroActionStyle.ghost,
         onPressed: () => ref
@@ -287,7 +302,7 @@ class _SeriesDownloadControl extends ConsumerWidget {
     // enqueueSeries is idempotent and skips already-cached chapters.)
     if (status.active > 0) {
       return HeroAction(
-        label: 'Stop downloading ($downloaded/$total)',
+        label: context.l10n.stopDownloading(downloaded, total),
         icon: AppIcons.close,
         style: HeroActionStyle.ghost,
         onPressed: () =>
@@ -296,8 +311,8 @@ class _SeriesDownloadControl extends ConsumerWidget {
     }
     return HeroAction(
       label: downloaded > 0 && downloaded < total
-          ? 'Download remaining ($downloaded/$total)'
-          : 'Download series',
+          ? context.l10n.downloadRemaining(downloaded, total)
+          : context.l10n.downloadSeries,
       icon: AppIcons.download,
       style: HeroActionStyle.ghost,
       onPressed: () =>

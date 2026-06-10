@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/l10n.dart';
 import '../image_quality.dart';
 
 /// Global reader image-quality controls: a Smart switch (Mylarium picks the
@@ -27,13 +28,12 @@ class ImageQualitySheet extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Image quality', style: text.titleMedium),
+              Text(context.l10n.readerImageQuality, style: text.titleMedium),
               const SizedBox(height: 8),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Smart'),
-                subtitle: const Text(
-                    'Mylarium picks the sharpest quality your device can handle'),
+                title: Text(context.l10n.qualitySmart),
+                subtitle: Text(context.l10n.qualitySmartSubtitle),
                 value: quality.smart,
                 onChanged: controller.setSmart,
               ),
@@ -47,7 +47,8 @@ class ImageQualitySheet extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        Text('Smoother', style: text.labelMedium),
+                        Text(context.l10n.qualitySmoother,
+                            style: text.labelMedium),
                         Expanded(
                           child: Slider(
                             min: 0,
@@ -59,11 +60,12 @@ class ImageQualitySheet extends ConsumerWidget {
                                 : (v) => controller.setManualLevel(v.round()),
                           ),
                         ),
-                        Text('Sharper', style: text.labelMedium),
+                        Text(context.l10n.qualitySharper,
+                            style: text.labelMedium),
                       ],
                     ),
                     Text(
-                      'Sharper looks crisper but uses more memory.',
+                      context.l10n.qualitySharperHint,
                       style: text.bodySmall
                           ?.copyWith(color: Theme.of(context).hintColor),
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
 import '../../../app/theme/app_icons.dart';
 import '../../../data/comicvine/comic_vine_models.dart';
 import '../../library/widgets/detail_header.dart' show DetailPill;
@@ -111,26 +112,28 @@ class _DetailsCard extends StatelessWidget {
           ],
           if (shownChars.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _Label('Characters'),
+            _Label(context.l10n.comicVineCharacters),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 for (final c in shownChars) DetailPill(c),
-                if (overflow > 0) DetailPill('+$overflow more', accent: true),
+                if (overflow > 0)
+                  DetailPill(context.l10n.comicVineMore(overflow),
+                      accent: true),
               ],
             ),
           ],
           if (roles.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _Label('Creators'),
+            _Label(context.l10n.comicVineCreators),
             const SizedBox(height: 6),
             for (final group in roles) _CreditLine(group: group),
           ],
           if (storyArcs.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _Label('Story arcs'),
+            _Label(context.l10n.comicVineStoryArcs),
             const SizedBox(height: 6),
             Text(
               storyArcs.join(', '),
@@ -250,7 +253,7 @@ class ComicVineErrorView extends StatelessWidget {
           TextButton.icon(
             onPressed: onRetry,
             icon: const Icon(AppIcons.refresh, size: 18),
-            label: const Text('Retry'),
+            label: Text(context.l10n.retry),
           ),
         ],
       ),

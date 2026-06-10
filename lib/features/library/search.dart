@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../app/widgets/app_text_field.dart';
@@ -24,8 +25,20 @@ enum SeriesSort {
   recentlyUpdated('Recently updated', 'lastModifiedDate,desc');
 
   const SeriesSort(this.label, this.value);
+
+  /// English label, retained for non-UI/debug use; the UI uses
+  /// [localizedLabel].
   final String label;
   final String? value;
+
+  /// Localized menu label.
+  String localizedLabel(BuildContext context) => switch (this) {
+        SeriesSort.relevance => context.l10n.searchSortRelevance,
+        SeriesSort.titleAsc => context.l10n.sortTitleAsc,
+        SeriesSort.titleDesc => context.l10n.sortTitleDesc,
+        SeriesSort.recentlyAdded => context.l10n.searchSortRecentlyAdded,
+        SeriesSort.recentlyUpdated => context.l10n.searchSortRecentlyUpdated,
+      };
 }
 
 /// Online search over series with text + library + age filters and a sort.
@@ -50,18 +63,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final Set<int> _ageRatings = {};
   SeriesSort _sort = SeriesSort.relevance;
 
-  // Komga series and read statuses.
-  static const _statusOptions = {
-    'ONGOING': 'Ongoing',
-    'ENDED': 'Ended',
-    'HIATUS': 'Hiatus',
-    'ABANDONED': 'Abandoned',
-  };
-  static const _readStatusOptions = {
-    'UNREAD': 'Unread',
-    'IN_PROGRESS': 'In progress',
-    'READ': 'Read',
-  };
+  // Komga series and read status codes (the API values; labels are localized
+  // at render via [_statusLabel] / [_readStatusLabel]).
+  static const _statusCodes = ['ONGOING', 'ENDED', 'HIATUS', 'ABANDONED'];
+  static const _readStatusCodes = ['UNREAD', 'IN_PROGRESS', 'READ'];
+
+  String _statusLabel(BuildContext context, String code) => switch (code) {
+        'ONGOING' => context.l10n.statusOngoing,
+        'ENDED' => context.l10n.statusEnded,
+        'HIATUS' => context.l10n.statusHiatus,
+        'ABANDONED' => context.l10n.statusAbandoned,
+        _ => code,
+      };
+
+  String _readStatusLabel(BuildContext context, String code) => switch (code) {
+        'UNREAD' => context.l10n.readStatusUnread,
+        'IN_PROGRESS' => context.l10n.readStatusInProgress,
+        'READ' => context.l10n.readStatusRead,
+        _ => code,
+      };
 
   AsyncValue<List<SeriesDto>> _results = const AsyncData([]);
 
@@ -170,7 +190,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           controller: _controller,
           autofocus: true,
           dense: true,
-          hint: 'Search series',
+          hint: context.l10n.searchHint,
           prefixIcon: AppIcons.search,
           textInputAction: TextInputAction.search,
           onChanged: _onQueryChanged,
@@ -186,7 +206,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             },
             itemBuilder: (_) => [
               for (final s in SeriesSort.values)
-                PopupMenuItem(value: s, child: Text(s.label)),
+                PopupMenuItem(value: s, child: Text(s.localizedLabel(context))),
             ],
           ),
         ],
@@ -205,17 +225,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   }),
           ]),
           _filterRow([
-            for (final e in _statusOptions.entries)
-              _chip(e.value, _status.contains(e.key), (sel) {
+            for (final code in _statusCodes)
+              _chip(_statusLabel(context, code), _status.contains(code), (sel) {
                 setState(() =>
-                    sel ? _status.add(e.key) : _status.remove(e.key));
+                    sel ? _status.add(code) : _status.remove(code));
                 _run();
               }),
-            for (final e in _readStatusOptions.entries)
-              _chip(e.value, _readStatus.contains(e.key), (sel) {
+            for (final code in _readStatusCodes)
+              _chip(_readStatusLabel(context, code), _readStatus.contains(code),
+                  (sel) {
                 setState(() => sel
-                    ? _readStatus.add(e.key)
-                    : _readStatus.remove(e.key));
+                    ? _readStatus.add(code)
+                    : _readStatus.remove(code));
                 _run();
               }),
           ]),
@@ -236,13 +257,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: _results.when(
               loading: () =>
                   const AppLoadingIndicator(),
-              error: (e, _) => Center(child: Text('Search failed: $e')),
+              error: (e, _) =>
+                  Center(child: Text(context.l10n.searchFailed('$e'))),
               data: (series) => series.isEmpty
                   ? Center(
                       child: Text(
                         _query.trim().isEmpty && !_hasFilters
-                            ? 'Search series by title.'
-                            : 'No results.',
+                            ? context.l10n.searchPrompt
+                            : context.l10n.searchNoResults,
                       ),
                     )
                   : GridView.builder(

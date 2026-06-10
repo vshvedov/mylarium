@@ -1,6 +1,8 @@
+import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../app/l10n.dart';
 import '../sync/sync_providers.dart';
 import 'stats_models.dart';
 
@@ -10,11 +12,19 @@ part 'stats_controller.g.dart';
 enum StatsPeriod { month, year, allTime }
 
 extension StatsPeriodLabel on StatsPeriod {
+  /// English label, retained for non-UI use; the UI uses [localizedLabel].
   String get label => switch (this) {
     StatsPeriod.month => 'Month',
     StatsPeriod.year => 'Year',
     StatsPeriod.allTime => 'All time',
   };
+
+  /// Localized period label for the stats period switcher.
+  String localizedLabel(BuildContext context) => switch (this) {
+        StatsPeriod.month => context.l10n.statsPeriodMonth,
+        StatsPeriod.year => context.l10n.statsPeriodYear,
+        StatsPeriod.allTime => context.l10n.statsPeriodAllTime,
+      };
 }
 
 /// Computes the [StatsSummary] for [period], picking the local-time range, the

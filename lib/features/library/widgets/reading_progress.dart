@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/l10n.dart';
+
 /// A thin determinate progress bar: theme-primary fill on a surface track,
 /// rounded caps. Pure rendering; pass a 0..1 [value]. Spans the full width its
 /// parent gives it (under a cover tile, or as the strip overlay on a cover).
@@ -64,7 +66,7 @@ class ReadingProgressLabel extends StatelessWidget {
         ReadingProgressBar(value: page / total),
         const SizedBox(height: 4),
         Text(
-          'p. $page of $total',
+          context.l10n.pageProgress(page, total),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/l10n.dart';
 import '../../app/theme/app_icons.dart';
 import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/app_loading.dart';
@@ -20,10 +21,10 @@ class GalleryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(capturesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Gallery')),
+      appBar: AppBar(title: Text(context.l10n.galleryTitle)),
       body: async.when(
         loading: () => const AppLoadingIndicator(),
-        error: (_, _) => const Center(child: Text('Could not load the gallery.')),
+        error: (_, _) => Center(child: Text(context.l10n.galleryLoadError)),
         data: (captures) => captures.isEmpty
             ? const _EmptyGallery()
             : GridView.builder(
@@ -54,7 +55,7 @@ class _CaptureTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
-    final chapter = capture.bookTitle ?? 'Untitled';
+    final chapter = capture.bookTitle ?? context.l10n.galleryUntitled;
     return Semantics(
       label: chapter,
       button: true,
@@ -103,15 +104,15 @@ class _CaptureTile extends ConsumerWidget {
       context: context,
       barrierColor: einkOf(context) ? kEinkBarrierColor : null,
       builder: (_) => AlertDialog(
-        title: const Text('Delete capture?'),
+        title: Text(context.l10n.galleryDeleteTitle),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -133,7 +134,7 @@ class _EmptyGallery extends StatelessWidget {
         children: [
           Icon(AppIcons.gallery, size: 44, color: scheme.onSurfaceVariant),
           const SizedBox(height: 12),
-          const Text('No captures yet.'),
+          Text(context.l10n.galleryEmpty),
         ],
       ),
     );
