@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 
 import 'app_paths.dart';
 import 'backup_exclusion.dart';
+import 'disk_quota.dart';
 
 /// Disk budget for staged tree archives. Generous enough that a reading
 /// session's current and recent books stay staged (no re-copy when flipping
@@ -69,29 +70,21 @@ class ScratchStore {
   }
 
   /// Evicts least-recently-used staged archives until the store fits the cap.
-  /// Never evicts [keepComicId] (the book being read right now).
+  /// Never evicts [keepComicId] (the book being read right now). The `.src`
+  /// stamps are excluded from the budget; [_delete] removes each evicted
+  /// archive together with its stamp.
   Future<void> enforceCap({String? keepComicId}) async {
     final dir = Directory(await AppPaths.resolve(scratchDir));
-    if (!await dir.exists()) return;
-    final keepPath =
-        keepComicId == null ? null : '${_safe(keepComicId)}.archive';
-    final files = <File>[];
-    var total = 0;
-    await for (final entity in dir.list()) {
-      if (entity is! File || entity.path.endsWith('.src')) continue;
-      files.add(entity);
-      total += await entity.length();
-    }
-    if (total <= kScratchCapBytes) return;
-    final stats = <(File, DateTime)>[
-      for (final f in files) (f, (await f.stat()).modified),
-    ]..sort((a, b) => a.$2.compareTo(b.$2));
-    for (final (file, _) in stats) {
-      if (total <= kScratchCapBytes) break;
-      if (keepPath != null && p.basename(file.path) == keepPath) continue;
-      total -= await file.length();
-      await _delete(file);
-    }
+    await DiskQuota.enforce(
+      dir: dir,
+      capBytes: kScratchCapBytes,
+      include: (file) => !file.path.endsWith('.src'),
+      keepPaths: {
+        if (keepComicId != null)
+          p.join(dir.path, '${_safe(keepComicId)}.archive'),
+      },
+      onEvict: _delete,
+    );
   }
 
   Future<int?> _readStamp(File stampFile) async {

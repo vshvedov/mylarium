@@ -7,6 +7,7 @@ import '../../app/theme/design_tokens.dart';
 import '../../app/widgets/adaptive_layout.dart';
 import '../../app/widgets/app_loading.dart';
 import '../../core/db/database.dart';
+import 'book_detail.dart';
 import 'library_browse_controllers.dart';
 import 'series_detail.dart';
 import 'series_sync.dart';
@@ -17,6 +18,13 @@ import 'widgets/library_tiles.dart';
 /// The selected series in the two-pane browse shell, keyed per source so a stale
 /// selection never leaks across sources. autoDispose: reset on leaving browse.
 final selectedSeriesProvider = StateProvider.autoDispose
+    .family<String?, String>((ref, sourceId) => null);
+
+/// The book opened in-pane from the embedded series detail (one level deeper
+/// than [selectedSeriesProvider], same keying). Null shows the series detail;
+/// the pane's back affordance and a new series selection both reset it.
+/// autoDispose: reset on leaving browse.
+final selectedBookProvider = StateProvider.autoDispose
     .family<String?, String>((ref, sourceId) => null);
 
 /// Virtualized series grid over the whole locally-cached library for a source. A
@@ -333,21 +341,43 @@ class BrowseShell extends ConsumerWidget {
               sourceId: sourceId,
               embedded: true,
               onSelectSeries: showsDetail
-                  ? (id) => ref
-                      .read(selectedSeriesProvider(sourceId).notifier)
-                      .state = id
+                  ? (id) {
+                      // A new series selection always lands on the series
+                      // detail, never on a book left over from the previous
+                      // selection.
+                      ref.read(selectedBookProvider(sourceId).notifier).state =
+                          null;
+                      ref
+                          .read(selectedSeriesProvider(sourceId).notifier)
+                          .state = id;
+                    }
                   : null,
             ),
             detail: Consumer(
               builder: (context, ref, _) {
                 final selected = ref.watch(selectedSeriesProvider(sourceId));
-                return selected == null
-                    ? const _SelectSeriesPlaceholder()
-                    : SeriesDetailScreen(
-                        sourceId: sourceId,
-                        seriesId: selected,
-                        embedded: true,
-                      );
+                if (selected == null) return const _SelectSeriesPlaceholder();
+                // One level of pane-local navigation: a tapped book replaces
+                // the series detail in this pane (reading itself still pushes
+                // the full-screen reader route from inside the book detail).
+                final book = ref.watch(selectedBookProvider(sourceId));
+                if (book != null) {
+                  return BookDetailScreen(
+                    sourceId: sourceId,
+                    bookId: book,
+                    onEmbeddedBack: () => ref
+                        .read(selectedBookProvider(sourceId).notifier)
+                        .state = null,
+                  );
+                }
+                return SeriesDetailScreen(
+                  sourceId: sourceId,
+                  seriesId: selected,
+                  embedded: true,
+                  onSelectBook: (id) => ref
+                      .read(selectedBookProvider(sourceId).notifier)
+                      .state = id,
+                );
               },
             ),
           );

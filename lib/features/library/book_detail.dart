@@ -25,10 +25,16 @@ class BookDetailScreen extends ConsumerWidget {
     super.key,
     required this.sourceId,
     required this.bookId,
+    this.onEmbeddedBack,
   });
 
   final String sourceId;
   final String bookId;
+
+  /// Non-null when embedded in the two-pane browse shell's detail pane: the
+  /// back affordance runs this (returning the pane to the series detail)
+  /// instead of popping a route. Reading still pushes the full-screen reader.
+  final VoidCallback? onEmbeddedBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -166,7 +172,11 @@ class BookDetailScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const Positioned(top: 0, left: 4, child: HeroBackButton()),
+          Positioned(
+            top: 0,
+            left: 4,
+            child: HeroBackButton(onPressed: onEmbeddedBack),
+          ),
         ],
       ),
     );

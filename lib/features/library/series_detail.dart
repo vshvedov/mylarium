@@ -18,18 +18,24 @@ import 'widgets/star_rating.dart';
 
 /// Series detail: a cover-forward hero, status/summary, then the series' books
 /// as a grid. Books are streamed from the cache (refreshed online on open). Runs
-/// [embedded] (no back button) inside the two-pane browse shell.
+/// [embedded] (no back button) inside the two-pane browse shell, which passes
+/// [onSelectBook] so a book tap stays in the pane instead of pushing a route.
 class SeriesDetailScreen extends ConsumerWidget {
   const SeriesDetailScreen({
     super.key,
     required this.sourceId,
     required this.seriesId,
     this.embedded = false,
+    this.onSelectBook,
   });
 
   final String sourceId;
   final String seriesId;
   final bool embedded;
+
+  /// Reports book taps to the host pane (the two-pane shell) instead of
+  /// pushing the book detail route. Null on phone widths: taps push as before.
+  final void Function(String bookId)? onSelectBook;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -169,7 +175,14 @@ class SeriesDetailScreen extends ConsumerWidget {
                             sourceId: sourceId,
                             bookId: b.id,
                           ),
-                          onTap: () => context.push('/book/$sourceId/${b.id}'),
+                          onTap: () {
+                            final onSelect = onSelectBook;
+                            if (onSelect != null) {
+                              onSelect(b.id);
+                            } else {
+                              context.push('/book/$sourceId/${b.id}');
+                            }
+                          },
                         );
                       }, childCount: bookRows.length),
                     ),

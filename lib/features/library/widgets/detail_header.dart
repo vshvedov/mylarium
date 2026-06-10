@@ -25,7 +25,11 @@ Color _heroChipIcon(bool eink, ColorScheme scheme) =>
 /// A floating back affordance for cover-forward detail screens: a light Phosphor
 /// icon on a subtle dark scrim, legible over any cover art and the dark bar.
 class HeroBackButton extends StatelessWidget {
-  const HeroBackButton({super.key});
+  const HeroBackButton({super.key, this.onPressed});
+
+  /// Overrides the default route pop, e.g. the in-pane back of a book detail
+  /// embedded in the two-pane browse shell.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +46,7 @@ class HeroBackButton extends StatelessWidget {
             color: _heroChipIcon(eink, scheme),
             icon: const Icon(AppIcons.back),
             tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            onPressed: () => Navigator.maybePop(context),
+            onPressed: onPressed ?? () => Navigator.maybePop(context),
           ),
         ),
       ),
