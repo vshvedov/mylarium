@@ -6,7 +6,7 @@ part of 'thumbnail_cache.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$coverImageHash() => r'ebbddfd60418d62f44d54158075945cc8c2ea1a2';
+String _$coverImageHash() => r'07104b49cd8d865435dda0ea29bb20cd41579234';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,26 +29,34 @@ class _SystemHash {
   }
 }
 
-/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-/// there is no api or the fetch fails (caller renders a placeholder).
+/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+/// cached image if one exists (always), fetches via the network api when
+/// available, or returns null (caller renders a placeholder). Null api means
+/// cache-only mode (local sources store covers at import time).
 ///
 /// Copied from [coverImage].
 @ProviderFor(coverImage)
 const coverImageProvider = CoverImageFamily();
 
-/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-/// there is no api or the fetch fails (caller renders a placeholder).
+/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+/// cached image if one exists (always), fetches via the network api when
+/// available, or returns null (caller renders a placeholder). Null api means
+/// cache-only mode (local sources store covers at import time).
 ///
 /// Copied from [coverImage].
 class CoverImageFamily extends Family<AsyncValue<ImageProvider?>> {
-  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-  /// there is no api or the fetch fails (caller renders a placeholder).
+  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+  /// cached image if one exists (always), fetches via the network api when
+  /// available, or returns null (caller renders a placeholder). Null api means
+  /// cache-only mode (local sources store covers at import time).
   ///
   /// Copied from [coverImage].
   const CoverImageFamily();
 
-  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-  /// there is no api or the fetch fails (caller renders a placeholder).
+  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+  /// cached image if one exists (always), fetches via the network api when
+  /// available, or returns null (caller renders a placeholder). Null api means
+  /// cache-only mode (local sources store covers at import time).
   ///
   /// Copied from [coverImage].
   CoverImageProvider call(String sourceId, String ownerType, String ownerId) {
@@ -77,13 +85,17 @@ class CoverImageFamily extends Family<AsyncValue<ImageProvider?>> {
   String? get name => r'coverImageProvider';
 }
 
-/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-/// there is no api or the fetch fails (caller renders a placeholder).
+/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+/// cached image if one exists (always), fetches via the network api when
+/// available, or returns null (caller renders a placeholder). Null api means
+/// cache-only mode (local sources store covers at import time).
 ///
 /// Copied from [coverImage].
 class CoverImageProvider extends AutoDisposeFutureProvider<ImageProvider?> {
-  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-  /// there is no api or the fetch fails (caller renders a placeholder).
+  /// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+  /// cached image if one exists (always), fetches via the network api when
+  /// available, or returns null (caller renders a placeholder). Null api means
+  /// cache-only mode (local sources store covers at import time).
   ///
   /// Copied from [coverImage].
   CoverImageProvider(String sourceId, String ownerType, String ownerId)
