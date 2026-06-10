@@ -234,14 +234,22 @@ class ImportService {
   Future<void> deleteImported(LocalComic comic) async {
     final rel = comic.managedPath;
     if (rel != null) {
-      final file = File(await AppPaths.resolve(rel));
-      if (await file.exists()) await file.delete();
+      try {
+        final file = File(await AppPaths.resolve(rel));
+        if (await file.exists()) await file.delete();
+      } on FileSystemException {
+        // Best-effort: an undeletable file must not strand the rows.
+      }
     }
     final thumb = await _db.getThumbnail(comic.sourceId, 'book', comic.id);
     final diskPath = thumb?.diskPath;
     if (diskPath != null) {
-      final thumbFile = File(await AppPaths.resolve(diskPath));
-      if (await thumbFile.exists()) await thumbFile.delete();
+      try {
+        final thumbFile = File(await AppPaths.resolve(diskPath));
+        if (await thumbFile.exists()) await thumbFile.delete();
+      } on FileSystemException {
+        // Best-effort: an undeletable file must not strand the rows.
+      }
     }
     await _db.deleteThumbnail(comic.sourceId, 'book', comic.id);
     await _db.deleteLocalComic(comic.id);
