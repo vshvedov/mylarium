@@ -10,6 +10,7 @@ import '../../app/widgets/ephemeral_storage_banner.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../app/widgets/app_segmented_toggle.dart';
 import '../../data/source/source_providers.dart';
+import '../sources/local/local_home.dart';
 import '../library/library_browse_controllers.dart';
 import '../library/pin_controllers.dart';
 import '../library/rail_item.dart';
@@ -141,24 +142,32 @@ class HomeScreen extends ConsumerWidget {
         visibleRails
             .every((k) => (itemsFor(k) ?? const <RailItem>[]).isEmpty);
 
+    // A local source has no server rails; render the local home body inside
+    // the same scaffold and app bar so sources, search, and settings remain
+    // accessible.
+    final activeSource = ref.watch(activeSourceProvider).valueOrNull;
+    final isLocal =
+        activeSource != null && activeSource.kind == 'local';
+
     return Scaffold(
       appBar: AppBar(
         // Collapses the wordmark to the brand monogram when the action icons
         // leave too little width for the text (narrow phones).
         title: const BrandTitle(),
         actions: [
-          if (sourceId != null) SourceStatusButton(sourceId: sourceId),
+          if (sourceId != null && !isLocal) SourceStatusButton(sourceId: sourceId),
           IconButton(
             icon: const Icon(AppIcons.search),
             onPressed: () => context.push('/search'),
           ),
-          IconButton(
-            icon: const Icon(AppIcons.browse),
-            tooltip: 'Browse all',
-            onPressed: sourceId == null
-                ? null
-                : () => context.push('/browse/$sourceId'),
-          ),
+          if (!isLocal)
+            IconButton(
+              icon: const Icon(AppIcons.browse),
+              tooltip: 'Browse all',
+              onPressed: sourceId == null
+                  ? null
+                  : () => context.push('/browse/$sourceId'),
+            ),
           IconButton(
             icon: const Icon(AppIcons.gallery),
             tooltip: 'Gallery',
@@ -183,26 +192,28 @@ class HomeScreen extends ConsumerWidget {
           Expanded(
             child: sourceId == null
                 ? const _NoSource()
-                : RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(keepReadingProvider);
-                      ref.invalidate(recentlyAddedBooksProvider);
-                      ref.invalidate(recentlyAddedSeriesProvider);
-                      ref.invalidate(recentlyUpdatedSeriesProvider);
-                    },
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 820),
-                        child: ListView(
-                          children: [
-                            for (final kind in visibleRails) railSlot(kind),
-                            if (allResolved && everythingEmpty)
-                              const _EmptyHome(),
-                          ],
+                : isLocal
+                    ? LocalHomeBody(sourceId: activeSource.id)
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(keepReadingProvider);
+                          ref.invalidate(recentlyAddedBooksProvider);
+                          ref.invalidate(recentlyAddedSeriesProvider);
+                          ref.invalidate(recentlyUpdatedSeriesProvider);
+                        },
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 820),
+                            child: ListView(
+                              children: [
+                                for (final kind in visibleRails) railSlot(kind),
+                                if (allResolved && everythingEmpty)
+                                  const _EmptyHome(),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
           ),
         ],
       ),
