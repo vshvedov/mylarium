@@ -183,6 +183,8 @@ abstract final class AppIcons {
       IconData(0xe236, fontFamily: _family, fontPackage: _package); // filePlus
   static const localBook =
       IconData(0xeb2a, fontFamily: _family, fontPackage: _package); // fileArchive
+  static const link =
+      IconData(0xe2e2, fontFamily: _family, fontPackage: _package); // link
 
   // Badges (milestones)
   static const badge =

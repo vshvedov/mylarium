@@ -6,7 +6,7 @@ part of 'import_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$importControllerHash() => r'e96570df35a44e350defbf934b147c9f1da9a1f1';
+String _$importControllerHash() => r'2954df5076b39a828cbf535d6062692caedfed08';
 
 /// Drives a pick-then-import run. The picker's extension filter is UX-only
 /// (magic-byte sniffing decides for real, per the imports rule); per-file

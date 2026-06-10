@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,14 +17,15 @@ import '../gallery/gallery_controller.dart';
 import '../offline/download_manager.dart';
 import '../offline/offline_providers.dart';
 import '../sync/sync_engine.dart';
-import '../sync/sync_models.dart';
 import '../sync/sync_providers.dart';
+import 'capture_controller.dart';
 import 'color/color_corrected_image_provider.dart';
 import 'color/color_math.dart';
 import 'color/color_settings.dart';
 import 'color/color_settings_controller.dart';
 import 'double_page_layout.dart';
 import 'double_page_view.dart';
+import 'focus_policy.dart';
 import 'gestures/tap_zones.dart';
 import 'image_quality.dart';
 import 'offline_page_source.dart';
@@ -36,6 +36,7 @@ import 'paged_view.dart';
 import 'page_prefetcher.dart';
 import 'reader_controller.dart';
 import 'reader_models.dart';
+import 'reader_progress_coordinator.dart';
 import '../settings/settings_providers.dart';
 import 'reader_navigation.dart';
 import 'webtoon_metrics.dart';
@@ -109,21 +110,6 @@ int _readerPageCount(ReaderData data) => switch (data.source) {
   OfflinePages(:final entries) => entries.length,
 };
 
-/// Decode headroom over the viewport so pinch-zoom stays sharp: a page is
-/// decoded up to this multiple of the viewport width (every reading mode is
-/// pinch-zoomable, up to `maxScale` = 4x). The decode is still bounded by the
-/// image-quality ceiling and clamped to the page's intrinsic width in the page
-/// sources (never upscaled), so a normal page costs no more than its native
-/// resolution and zoom reveals real detail instead of a stretched thumbnail.
-const double kReaderZoomHeadroom = 4.0;
-
-/// Delay after the last page change before the now-stationary page is upgraded
-/// to a full-resolution decode. Long enough that flipping quickly through pages
-/// never triggers a per-page high-res decode mid-slide (the cause of page-turn
-/// jank); short enough that a settled page is sharp well before the reader would
-/// pinch-zoom it. A zoom gesture promotes immediately, so this is never felt.
-const Duration kFocusUpgradeDelay = Duration(milliseconds: 200);
-
 class _ReaderBody extends ConsumerStatefulWidget {
   const _ReaderBody({
     super.key,
@@ -167,12 +153,9 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   bool _chrome = false;
   int? _cacheWidth;
 
-  /// Page-capture mode: when true the capture overlay is up, chrome is hidden,
-  /// and the page view ignores pointers so the overlay owns the marquee gesture.
-  bool _capturing = false;
-
-  /// Guards against a double-Save while a capture write is in flight.
-  bool _saving = false;
+  /// Page-capture state machine + crop/save pipeline. Plain state: [build]
+  /// reads its flags, the action handlers wrap its transitions in setState.
+  final _capture = CaptureController();
 
   /// Identifies the RepaintBoundary wrapping the rendered page, for WYSIWYG
   /// capture (color correction is inside it; chrome is outside).
@@ -192,9 +175,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   late ColorAdjustments _adj = widget.data.colorAdjustments;
   ColorFilter? _colorFilter;
 
-  /// Reading-time + page-span accumulator for the current session. Lives on the
-  /// State (a stable lifetime) so orientation rebuilds do not reset it.
-  final _recorder = ReadingSessionRecorder();
+  /// Progress write-back + reading-session recording for this open: the
+  /// per-turn debounce, the 60s in-flight checkpoint, and the lifecycle
+  /// pause/resume bookkeeping. Created in [initState], flushed + disposed in
+  /// [dispose]. See [ReaderProgressCoordinator].
+  late final ReaderProgressCoordinator _progress;
 
   /// The app-lifetime sync engine future, captured once in [initState] so the
   /// teardown write-back (in [dispose]) never touches `ref` after the element is
@@ -214,16 +199,6 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// path, and dispose enqueue it at most once.
   bool _backfillStarted = false;
 
-  /// Debounces per-turn progress write-back (BookState + Komga queue).
-  Timer? _progressDebounce;
-
-  /// Periodic in-flight session checkpoint. A hard process kill (OOM, crash,
-  /// task-switcher swipe-kill) never runs [dispose] or the lifecycle pause
-  /// path, so without this the whole in-flight reading session would be lost;
-  /// checkpointing every minute bounds the stats loss to at most one interval.
-  /// Never started in preview mode.
-  Timer? _sessionCheckpointTimer;
-
   /// Guards the adaptive image-cache cap so it is computed once per reader
   /// open (it needs MediaQuery, so it runs in [didChangeDependencies]).
   bool _imageCacheCapSet = false;
@@ -240,37 +215,20 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Canonical current page index (0-based).
   int _page = 0;
 
-  /// The page currently promoted to a full-resolution decode (for sharp zoom).
-  /// Deliberately LAGS [_page]: it is bumped to the current page only a beat
-  /// AFTER the controller settles ([kFocusUpgradeDelay]). While a turn is in
-  /// flight the focus set still points at the previous page, so neither the
-  /// outgoing page (stays full-res) nor the incoming page (stays at its
-  /// prefetched display resolution) changes decode width. The slide is then just
-  /// translating ready textures - no mid-slide re-decode, no dropped frames.
-  int _settledPage = 0;
-
-  /// Fires [kFocusUpgradeDelay] after the last page change to promote the
-  /// stationary page to full resolution. Reset on every turn so a fast
-  /// flip-through never decodes at full resolution until it stops.
-  Timer? _focusSettleTimer;
+  /// Focused-page promotion policy: which page(s) hold a full-resolution
+  /// decode (the settled page, lagging [_page] by [kFocusUpgradeDelay]) and
+  /// the focus/neighbor decode widths. Owns the settle timer and the zoom
+  /// listener on [_zoomed]; see [FocusUpgradePolicy].
+  late final FocusUpgradePolicy _focus = FocusUpgradePolicy(
+    currentPage: () => _page,
+    onPromoted: _onFocusPromoted,
+  );
 
   /// End-of-book seam: true once the last page/spread is reached; [_seamDismissed]
   /// hides it after the user closes it (re-armed by leaving and returning to the
   /// end, or by trying to page past it).
   bool _atEnd = false;
   bool _seamDismissed = false;
-
-  /// Display-resolution decode width for off-focus pages (the page source's
-  /// default `cacheWidth`). Bounds memory so only the focused page holds a
-  /// full-resolution texture.
-  int _neighborWidth = 1;
-
-  /// High-resolution decode width for the focused page/spread: the device-tier
-  /// (or manual) ceiling, clamped to the safe texture size. The page sources
-  /// never upscale past a page's native width, so a normal page costs at most its
-  /// native resolution while a large scan zooms sharply. Recomputed live when the
-  /// image-quality preference changes.
-  int _focusWidth = 1;
 
   /// GPU sampling quality for page rendering, from the device tier.
   FilterQuality _sampling = FilterQuality.high;
@@ -299,13 +257,23 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
         : (widget.initialPage ?? widget.data.initialPage).clamp(0, count - 1);
     // The opening page is stationary, so promote it to full resolution at once
     // (no settle delay on first paint).
-    _settledPage = _page;
-    _recorder.onPage(_page, _nowMs());
+    _focus.settleImmediately();
+    // The coordinator starts the 60s in-flight session checkpoint itself
+    // (never in preview); resume() starts the session at the opening page.
+    _progress = ReaderProgressCoordinator(
+      syncEngine: _syncEngine,
+      sourceId: widget.sourceId,
+      bookId: widget.bookId,
+      seriesId: widget.data.seriesId,
+      preview: widget.preview,
+      isLastPage: _isLastPage,
+    );
+    _progress.resume(_page);
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onWebtoonScroll);
     // A zoom gesture promotes the focused page to full resolution immediately,
     // so a pinch right after a turn is sharp without waiting for the settle.
-    _zoomed.addListener(_onZoomChanged);
+    _focus.attachZoom(_zoomed);
     // Distraction-free, full-bleed reading: hide the system bars and claim the
     // screen edges from the Android back/switch gesture (no-op on iOS).
     unawaited(enterReaderImmersive());
@@ -316,17 +284,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     if (!widget.preview && source is OnlinePages) {
       _backfillTimer = Timer(const Duration(seconds: 3), _backfillOffline);
     }
-    // Checkpoint the in-flight session every minute (see [_checkpointSession]
-    // for the hard-kill rationale). Preview records no sessions, so no timer.
-    if (!widget.preview) {
-      _sessionCheckpointTimer = Timer.periodic(
-        const Duration(seconds: 60),
-        (_) => _checkpointSession(),
-      );
-    }
   }
-
-  int _nowMs() => DateTime.now().millisecondsSinceEpoch;
 
   int get _pageCount => _source?.pageCount ?? _readerPageCount(widget.data);
 
@@ -341,64 +299,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     return page >= _pageCount - 1;
   }
 
-  /// Records a page change: feeds the session recorder and schedules a debounced
-  /// progress write-back. The last page flushes immediately (marks completion).
+  /// Records a page change with the coordinator (session recorder + debounced
+  /// progress write-back; the last page flushes immediately) and remembers the
+  /// end-reach for delete-on-read at teardown.
   void _reportPage(int page) {
-    _recorder.onPage(page, _nowMs());
-    _progressDebounce?.cancel();
-    if (_isLastPage(page)) {
-      _reachedEnd = true;
-      _pushProgress(page, completed: true);
-    } else {
-      _progressDebounce = Timer(
-        const Duration(seconds: 2),
-        () => _pushProgress(page, completed: false),
-      );
-    }
-  }
-
-  void _pushProgress(int page, {required bool completed}) {
-    // Preview mode is a non-committal peek: never report progress (local or to
-    // the source), so the book is not marked currently-reading anywhere.
-    if (widget.preview) return;
-    final sourceId = widget.sourceId;
-    final bookId = widget.bookId;
-    _syncEngine
-        .then((e) => e.recordProgress(sourceId, bookId, page, completed))
-        .catchError((Object _) {});
-  }
-
-  /// Appends the current reading session (if it has measurable activity) and
-  /// resets the recorder so a later checkpoint or dispose does not double-emit.
-  void _finalizeSession() {
-    // Preview mode records no reading session (no stats, no completion).
-    if (widget.preview) return;
-    final span = _recorder.build(
-      sourceId: widget.sourceId,
-      bookId: widget.bookId,
-      seriesId: widget.data.seriesId,
-    );
-    _recorder.reset();
-    if (span == null) return;
-    final isCompletion = _isLastPage(span.endPage);
-    _syncEngine
-        .then((e) => e.recordSession(span, isCompletion: isCompletion))
-        .catchError((Object _) {});
-  }
-
-  /// Periodic checkpoint of the in-flight reading session. A hard process kill
-  /// (OOM, crash, swipe-kill) skips [dispose] and the lifecycle pause path, so
-  /// an unflushed session would vanish entirely; appending it every minute
-  /// bounds the loss to the last interval. Mirrors the paused -> resumed
-  /// lifecycle sequence (flush time, append, restart at the current page) but
-  /// deliberately does NOT push progress (that has its own debounce).
-  /// [_finalizeSession] is naturally a no-op when the recorder has nothing
-  /// measurable (its build() returns null).
-  void _checkpointSession() {
-    if (widget.preview) return;
-    _recorder.pause(_nowMs());
-    _finalizeSession();
-    _recorder.onPage(_page, _nowMs());
+    if (_isLastPage(page)) _reachedEnd = true;
+    _progress.onPage(page);
   }
 
   /// Auto-cache backfill: enqueues the full-chapter download once per session.
@@ -425,14 +331,11 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       case AppLifecycleState.hidden:
         // Background: flush time, push the final position, and checkpoint the
         // session so a background-kill does not lose it.
-        _recorder.pause(_nowMs());
-        _progressDebounce?.cancel();
-        _pushProgress(_page, completed: _isLastPage(_page));
-        _finalizeSession();
+        _progress.pause();
         _backfillOffline();
       case AppLifecycleState.resumed:
         // Start a fresh session segment at the current page.
-        _recorder.onPage(_page, _nowMs());
+        _progress.resume(_page);
         // Re-assert immersion + gesture exclusion (the OS can restore the bars
         // and clear exclusion rects while backgrounded).
         unawaited(enterReaderImmersive());
@@ -451,7 +354,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
       setState(() => _page = page);
       _prefetcher?.onPage(page);
       _reportPage(page);
-      _scheduleFocusUpgrade();
+      _focus.onPageTurned();
     }
   }
 
@@ -503,30 +406,25 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final width = MediaQuery.sizeOf(context).width;
     _sampling = kReaderSampling;
-    // Off-focus pages decode at display resolution (modest headroom) so only the
-    // focused page holds a full-resolution texture; this is what keeps memory in
-    // budget while the focused page can be sharp.
-    final neighborWidth = (width * dpr * 1.5).round().clamp(
-      1,
-      kFallbackMaxTextureDim,
-    );
-    // The focused page decodes with zoom headroom over the viewport, up to the
-    // image-quality ceiling (the device's probed max texture size in Smart mode),
-    // bounded by the RAM-safe focus limit. The page sources clamp to each page's
-    // intrinsic width (never upscaled), so a normal page costs at most its native
-    // resolution and zoom reveals real detail instead of a stretched thumbnail.
+    // Recompute the focus/neighbor decode widths BEFORE the rebuild gate below:
+    // a live quality change updates the focus width even when the source's
+    // default decode width is unchanged, so only the focused page re-decodes
+    // (via [_pageImage]).
     final hardwareCap = focusTextureCap(ref.read(renderCapabilitiesProvider));
     final focusCeiling = ref
         .read(imageQualityControllerProvider)
         .focusCeiling(hardwareCap);
-    final cap = focusCeiling < hardwareCap ? focusCeiling : hardwareCap;
-    _focusWidth = (width * dpr * kReaderZoomHeadroom).round().clamp(1, cap);
-    _neighborWidth = neighborWidth;
+    _focus.recomputeWidths(
+      viewportWidth: width,
+      devicePixelRatio: dpr,
+      hardwareCap: hardwareCap,
+      focusCeiling: focusCeiling,
+    );
+    final neighborWidth = _focus.neighborWidth;
     // Only rebuild the source (resetting the prefetch window) when the source's
     // default decode width actually changes (e.g. rotation); a metrics/theme
-    // dependency change must not reset the window. A live quality change updates
-    // [_focusWidth] above and only the focused page re-decodes (via [_pageImage]).
-    // [force] rebuilds even when the width is unchanged (a color change).
+    // dependency change must not reset the window. [force] rebuilds even when
+    // the width is unchanged (a color change).
     if (!force && _source != null && _cacheWidth == neighborWidth) return;
     _cacheWidth = neighborWidth;
     final base = switch (widget.data.source) {
@@ -599,8 +497,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // (e.g. switching mode while the seam is showing on the last page). The
     // current page is stationary in the new mode, so make it full-res at once.
     _setAtEnd(_isEndController(target));
-    _focusSettleTimer?.cancel();
-    _settledPage = _page;
+    _focus.settleImmediately();
     setState(() {});
   }
 
@@ -620,45 +517,21 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     return _pairs[index].first;
   }
 
-  /// Indices currently in focus (decoded at full resolution): the SETTLED page in
-  /// paged and webtoon modes, both pages of the settled spread in double-page.
-  /// Keyed on [_settledPage] (not the live [_page]) so a page turn never changes
-  /// which pages are full-res mid-slide - that is what keeps paging decode-free.
-  Set<int> _focusIndices() {
-    if (_mode == ReadingMode.doublePage && _pairs.isNotEmpty) {
-      final i = _controllerIndexFor(_settledPage).clamp(0, _pairs.length - 1);
-      return _pairs[i].toSet();
-    }
-    return {_settledPage};
-  }
-
-  /// Provider for page [i]: the focused page/spread decodes at [_focusWidth] (high
-  /// resolution for sharp zoom), all other pages at [_neighborWidth] (display
-  /// resolution, to bound memory).
+  /// Provider for page [i]: the focused page/spread decodes at the policy's
+  /// focus width (high resolution for sharp zoom), all other pages at its
+  /// neighbor width (display resolution, to bound memory).
   ImageProvider _pageImage(int i) {
-    final w = _focusIndices().contains(i) ? _focusWidth : _neighborWidth;
+    final w = _focus.indicesFor(_mode, _pairs).contains(i)
+        ? _focus.focusWidth
+        : _focus.neighborWidth;
     return _source!.imageProviderAt(i, w);
   }
 
-  /// Schedule the focused-page full-resolution upgrade for a beat after motion
-  /// stops. Reset on every turn, so flipping quickly never decodes at full
-  /// resolution mid-slide; the upgrade lands only once the user pauses.
-  void _scheduleFocusUpgrade() {
-    _focusSettleTimer?.cancel();
-    _focusSettleTimer = Timer(kFocusUpgradeDelay, _promoteFocusNow);
-  }
-
-  /// Promote the current page to a full-resolution decode now: after a settle,
-  /// or immediately when a zoom starts so the pinch is sharp. A no-op when the
-  /// current page is already the promoted one.
-  void _promoteFocusNow() {
-    _focusSettleTimer?.cancel();
-    if (!mounted || _settledPage == _page) return;
-    setState(() => _settledPage = _page);
-  }
-
-  void _onZoomChanged() {
-    if (_zoomed.value) _promoteFocusNow();
+  /// The focus policy promoted the settled page: rebuild so the focused page
+  /// re-decodes at the high-resolution width (via [_pageImage]).
+  void _onFocusPromoted() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   /// Whether [controllerIndex] is the last position in the current paged mode
@@ -684,15 +557,15 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     WidgetsBinding.instance.removeObserver(this);
     // Leave the reader: restore the app-wide chrome and clear gesture exclusion.
     unawaited(exitReaderImmersive());
-    _progressDebounce?.cancel();
-    _focusSettleTimer?.cancel();
+    // Cancel the pending focus upgrade and detach the zoom listener (before
+    // [_zoomed] itself is disposed below).
+    _focus.dispose();
     _backfillTimer?.cancel();
-    _sessionCheckpointTimer?.cancel();
     // Push the final position (durable) and append the session (best-effort;
     // the SyncEngine + database are app-lifetime, so the write survives this
-    // screen's teardown).
-    _pushProgress(_page, completed: _isLastPage(_page));
-    _finalizeSession();
+    // screen's teardown). flush() also cancels the debounce/checkpoint timers.
+    _progress.flush(page: _page);
+    _progress.dispose();
     // Fallback: enqueue the backfill if the during-read timer never fired (the
     // [_backfillStarted] guard makes this a no-op once it has).
     _backfillOffline();
@@ -709,7 +582,6 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
           .then((e) => e.maybeDeleteOnRead(sourceId, bookId))
           .catchError((Object _) {});
     }
-    _zoomed.removeListener(_onZoomChanged);
     _zoomed.dispose();
     _scrollController.dispose();
     _pageController?.dispose();
@@ -723,7 +595,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     _setAtEnd(_isEndController(index));
     // Hold the full-res focus on the previous page until the turn settles, so
     // the slide does not re-decode either page; promote a beat after it stops.
-    _scheduleFocusUpgrade();
+    _focus.onPageTurned();
     setState(() {});
   }
 
@@ -778,33 +650,28 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   /// Enter capture mode: hide chrome and raise the marquee overlay.
   void _startCapture() => setState(() {
         _chrome = false;
-        _capturing = true;
+        _capture.start();
       });
 
-  void _cancelCapture() => setState(() => _capturing = false);
+  void _cancelCapture() => setState(() => _capture.cancel());
 
   /// Crop the rendered page to [selection] (WYSIWYG, color correction baked in),
-  /// save it to the gallery, and confirm. Distinct messages for a capture vs a
-  /// save failure; guarded against double-save and post-dispose setState.
+  /// save it to the gallery, and confirm. The controller runs the pipeline and
+  /// reports which stage failed (distinct messages for a capture vs a save
+  /// failure) and guards against a double-Save; the snackbar/navigation
+  /// plumbing stays here, guarded against post-dispose setState.
   Future<void> _onCaptureSave(Rect selection) async {
-    if (_saving) return;
-    setState(() => _saving = true);
+    if (_capture.saving) return;
     final messenger = ScaffoldMessenger.of(context);
     final navContext = context;
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-    ({Uint8List png, int width, int height}) shot;
-    try {
-      shot = await cropBoundaryToPng(
+    final pending = _capture.save(
+      crop: () => cropBoundaryToPng(
         boundaryKey: _captureBoundaryKey,
         selectionLogical: selection,
         pixelRatio: pixelRatio,
-      );
-    } catch (_) {
-      _finishCapture(messenger, 'Could not capture this page.');
-      return;
-    }
-    try {
-      await ref.read(capturesRepositoryProvider).save(
+      ),
+      persist: (shot) => ref.read(capturesRepositoryProvider).save(
             sourceId: widget.sourceId,
             seriesId: widget.data.seriesId,
             bookId: widget.bookId,
@@ -813,35 +680,35 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             pngBytes: shot.png,
             width: shot.width,
             height: shot.height,
-          );
-    } catch (_) {
-      _finishCapture(messenger, 'Could not save capture.');
-      return;
+          ),
+    );
+    // Reflect the in-flight save (the overlay disables Save while busy).
+    setState(() {});
+    final outcome = await pending;
+    if (outcome == null || !mounted) return;
+    // The controller has left capture mode; rebuild to drop the overlay.
+    setState(() {});
+    switch (outcome) {
+      case CaptureSaveOutcome.captureFailed:
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not capture this page.')),
+        );
+      case CaptureSaveOutcome.saveFailed:
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not save capture.')),
+        );
+      case CaptureSaveOutcome.saved:
+        messenger.showSnackBar(SnackBar(
+          content: const Text('Saved to Gallery'),
+          // Auto-dismiss the capture confirmation after a short timeout so it does
+          // not linger over the page; still long enough to tap "View".
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'View',
+            onPressed: () => navContext.push('/gallery'),
+          ),
+        ));
     }
-    if (!mounted) return;
-    setState(() {
-      _capturing = false;
-      _saving = false;
-    });
-    messenger.showSnackBar(SnackBar(
-      content: const Text('Saved to Gallery'),
-      // Auto-dismiss the capture confirmation after a short timeout so it does
-      // not linger over the page; still long enough to tap "View".
-      duration: const Duration(seconds: 3),
-      action: SnackBarAction(
-        label: 'View',
-        onPressed: () => navContext.push('/gallery'),
-      ),
-    ));
-  }
-
-  void _finishCapture(ScaffoldMessengerState messenger, String message) {
-    if (!mounted) return;
-    setState(() {
-      _capturing = false;
-      _saving = false;
-    });
-    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _step(int delta) {
@@ -897,7 +764,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
   void _seekPage(int page) {
     _page = page;
     _reportPage(page);
-    _scheduleFocusUpgrade();
+    _focus.onPageTurned();
     if (_mode.isWebtoon) {
       if (_scrollController.hasClients) {
         final offsets = _webtoonOffsets();
@@ -1029,7 +896,7 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
     // previewing, and not capturing (the overlay owns the screen then).
     final showDirectionNudge = widget.data.directionUnset &&
         !widget.preview &&
-        !_capturing &&
+        !_capture.capturing &&
         !_directionNudgeDismissed &&
         s.mode.isPaged &&
         !effectiveRtl(s);
@@ -1040,7 +907,10 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
             key: _captureBoundaryKey,
             // While capturing, the page ignores pointers so the overlay's
             // marquee gesture is the sole handler (no photo_view arena contest).
-            child: IgnorePointer(ignoring: _capturing, child: filteredView),
+            child: IgnorePointer(
+              ignoring: _capture.capturing,
+              child: filteredView,
+            ),
           ),
         ),
         if (_atEnd && !_seamDismissed)
@@ -1111,12 +981,12 @@ class _ReaderBodyState extends ConsumerState<_ReaderBody>
               ),
             ),
           ),
-        if (_capturing)
+        if (_capture.capturing)
           Positioned.fill(
             child: CaptureOverlay(
               onCancel: _cancelCapture,
               onSave: _onCaptureSave,
-              busy: _saving,
+              busy: _capture.saving,
             ),
           ),
       ],

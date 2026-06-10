@@ -13,6 +13,7 @@ import '../../library/widgets/skeleton.dart';
 import 'import_controller.dart';
 import 'import_results_sheet.dart';
 import 'local_providers.dart';
+import 'url_import.dart';
 
 /// Home body for the Local files source: keep-reading and recently-imported
 /// rails over the imported library, plus import and browse entry points. An
@@ -47,6 +48,16 @@ class LocalHomeBody extends ConsumerWidget {
               onPressed:
                   run is ImportRunActive ? null : () => _import(context, ref),
             ),
+          ),
+          const SizedBox(width: 8),
+          // Split affordance: the small companion to "Import comics" that
+          // takes a pasted URL instead of opening the OS picker.
+          IconButton.filledTonal(
+            tooltip: 'Import from URL',
+            icon: const Icon(AppIcons.link),
+            onPressed: run is ImportRunActive
+                ? null
+                : () => _importUrl(context, ref),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -87,6 +98,7 @@ class LocalHomeBody extends ConsumerWidget {
       return _EmptyLibrary(
         busy: run is ImportRunActive,
         onImport: () => _import(context, ref),
+        onImportUrl: () => _importUrl(context, ref),
       );
     }
 
@@ -118,6 +130,13 @@ class LocalHomeBody extends ConsumerWidget {
   Future<void> _import(BuildContext context, WidgetRef ref) async {
     final result =
         await ref.read(importControllerProvider.notifier).pickAndImport();
+    if (result != null && context.mounted) {
+      await ImportResultsSheet.show(context, result);
+    }
+  }
+
+  Future<void> _importUrl(BuildContext context, WidgetRef ref) async {
+    final result = await UrlImportDialog.show(context);
     if (result != null && context.mounted) {
       await ImportResultsSheet.show(context, result);
     }
@@ -217,10 +236,15 @@ class _LocalReadingProgress extends ConsumerWidget {
 }
 
 class _EmptyLibrary extends StatelessWidget {
-  const _EmptyLibrary({required this.busy, required this.onImport});
+  const _EmptyLibrary({
+    required this.busy,
+    required this.onImport,
+    required this.onImportUrl,
+  });
 
   final bool busy;
   final VoidCallback onImport;
+  final VoidCallback onImportUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -243,10 +267,21 @@ class _EmptyLibrary extends StatelessWidget {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
-            FilledButton.icon(
-              icon: const Icon(AppIcons.importComics),
-              label: Text(busy ? 'Importing...' : 'Import comics'),
-              onPressed: busy ? null : onImport,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FilledButton.icon(
+                  icon: const Icon(AppIcons.importComics),
+                  label: Text(busy ? 'Importing...' : 'Import comics'),
+                  onPressed: busy ? null : onImport,
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  tooltip: 'Import from URL',
+                  icon: const Icon(AppIcons.link),
+                  onPressed: busy ? null : onImportUrl,
+                ),
+              ],
             ),
           ],
         ),

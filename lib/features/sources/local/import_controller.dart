@@ -98,4 +98,28 @@ class ImportController extends _$ImportController {
     }
     return result;
   }
+
+  /// Validates and imports one pasted URL (T5). Mirrors [pickAndImport]:
+  /// drives the same state machine as a one-item run (so the home buttons and
+  /// the URL dialog show progress) and leaves the batch result in state as
+  /// [ImportRunDone] for the shared results sheet. Returns null when a run is
+  /// already active.
+  Future<ImportResult?> importUrl(Uri url) async {
+    if (state is ImportRunActive) return null;
+    state = ImportRunActive(
+      done: 0,
+      total: 1,
+      currentName: urlDisplayName(url),
+    );
+    final service = ref.read(importServiceProvider);
+    final localId = await service.ensureLocalSource();
+    final result = await service.importUrl(url);
+    state = ImportRunDone(result);
+    // Same active-source adoption rule as importFiles (see comment above).
+    final active = await ref.read(activeSourceIdProvider.future);
+    if (active == null) {
+      ref.read(activeSourceIdProvider.notifier).select(localId);
+    }
+    return result;
+  }
 }
