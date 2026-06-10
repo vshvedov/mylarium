@@ -77,6 +77,20 @@ Future<ContentApi?> contentApiFor(Ref ref, String sourceId) async {
   return null;
 }
 
+/// The full Sources row of the active source (id, kind, label), or null when
+/// no source exists. Lets UI branch by source kind (a local source renders
+/// local home/browse; server sources render the cache-backed surfaces).
+@riverpod
+Future<Source?> activeSource(Ref ref) async {
+  final id = await ref.watch(activeSourceIdProvider.future);
+  if (id == null) return null;
+  final sources = await ref.watch(sourcesStreamProvider.future);
+  for (final s in sources) {
+    if (s.id == id) return s;
+  }
+  return null;
+}
+
 /// The [ContentApi] for the active source, or null when there is no active
 /// source.
 @riverpod

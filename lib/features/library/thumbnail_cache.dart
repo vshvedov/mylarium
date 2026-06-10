@@ -23,11 +23,16 @@ const _inlineMaxBytes = 256 * 1024;
 /// images live inline as a Drift BLOB; larger spill to disk (relative path,
 /// excluded from iCloud backup). The "exactly one of bytes/diskPath" invariant
 /// is maintained on every upsert by nulling the sibling column.
+///
+/// When [_api] is null the cache operates in cache-only mode: hits from the
+/// Thumbnails table are returned, and cache misses yield null (no network
+/// fetch). This allows local sources (which have no [ContentApi]) to render
+/// covers that were stored at import time.
 class ThumbnailCache {
   const ThumbnailCache(this._db, this._api, this._sourceId);
 
   final AppDatabase _db;
-  final ContentApi _api;
+  final ContentApi? _api;
   final String _sourceId;
 
   Future<ImageProvider?> provider(String ownerType, String ownerId) async {
@@ -51,12 +56,14 @@ class ThumbnailCache {
 
   Future<ImageProvider?> _fetchAndStore(
       String ownerType, String ownerId) async {
+    final api = _api;
+    if (api == null) return null; // cache-only source (local); no fetch path
     final List<int> bytes;
     final String? etag;
     try {
       final (b, e) = ownerType == 'series'
-          ? await _api.seriesThumbnail(ownerId)
-          : await _api.bookThumbnail(ownerId);
+          ? await api.seriesThumbnail(ownerId)
+          : await api.bookThumbnail(ownerId);
       bytes = b;
       etag = e;
     } on ContentException {
@@ -96,8 +103,10 @@ class ThumbnailCache {
   }
 }
 
-/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Null when
-/// there is no api or the fetch fails (caller renders a placeholder).
+/// Resolves a cover [ImageProvider] for an owner under [sourceId]. Returns a
+/// cached image if one exists (always), fetches via the network api when
+/// available, or returns null (caller renders a placeholder). Null api means
+/// cache-only mode (local sources store covers at import time).
 @riverpod
 Future<ImageProvider?> coverImage(
   Ref ref,
@@ -106,7 +115,6 @@ Future<ImageProvider?> coverImage(
   String ownerId,
 ) async {
   final api = await ref.watch(contentApiForProvider(sourceId).future);
-  if (api == null) return null;
   final db = ref.watch(appDatabaseProvider);
   return ThumbnailCache(db, api, sourceId).provider(ownerType, ownerId);
 }

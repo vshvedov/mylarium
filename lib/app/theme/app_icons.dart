@@ -174,6 +174,12 @@ abstract final class AppIcons {
   static const export = IconData(0xeaf0,
       fontFamily: _family, fontPackage: _package); // export
 
+  // Local files / import
+  static const importComics =
+      IconData(0xe236, fontFamily: _family, fontPackage: _package); // filePlus
+  static const localBook =
+      IconData(0xeb2a, fontFamily: _family, fontPackage: _package); // fileArchive
+
   // Badges (milestones)
   static const badge =
       IconData(0xe320, fontFamily: _family, fontPackage: _package); // medal

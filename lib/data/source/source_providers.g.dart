@@ -203,6 +203,27 @@ class _ContentApiForProviderElement
   String get sourceId => (origin as ContentApiForProvider).sourceId;
 }
 
+String _$activeSourceHash() => r'e9c28b7289092d3df52422293d752e7bea16a47e';
+
+/// The full Sources row of the active source (id, kind, label), or null when
+/// no source exists. Lets UI branch by source kind (a local source renders
+/// local home/browse; server sources render the cache-backed surfaces).
+///
+/// Copied from [activeSource].
+@ProviderFor(activeSource)
+final activeSourceProvider = AutoDisposeFutureProvider<Source?>.internal(
+  activeSource,
+  name: r'activeSourceProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$activeSourceHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef ActiveSourceRef = AutoDisposeFutureProviderRef<Source?>;
 String _$activeContentApiHash() => r'2dd10cb453b3e251addde6bd48ac5f8f8cf7f761';
 
 /// The [ContentApi] for the active source, or null when there is no active
