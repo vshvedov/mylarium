@@ -103,8 +103,16 @@ class CollectionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final series = ref.watch(collectionSeriesProvider(collectionId));
+    // Title with the collection's actual name (already cached by the index
+    // screen's list); the generic label only flashes on a cold deep-link.
+    final name = ref
+        .watch(collectionsProvider)
+        .valueOrNull
+        ?.where((c) => c.id == collectionId)
+        .firstOrNull
+        ?.name;
     return Scaffold(
-      appBar: AppBar(title: const Text('Collection')),
+      appBar: AppBar(title: Text(name ?? 'Collection')),
       body: series.when(
         loading: () => const _Loading(),
         error: (e, _) => _Empty(label: 'Could not load: $e'),
@@ -163,8 +171,15 @@ class ReadListDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final books = ref.watch(readListBooksProvider(readListId));
+    // Same pattern as the collection detail: real name when cached.
+    final name = ref
+        .watch(readListsProvider)
+        .valueOrNull
+        ?.where((r) => r.id == readListId)
+        .firstOrNull
+        ?.name;
     return Scaffold(
-      appBar: AppBar(title: const Text('Read list')),
+      appBar: AppBar(title: Text(name ?? 'Read list')),
       body: books.when(
         loading: () => const _Loading(),
         error: (e, _) => _Empty(label: 'Could not load: $e'),

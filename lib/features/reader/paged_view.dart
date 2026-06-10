@@ -51,6 +51,14 @@ class PagedView extends StatelessWidget {
     return ValueListenableBuilder<bool>(
       valueListenable: zoomed,
       builder: (context, isZoomed, _) => PhotoViewGallery.builder(
+        // PhotoViewGallery captures its PageController once and never attaches
+        // a swapped-in instance (unlike PageView.didUpdateWidget). The screen
+        // recreates the controller on a direction/mode flip; without this key
+        // the new controller never attaches, so every tap-zone page turn
+        // silently no-ops on `hasClients == false` while swipes keep working
+        // through the stale controller. Keying by the controller remounts the
+        // gallery so the new controller drives the view.
+        key: ObjectKey(pageController),
         itemCount: pageCount,
         pageController: pageController,
         reverse: rtl,
