@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Ref;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -22,21 +24,31 @@ part 'source_providers.g.dart';
 Stream<List<Source>> sourcesStream(Ref ref) =>
     ref.watch(appDatabaseProvider).watchSources();
 
-/// The currently selected source id. With one source, `build` deterministically
-/// picks the lowest source id (sorted); [select] switches the active source
-/// (used by the sources screen). Remembering the last-active source across
-/// restarts is a follow-up.
+/// The currently selected source id. `build` restores the last-active source
+/// persisted by [select] (the sources screen, onboarding, and local import all
+/// switch through it); when nothing was persisted yet, or the remembered source
+/// was deleted, it falls back to the lowest source id (sorted) so the pick stays
+/// deterministic.
 @Riverpod(keepAlive: true)
 class ActiveSourceId extends _$ActiveSourceId {
   @override
   Future<String?> build() async {
-    final sources = await ref.watch(appDatabaseProvider).allSources();
+    final db = ref.watch(appDatabaseProvider);
+    final sources = await db.allSources();
     if (sources.isEmpty) return null;
+    final remembered = (await db.getOrCreateSettings()).lastActiveSourceId;
+    if (remembered != null && sources.any((s) => s.id == remembered)) {
+      return remembered;
+    }
     final ids = sources.map((s) => s.id).toList()..sort();
     return ids.first;
   }
 
-  void select(String sourceId) => state = AsyncData(sourceId);
+  void select(String sourceId) {
+    state = AsyncData(sourceId);
+    // Best-effort persistence; the in-memory switch must not wait on disk.
+    unawaited(ref.read(appDatabaseProvider).updateLastActiveSourceId(sourceId));
+  }
 }
 
 /// Builds an authenticated [ContentApi] for [sourceId], dispatching on the

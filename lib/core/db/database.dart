@@ -128,6 +128,14 @@ class AppDatabase extends _$AppDatabase {
             await m.createIndex(idxLocalComicsSeries);
             await m.createIndex(idxLocalComicsBooks);
           }
+          // v18 -> v19: remember the last-active source across restarts.
+          // Purely additive nullable column on the settings row. The `to`
+          // guard matters only for the per-version golden tests (which stop
+          // at intermediate versions); real upgrades always target the
+          // current schema version.
+          if (from < 19 && to >= 19) {
+            await m.addColumn(appSettings, appSettings.lastActiveSourceId);
+          }
         },
       );
 
@@ -186,6 +194,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateDeleteOnRead(bool v) =>
       (update(appSettings)..where((t) => t.id.equals(1)))
           .write(AppSettingsCompanion(deleteOnRead: Value(v)));
+
+  Future<void> updateLastActiveSourceId(String id) =>
+      (update(appSettings)..where((t) => t.id.equals(1)))
+          .write(AppSettingsCompanion(lastActiveSourceId: Value(id)));
 
   Stream<AppSetting> watchSettings() =>
       (select(appSettings)..where((t) => t.id.equals(1))).watchSingle();
@@ -1178,7 +1190,8 @@ const int _kBaselineVersion = 16;
 ///
 /// v17: adds the `Captures` table (page-capture gallery).
 /// v18: adds the `LocalComics` table (local files / folder sources, T1).
-const int _kSchemaVersion = 18;
+/// v19: adds `AppSettings.lastActiveSourceId` (restore the active source).
+const int _kSchemaVersion = 19;
 
 LazyDatabase _open() => LazyDatabase(() async {
       final dir = await getApplicationSupportDirectory();

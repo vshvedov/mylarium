@@ -357,12 +357,13 @@ final readListRepositoryProvider =
 // ignore: unused_element
 typedef ReadListRepositoryRef =
     AutoDisposeFutureProviderRef<ReadListRepository?>;
-String _$activeSourceIdHash() => r'22b7f3722b966f67b2cb8e7d86c30245a854c22d';
+String _$activeSourceIdHash() => r'4bd1d087a21ff5f6db32fc25e6c2ab5e7388903b';
 
-/// The currently selected source id. With one source, `build` deterministically
-/// picks the lowest source id (sorted); [select] switches the active source
-/// (used by the sources screen). Remembering the last-active source across
-/// restarts is a follow-up.
+/// The currently selected source id. `build` restores the last-active source
+/// persisted by [select] (the sources screen, onboarding, and local import all
+/// switch through it); when nothing was persisted yet, or the remembered source
+/// was deleted, it falls back to the lowest source id (sorted) so the pick stays
+/// deterministic.
 ///
 /// Copied from [ActiveSourceId].
 @ProviderFor(ActiveSourceId)

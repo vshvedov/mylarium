@@ -164,6 +164,17 @@ class $AppSettingsTable extends AppSettings
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _lastActiveSourceIdMeta =
+      const VerificationMeta('lastActiveSourceId');
+  @override
+  late final GeneratedColumn<String> lastActiveSourceId =
+      GeneratedColumn<String>(
+        'last_active_source_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -178,6 +189,7 @@ class $AppSettingsTable extends AppSettings
     homeLayout,
     deleteOnRead,
     autoAdvance,
+    lastActiveSourceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -284,6 +296,15 @@ class $AppSettingsTable extends AppSettings
         ),
       );
     }
+    if (data.containsKey('last_active_source_id')) {
+      context.handle(
+        _lastActiveSourceIdMeta,
+        lastActiveSourceId.isAcceptableOrUnknown(
+          data['last_active_source_id']!,
+          _lastActiveSourceIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -341,6 +362,10 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.bool,
         data['${effectivePrefix}auto_advance'],
       )!,
+      lastActiveSourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_active_source_id'],
+      ),
     );
   }
 
@@ -389,6 +414,11 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// When true, reaching the last page of a chapter auto-loads the next book in
   /// the series after a brief, cancelable seam (T2). Global, default off.
   final bool autoAdvance;
+
+  /// The id of the source the user last selected, restored as the active source
+  /// on the next launch. NULL until the first selection; a stale id (the source
+  /// was deleted) falls back to the deterministic lowest-sorted pick.
+  final String? lastActiveSourceId;
   const AppSetting({
     required this.id,
     required this.themeMode,
@@ -402,6 +432,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     this.homeLayout,
     this.deleteOnRead,
     required this.autoAdvance,
+    this.lastActiveSourceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -424,6 +455,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       map['delete_on_read'] = Variable<bool>(deleteOnRead);
     }
     map['auto_advance'] = Variable<bool>(autoAdvance);
+    if (!nullToAbsent || lastActiveSourceId != null) {
+      map['last_active_source_id'] = Variable<String>(lastActiveSourceId);
+    }
     return map;
   }
 
@@ -447,6 +481,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ? const Value.absent()
           : Value(deleteOnRead),
       autoAdvance: Value(autoAdvance),
+      lastActiveSourceId: lastActiveSourceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastActiveSourceId),
     );
   }
 
@@ -472,6 +509,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       homeLayout: serializer.fromJson<String?>(json['homeLayout']),
       deleteOnRead: serializer.fromJson<bool?>(json['deleteOnRead']),
       autoAdvance: serializer.fromJson<bool>(json['autoAdvance']),
+      lastActiveSourceId: serializer.fromJson<String?>(
+        json['lastActiveSourceId'],
+      ),
     );
   }
   @override
@@ -492,6 +532,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'homeLayout': serializer.toJson<String?>(homeLayout),
       'deleteOnRead': serializer.toJson<bool?>(deleteOnRead),
       'autoAdvance': serializer.toJson<bool>(autoAdvance),
+      'lastActiveSourceId': serializer.toJson<String?>(lastActiveSourceId),
     };
   }
 
@@ -508,6 +549,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     Value<String?> homeLayout = const Value.absent(),
     Value<bool?> deleteOnRead = const Value.absent(),
     bool? autoAdvance,
+    Value<String?> lastActiveSourceId = const Value.absent(),
   }) => AppSetting(
     id: id ?? this.id,
     themeMode: themeMode ?? this.themeMode,
@@ -522,6 +564,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     homeLayout: homeLayout.present ? homeLayout.value : this.homeLayout,
     deleteOnRead: deleteOnRead.present ? deleteOnRead.value : this.deleteOnRead,
     autoAdvance: autoAdvance ?? this.autoAdvance,
+    lastActiveSourceId: lastActiveSourceId.present
+        ? lastActiveSourceId.value
+        : this.lastActiveSourceId,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -555,6 +600,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       autoAdvance: data.autoAdvance.present
           ? data.autoAdvance.value
           : this.autoAdvance,
+      lastActiveSourceId: data.lastActiveSourceId.present
+          ? data.lastActiveSourceId.value
+          : this.lastActiveSourceId,
     );
   }
 
@@ -572,7 +620,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
           ..write('homeLayout: $homeLayout, ')
           ..write('deleteOnRead: $deleteOnRead, ')
-          ..write('autoAdvance: $autoAdvance')
+          ..write('autoAdvance: $autoAdvance, ')
+          ..write('lastActiveSourceId: $lastActiveSourceId')
           ..write(')'))
         .toString();
   }
@@ -591,6 +640,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     homeLayout,
     deleteOnRead,
     autoAdvance,
+    lastActiveSourceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -607,7 +657,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.imageQualityManualLevel == this.imageQualityManualLevel &&
           other.homeLayout == this.homeLayout &&
           other.deleteOnRead == this.deleteOnRead &&
-          other.autoAdvance == this.autoAdvance);
+          other.autoAdvance == this.autoAdvance &&
+          other.lastActiveSourceId == this.lastActiveSourceId);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -623,6 +674,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<String?> homeLayout;
   final Value<bool?> deleteOnRead;
   final Value<bool> autoAdvance;
+  final Value<String?> lastActiveSourceId;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.themeMode = const Value.absent(),
@@ -636,6 +688,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.homeLayout = const Value.absent(),
     this.deleteOnRead = const Value.absent(),
     this.autoAdvance = const Value.absent(),
+    this.lastActiveSourceId = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -650,6 +703,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.homeLayout = const Value.absent(),
     this.deleteOnRead = const Value.absent(),
     this.autoAdvance = const Value.absent(),
+    this.lastActiveSourceId = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -664,6 +718,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<String>? homeLayout,
     Expression<bool>? deleteOnRead,
     Expression<bool>? autoAdvance,
+    Expression<String>? lastActiveSourceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -680,6 +735,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (homeLayout != null) 'home_layout': homeLayout,
       if (deleteOnRead != null) 'delete_on_read': deleteOnRead,
       if (autoAdvance != null) 'auto_advance': autoAdvance,
+      if (lastActiveSourceId != null)
+        'last_active_source_id': lastActiveSourceId,
     });
   }
 
@@ -696,6 +753,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<String?>? homeLayout,
     Value<bool?>? deleteOnRead,
     Value<bool>? autoAdvance,
+    Value<String?>? lastActiveSourceId,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -711,6 +769,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       homeLayout: homeLayout ?? this.homeLayout,
       deleteOnRead: deleteOnRead ?? this.deleteOnRead,
       autoAdvance: autoAdvance ?? this.autoAdvance,
+      lastActiveSourceId: lastActiveSourceId ?? this.lastActiveSourceId,
     );
   }
 
@@ -757,6 +816,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (autoAdvance.present) {
       map['auto_advance'] = Variable<bool>(autoAdvance.value);
     }
+    if (lastActiveSourceId.present) {
+      map['last_active_source_id'] = Variable<String>(lastActiveSourceId.value);
+    }
     return map;
   }
 
@@ -774,7 +836,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('imageQualityManualLevel: $imageQualityManualLevel, ')
           ..write('homeLayout: $homeLayout, ')
           ..write('deleteOnRead: $deleteOnRead, ')
-          ..write('autoAdvance: $autoAdvance')
+          ..write('autoAdvance: $autoAdvance, ')
+          ..write('lastActiveSourceId: $lastActiveSourceId')
           ..write(')'))
         .toString();
   }
@@ -11520,6 +11583,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<String?> homeLayout,
       Value<bool?> deleteOnRead,
       Value<bool> autoAdvance,
+      Value<String?> lastActiveSourceId,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -11535,6 +11599,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<String?> homeLayout,
       Value<bool?> deleteOnRead,
       Value<bool> autoAdvance,
+      Value<String?> lastActiveSourceId,
     });
 
 class $$AppSettingsTableFilterComposer
@@ -11603,6 +11668,11 @@ class $$AppSettingsTableFilterComposer
 
   ColumnFilters<bool> get autoAdvance => $composableBuilder(
     column: $table.autoAdvance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastActiveSourceId => $composableBuilder(
+    column: $table.lastActiveSourceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -11675,6 +11745,11 @@ class $$AppSettingsTableOrderingComposer
     column: $table.autoAdvance,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get lastActiveSourceId => $composableBuilder(
+    column: $table.lastActiveSourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppSettingsTableAnnotationComposer
@@ -11739,6 +11814,11 @@ class $$AppSettingsTableAnnotationComposer
     column: $table.autoAdvance,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get lastActiveSourceId => $composableBuilder(
+    column: $table.lastActiveSourceId,
+    builder: (column) => column,
+  );
 }
 
 class $$AppSettingsTableTableManager
@@ -11784,6 +11864,7 @@ class $$AppSettingsTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<bool?> deleteOnRead = const Value.absent(),
                 Value<bool> autoAdvance = const Value.absent(),
+                Value<String?> lastActiveSourceId = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 themeMode: themeMode,
@@ -11797,6 +11878,7 @@ class $$AppSettingsTableTableManager
                 homeLayout: homeLayout,
                 deleteOnRead: deleteOnRead,
                 autoAdvance: autoAdvance,
+                lastActiveSourceId: lastActiveSourceId,
               ),
           createCompanionCallback:
               ({
@@ -11812,6 +11894,7 @@ class $$AppSettingsTableTableManager
                 Value<String?> homeLayout = const Value.absent(),
                 Value<bool?> deleteOnRead = const Value.absent(),
                 Value<bool> autoAdvance = const Value.absent(),
+                Value<String?> lastActiveSourceId = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 themeMode: themeMode,
@@ -11825,6 +11908,7 @@ class $$AppSettingsTableTableManager
                 homeLayout: homeLayout,
                 deleteOnRead: deleteOnRead,
                 autoAdvance: autoAdvance,
+                lastActiveSourceId: lastActiveSourceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

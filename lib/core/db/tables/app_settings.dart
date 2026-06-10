@@ -49,6 +49,11 @@ class AppSettings extends Table {
   /// the series after a brief, cancelable seam (T2). Global, default off.
   BoolColumn get autoAdvance => boolean().withDefault(const Constant(false))();
 
+  /// The id of the source the user last selected, restored as the active source
+  /// on the next launch. NULL until the first selection; a stale id (the source
+  /// was deleted) falls back to the deterministic lowest-sorted pick.
+  TextColumn get lastActiveSourceId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

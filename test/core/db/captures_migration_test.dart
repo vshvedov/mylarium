@@ -6,6 +6,7 @@ import 'package:mylarium/core/db/database.dart';
 import '../../drift/generated/schema.dart';
 import '../../drift/generated/schema_v16.dart' as v16;
 import '../../drift/generated/schema_v17.dart' as v17;
+import '../../drift/generated/schema_v18.dart' as v18;
 
 void main() {
   late SchemaVerifier verifier;
@@ -108,6 +109,46 @@ void main() {
     expect(row, isNotNull);
     expect(row!.series, 'Berserk');
     expect(row.readingDirection, 'ltr');
+
+    await db.close();
+  });
+
+  test('migrates v18 -> v19 to the expected schema', () async {
+    final connection = await verifier.startAt(18);
+    final db = AppDatabase(connection);
+    // Validates that running AppDatabase.migration from 18 to 19 yields exactly
+    // the committed v19 snapshot (adds app_settings.last_active_source_id).
+    await verifier.migrateAndValidate(db, 19);
+    await db.close();
+  });
+
+  test('v18 -> v19 preserves the settings row and lastActiveSourceId works',
+      () async {
+    final schema = await verifier.schemaAt(18);
+
+    final old = v18.DatabaseAtV18(schema.newConnection());
+    await old.customStatement(
+      "INSERT INTO app_settings (id, theme_mode, device_id) "
+      "VALUES (1, 'dark', 'dev-1')",
+    );
+    await old.customStatement(
+      "INSERT INTO sources (id, kind, base_url, auth_kind, handle, label) "
+      "VALUES ('s1', 'komga', 'http://x', 'basic', 'h', 'Test')",
+    );
+    await old.close();
+
+    final db = AppDatabase(schema.newConnection());
+    await db.customStatement('SELECT 1');
+
+    // The settings row survived with its values; the new column reads NULL.
+    final settings = await db.getOrCreateSettings();
+    expect(settings.themeMode, 'dark');
+    expect(settings.deviceId, 'dev-1');
+    expect(settings.lastActiveSourceId, isNull);
+
+    // The new column is writable and readable after the upgrade.
+    await db.updateLastActiveSourceId('s1');
+    expect((await db.getOrCreateSettings()).lastActiveSourceId, 's1');
 
     await db.close();
   });
