@@ -247,18 +247,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sourceLocalImportSubtitle => 'Import comics from this device';
 
   @override
-  String sourceUseCard(String card) {
-    return 'Use $card';
-  }
-
-  @override
-  String get sourceUseCardSubtitle => 'Read comics from the card, in place';
-
-  @override
   String get sourceAddFolder => 'Add folder library';
 
   @override
-  String get sourceAddFolderSubtitle => 'Read comics from a folder, in place';
+  String get sourceAddFolderSubtitle =>
+      'Read comics from a folder or SD card, in place';
 
   @override
   String get sourceAddSource => 'Add a source';

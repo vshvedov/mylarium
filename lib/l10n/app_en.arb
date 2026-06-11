@@ -265,16 +265,9 @@
   "@sourceRemoveServerBody": { "description": "Body of the remove-server confirmation dialog." },
   "sourceLocalImportSubtitle": "Import comics from this device",
   "@sourceLocalImportSubtitle": { "description": "Subtitle of the local-files add row in the sources sheet." },
-  "sourceUseCard": "Use {card}",
-  "@sourceUseCard": {
-    "description": "Row title for using a detected removable volume as a library.",
-    "placeholders": { "card": { "type": "String" } }
-  },
-  "sourceUseCardSubtitle": "Read comics from the card, in place",
-  "@sourceUseCardSubtitle": { "description": "Subtitle of the use-card source row." },
   "sourceAddFolder": "Add folder library",
   "@sourceAddFolder": { "description": "Row to add a folder-tree library source." },
-  "sourceAddFolderSubtitle": "Read comics from a folder, in place",
+  "sourceAddFolderSubtitle": "Read comics from a folder or SD card, in place",
   "@sourceAddFolderSubtitle": { "description": "Subtitle of the add-folder source row." },
   "sourceAddSource": "Add a source",
   "@sourceAddSource": { "description": "Row to add another source (opens onboarding)." },

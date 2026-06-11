@@ -520,18 +520,6 @@ abstract class AppLocalizations {
   /// **'Import comics from this device'**
   String get sourceLocalImportSubtitle;
 
-  /// Row title for using a detected removable volume as a library.
-  ///
-  /// In en, this message translates to:
-  /// **'Use {card}'**
-  String sourceUseCard(String card);
-
-  /// Subtitle of the use-card source row.
-  ///
-  /// In en, this message translates to:
-  /// **'Read comics from the card, in place'**
-  String get sourceUseCardSubtitle;
-
   /// Row to add a folder-tree library source.
   ///
   /// In en, this message translates to:
@@ -541,7 +529,7 @@ abstract class AppLocalizations {
   /// Subtitle of the add-folder source row.
   ///
   /// In en, this message translates to:
-  /// **'Read comics from a folder, in place'**
+  /// **'Read comics from a folder or SD card, in place'**
   String get sourceAddFolderSubtitle;
 
   /// Row to add another source (opens onboarding).

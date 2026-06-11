@@ -12,7 +12,6 @@ import '../../app/theme/theme_controller.dart' show appDatabaseProvider;
 import '../../app/widgets/app_bottom_sheet.dart';
 import '../../app/widgets/app_list_row.dart';
 import '../../core/db/database.dart';
-import '../../core/platform/storage_volumes.dart';
 import '../../data/kavita/kavita_providers.dart';
 import '../../data/komga/komga_providers.dart';
 import '../../data/source/content_source.dart';
@@ -88,16 +87,11 @@ class _SourcesSheet extends ConsumerWidget {
     ref.invalidate(activeSourceIdProvider);
   }
 
-  /// Picks a folder (optionally rooted at an SD card), creates the safTree
-  /// source, makes it active, and starts the initial scan.
-  Future<void> _addFolder(
-    BuildContext context,
-    WidgetRef ref, {
-    String? initialUri,
-  }) async {
-    final id = await ref
-        .read(folderSourceServiceProvider)
-        .addFolderSource(initialUri: initialUri);
+  /// Picks a folder via the SAF tree picker, creates the safTree source, makes
+  /// it active, and starts the initial scan.
+  Future<void> _addFolder(BuildContext context, WidgetRef ref) async {
+    final id =
+        await ref.read(folderSourceServiceProvider).addFolderSource();
     if (id == null) return; // picker cancelled
     ref.read(activeSourceIdProvider.notifier).select(id);
     unawaited(
@@ -197,28 +191,16 @@ class _SourcesSheet extends ConsumerWidget {
                 },
               ),
             // Folder libraries are Android-only (SAF document trees); iOS
-            // folder sources are a future phase (PRD OQ1).
-            if (Platform.isAndroid) ...[
-              // A detected SD card gets its own shortcut: the picker opens
-              // rooted at the card so "use my card as a library" is two taps.
-              for (final volume in ref
-                      .watch(removableVolumesProvider)
-                      .valueOrNull ??
-                  const <RemovableVolume>[])
-                AppListRow(
-                  icon: AppIcons.sdCard,
-                  title: context.l10n.sourceUseCard(volume.description),
-                  subtitle: context.l10n.sourceUseCardSubtitle,
-                  onTap: () =>
-                      _addFolder(context, ref, initialUri: volume.initialUri),
-                ),
+            // folder sources are a future phase (PRD OQ1). A single entry: the
+            // SAF picker can navigate to internal storage or an SD card alike,
+            // so there is no separate per-card shortcut.
+            if (Platform.isAndroid)
               AppListRow(
                 icon: AppIcons.sourceFolder,
                 title: context.l10n.sourceAddFolder,
                 subtitle: context.l10n.sourceAddFolderSubtitle,
                 onTap: () => _addFolder(context, ref),
               ),
-            ],
             AppListRow(
               icon: AppIcons.add,
               title: context.l10n.sourceAddSource,

@@ -101,12 +101,13 @@ void main() {
       expect(data.settings.direction, ReadingDirection.rtl);
     });
 
-    test('directionUnset: ltr import with nothing persisted is unset, rtl not',
+    test('directionUnset: local imports never show the first-open RTL nudge',
         () async {
       AppPaths.debugOverrideRoot = '/r';
       addTearDown(() => AppPaths.debugOverrideRoot = null);
-      // 'ltr' is also the no-metadata fallback (no ComicInfo hint), so the
-      // direction counts as unset; 'rtl' is a real hint and suppresses it.
+      // A local row carries no positive manga signal we can gate the nudge on:
+      // 'rtl' (ComicInfo Manga=YesAndRightToLeft) already opens RTL, and 'ltr'
+      // is also the no-metadata fallback. So local never nudges either way.
       await seedComic('c1'); // ltr
       await seedComic('c2', series: 'Akira', direction: 'rtl');
 
@@ -114,7 +115,7 @@ void main() {
       final ltr = await c.read(readerControllerProvider('loc', 'c1').future);
       final rtl = await c.read(readerControllerProvider('loc', 'c2').future);
 
-      expect(ltr.directionUnset, isTrue);
+      expect(ltr.directionUnset, isFalse);
       expect(rtl.directionUnset, isFalse);
     });
 

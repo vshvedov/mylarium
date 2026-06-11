@@ -48,6 +48,19 @@ class SeriesDto {
   final List<ContentLink> links;
   final String? language;
 
+  /// True when the series metadata positively suggests manga, independent of
+  /// reading direction: a Japanese language tag, or a genre/tag mentioning
+  /// "manga". Gates the first-open right-to-left nudge so it only appears for
+  /// likely-manga content (a real RIGHT_TO_LEFT/VERTICAL hint already opens RTL,
+  /// so it needs no nudge).
+  bool get looksLikeManga {
+    final lang = language?.toLowerCase();
+    if (lang == 'ja' || lang == 'jpn') return true;
+    bool mentionsManga(List<String> xs) =>
+        xs.any((s) => s.toLowerCase().contains('manga'));
+    return mentionsManga(genres) || mentionsManga(tags);
+  }
+
   factory SeriesDto.fromJson(Map<String, Object?> json) {
     final meta = (json['metadata'] as Map<String, Object?>?) ?? const {};
     final name = json['name'] as String? ?? '';

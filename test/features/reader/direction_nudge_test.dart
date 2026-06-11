@@ -1,6 +1,3 @@
-import 'dart:convert' show jsonEncode;
-
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,10 +5,50 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mylarium/app/theme/theme_controller.dart'
     show appDatabaseProvider;
 import 'package:mylarium/core/db/database.dart';
-import 'package:mylarium/core/fs/app_paths.dart';
+import 'package:mylarium/data/source/content_api.dart';
+import 'package:mylarium/data/source/models/book_dto.dart';
+import 'package:mylarium/data/source/models/page_dto.dart';
+import 'package:mylarium/data/source/models/series_dto.dart';
+import 'package:mylarium/data/source/source_providers.dart';
+import 'package:mylarium/features/offline/offline_cache.dart';
+import 'package:mylarium/features/offline/offline_providers.dart';
 import 'package:mylarium/features/reader/reader_controller.dart';
 import 'package:mylarium/features/reader/reader_models.dart';
 import 'package:mylarium/features/reader/widgets/direction_nudge.dart';
+
+/// Online series with a manga signal (Japanese language) and no reading
+/// direction, so a fresh open lands left-to-right and the nudge is eligible.
+class _MangaApi implements ContentApi {
+  @override
+  Future<BookDto> getBook(String id) async => BookDto(
+        id: id,
+        seriesId: 'ser',
+        libraryId: 'lib',
+        name: id,
+        title: 'Title',
+        number: '1',
+        pagesCount: 3,
+        readPage: 0,
+      );
+
+  @override
+  Future<List<PageDto>> bookPages(String id) async =>
+      [for (var i = 1; i <= 3; i++) PageDto(number: i, fileName: 'p$i')];
+
+  @override
+  Future<SeriesDto> getSeries(String id) async => SeriesDto(
+        id: id,
+        libraryId: 'lib',
+        name: 'n',
+        title: 't',
+        titleSort: 't',
+        language: 'ja',
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
 
 void main() {
   group('DirectionNudge pill', () {
@@ -65,38 +102,14 @@ void main() {
   group('direction nudge persistence (controller)', () {
     late AppDatabase db;
 
-    setUp(() async {
-      AppPaths.debugOverrideRoot = '/r';
-      db = AppDatabase(NativeDatabase.memory());
-      await db.upsertSource(const SourcesCompanion(
-        id: Value('loc'),
-        kind: Value('local'),
-        label: Value('Local files'),
-      ));
-      await db.insertLocalComic(LocalComicsCompanion.insert(
-        id: 'c1',
-        sourceId: 'loc',
-        kind: 'localCopy',
-        managedPath: Value(AppPaths.localRelativePath('loc', 'c1')),
-        series: 'Berserk',
-        seriesSort: 'berserk',
-        number: '1',
-        numberSort: const Value(1.0),
-        title: 'Berserk 1',
-        readingDirection: const Value('ltr'),
-        pageOrder: jsonEncode(const ['001.jpg', '002.jpg']),
-        pagesCount: 2,
-        importedAt: 1700000000000,
-      ));
-    });
-    tearDown(() async {
-      AppPaths.debugOverrideRoot = null;
-      await db.close();
-    });
+    setUp(() => db = AppDatabase(NativeDatabase.memory()));
+    tearDown(() => db.close());
 
     ProviderContainer container() {
       final c = ProviderContainer(overrides: [
         appDatabaseProvider.overrideWithValue(db),
+        offlineCacheManagerProvider.overrideWithValue(OfflineCacheManager(db)),
+        contentApiForProvider('s').overrideWith((ref) async => _MangaApi()),
       ]);
       addTearDown(c.dispose);
       return c;
@@ -105,44 +118,43 @@ void main() {
     test('accepting RTL persists settings, so the nudge never returns',
         () async {
       final c = container();
-      final before =
-          await c.read(readerControllerProvider('loc', 'c1').future);
+      final before = await c.read(readerControllerProvider('s', 'b').future);
+      // Manga-signal series opened LTR with nothing persisted: nudge eligible.
       expect(before.directionUnset, isTrue);
 
       await c
-          .read(readerControllerProvider('loc', 'c1').notifier)
+          .read(readerControllerProvider('s', 'b').notifier)
           .toggleDirection();
 
       // Cleared in place for this open...
-      final after = c.read(readerControllerProvider('loc', 'c1')).value!;
+      final after = c.read(readerControllerProvider('s', 'b')).value!;
       expect(after.directionUnset, isFalse);
       expect(after.settings.mode, ReadingMode.pagedRtl);
 
       // ...and persisted, so a later open (fresh container) stays cleared.
-      final reopened = await container()
-          .read(readerControllerProvider('loc', 'c1').future);
+      final reopened =
+          await container().read(readerControllerProvider('s', 'b').future);
       expect(reopened.directionUnset, isFalse);
       expect(reopened.settings.mode, ReadingMode.pagedRtl);
     });
 
     test('dismissing persists the current settings as-is', () async {
       final c = container();
-      final before =
-          await c.read(readerControllerProvider('loc', 'c1').future);
+      final before = await c.read(readerControllerProvider('s', 'b').future);
       expect(before.directionUnset, isTrue);
       expect(before.settings.mode, ReadingMode.pagedLtr);
 
       // The x action: persist the settings unchanged.
       await c
-          .read(readerControllerProvider('loc', 'c1').notifier)
+          .read(readerControllerProvider('s', 'b').notifier)
           .updateSettings(before.settings);
 
-      final after = c.read(readerControllerProvider('loc', 'c1')).value!;
+      final after = c.read(readerControllerProvider('s', 'b')).value!;
       expect(after.directionUnset, isFalse);
       expect(after.settings.mode, ReadingMode.pagedLtr);
 
-      final reopened = await container()
-          .read(readerControllerProvider('loc', 'c1').future);
+      final reopened =
+          await container().read(readerControllerProvider('s', 'b').future);
       expect(reopened.directionUnset, isFalse);
       expect(reopened.settings.mode, ReadingMode.pagedLtr);
     });

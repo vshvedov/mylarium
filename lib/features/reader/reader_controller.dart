@@ -152,7 +152,6 @@ class ReaderController extends _$ReaderController {
       // ComicInfo's reading direction seeds the default (RTL manga opens RTL);
       // a persisted per-series setting wins, exactly like the server path. The
       // row stores 'rtl'/'ltr'; defaults() speaks Komga's direction names.
-      final hasSettings = await settingsRepo.has(sourceId, seriesKey);
       final settings = await settingsRepo.load(
         sourceId,
         seriesKey,
@@ -173,10 +172,12 @@ class ReaderController extends _$ReaderController {
         ),
         colorAdjustments: await ColorSettingsRepository(db)
             .resolve(sourceId, seriesKey, bookId),
-        // The row's 'rtl' is a real hint (ComicInfo Manga flag); 'ltr' is also
-        // the no-metadata fallback, indistinguishable from a real LTR flag, so
-        // only an RTL hint suppresses the direction nudge here.
-        directionUnset: !hasSettings && localComic.readingDirection != 'rtl',
+        // No first-open RTL nudge for local imports: the only manga signal a
+        // local row carries is ComicInfo's `Manga=YesAndRightToLeft`, which is
+        // already mapped to 'rtl' and opens RTL. A plain 'ltr' row has no
+        // positive manga signal (it is also the no-metadata fallback), so it
+        // must not nudge.
+        directionUnset: false,
       );
     }
 
@@ -191,9 +192,6 @@ class ReaderController extends _$ReaderController {
         final book = await db.getBook(sourceId, bookId);
         final seriesId = book?.seriesId ?? '';
         final title = book?.title ?? '';
-        // Settings load without a server direction probe here (offline), so the
-        // direction is a pure default whenever nothing was persisted.
-        final hasSettings = await settingsRepo.has(sourceId, seriesId);
         final settings = await settingsRepo.load(sourceId, seriesId);
         final colorAdjustments = await ColorSettingsRepository(
           db,
@@ -211,7 +209,10 @@ class ReaderController extends _$ReaderController {
             serverReadPage: book?.readPage,
           ),
           colorAdjustments: colorAdjustments,
-          directionUnset: !hasSettings,
+          // Offline there is no series metadata to read (the cached Series row
+          // carries no genres/language), so there is no manga signal to gate the
+          // nudge on - never nudge offline.
+          directionUnset: false,
         );
       } on ArchiveException {
         // Corrupt cache: quarantine and fall through to online.
@@ -261,10 +262,13 @@ class ReaderController extends _$ReaderController {
     final pages = await api.bookPages(bookId);
 
     String? direction;
+    var looksLikeManga = false;
     final hasSettings = await settingsRepo.has(sourceId, seriesId);
     if (!hasSettings) {
       try {
-        direction = (await api.getSeries(seriesId)).readingDirection;
+        final series = await api.getSeries(seriesId);
+        direction = series.readingDirection;
+        looksLikeManga = series.looksLikeManga;
       } on ContentException {
         // Fall back to LTR defaults.
       }
@@ -291,9 +295,12 @@ class ReaderController extends _$ReaderController {
         serverReadPage: serverReadPage,
       ),
       colorAdjustments: colorAdjustments,
-      // Unset only when nothing was persisted AND the series metadata probe
-      // gave no reading-direction hint (null, or unreachable).
-      directionUnset: !hasSettings && direction == null,
+      // Show the first-open right-to-left nudge only for series that positively
+      // look like manga (Japanese / manga genre or tag) yet opened with no saved
+      // settings. A real RIGHT_TO_LEFT/VERTICAL hint already seeds an RTL/webtoon
+      // default, which the reader screen suppresses the nudge for; everything
+      // else (no signal) must NOT nudge, so it does not nag on every book.
+      directionUnset: !hasSettings && looksLikeManga,
     );
   }
 
