@@ -18,6 +18,7 @@ A premium, cover-forward comics and manga reader for Android, backed by your sel
 - **Reader**: paged left-to-right and right-to-left for **manga**, gapless webtoon, and double-page spreads
 - Pinch-zoom and per-page **color correction**
 - **Capture** favorite panels and moments to a built-in **gallery**
+- Optional **Comic Vine** integration for richer series metadata
 - Cover-forward design with **dark**, **light**, **auto**, and **e-ink** themes
 - Adaptive **tablet** layout with a two-pane browser
 - **Reading stats** kept on your device
