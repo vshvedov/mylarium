@@ -1,0 +1,98 @@
+# Build signed, split-per-ABI release APKs and attach them to a GitHub Release.
+#
+# This complements the Play Store pipeline (.forgejo/workflows/release.yml, which
+# ships a signed AAB to the Play internal track): this workflow publishes
+# directly-installable APKs on the repo's GitHub Releases page, for sideloading.
+#
+# Cut a release by pushing a version tag, e.g.:
+#   git tag v1.1.3 && git push origin v1.1.3
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   ANDROID_KEYSTORE_BASE64    base64 of the upload keystore (vsh-upload.jks)
+#   ANDROID_KEYSTORE_PASSWORD  store password
+#   ANDROID_KEY_ALIAS          key alias (e.g. upload)
+#   ANDROID_KEY_PASSWORD       key password
+# If ANDROID_KEYSTORE_BASE64 is absent the build still runs, but the APKs fall
+# back to debug signing (see android/app/build.gradle.kts).
+
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*' # push a tag like v1.1.3 to cut a release
+
+permissions:
+  contents: write # create the GitHub Release and upload APK assets
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    # Same toolchain image the Play pipeline uses: Flutter + Android SDK + JDK 17
+    # with pre-accepted licenses, so a build proven to work there works here.
+    container:
+      image: ghcr.io/cirruslabs/flutter:3.44.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so `git rev-list --count` yields the real, monotonic
+          # commit count used as the Android versionCode.
+          fetch-depth: 0
+
+      - name: Trust the workspace
+        # The container runs as a different user than the checkout owner; without
+        # this git refuses to operate ("dubious ownership").
+        run: git config --global --add safe.directory '*'
+
+      - name: Configure release signing
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "No ANDROID_KEYSTORE_BASE64 secret; release APKs will be debug-signed."
+            exit 0
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > android/app/upload.jks
+          {
+            echo "storeFile=upload.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+          echo "Release signing configured."
+
+      - name: Set version from tag + commit count
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"        # v1.1.3 -> 1.1.3
+          BUILD=$(git rev-list --count HEAD)
+          sed -i -E "s/^version: .*/version: ${TAG_VERSION}+${BUILD}/" pubspec.yaml
+          echo "version -> ${TAG_VERSION}+${BUILD}"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Codegen (Drift / Riverpod)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build split-per-ABI release APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Collect and name APKs
+        run: |
+          mkdir -p dist
+          cd build/app/outputs/flutter-apk
+          for f in app-*-release.apk; do
+            abi="${f#app-}"; abi="${abi%-release.apk}"
+            cp "$f" "$GITHUB_WORKSPACE/dist/mylarium-${GITHUB_REF_NAME}-${abi}.apk"
+          done
+          ls -la "$GITHUB_WORKSPACE/dist"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          generate_release_notes: true
+          fail_on_unmatched_files: true
