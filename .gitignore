@@ -33,6 +33,8 @@ migrate_working_dir/
 /build/
 /coverage/
 
+docs/
+
 # Symbolication related
 app.*.symbols
 
@@ -44,3 +46,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 **/failures/
+
+# AI assistant related
+.claude/
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*
+.github/copilot-instructions.md
