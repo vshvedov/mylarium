@@ -136,9 +136,10 @@
     h1 {
       font-family: 'Anton', sans-serif;
       font-weight: 400;
-      font-size: 44px;
-      letter-spacing: 1px;
+      font-size: 46px;
+      letter-spacing: 3px;
       margin-top: 14px;
+      text-transform: uppercase;
     }
     .tagline {
       color: var(--muted);
@@ -161,6 +162,7 @@
     }
     .cta:hover { transform: translateY(-2px); box-shadow: 0 12px 38px rgba(139, 124, 246, 0.5); }
     .cta-sub { display: block; margin-top: 12px; color: var(--muted); font-size: 14px; }
+    .cta-sub a { color: var(--accent-2); text-decoration: underline; }
 
     .shots {
       display: flex;
@@ -214,10 +216,20 @@
     footer a { color: var(--accent-2); text-decoration: none; }
 
     @media (max-width: 680px) {
-      .mark { font-size: 64px; }
-      h1 { font-size: 34px; }
-      ul { grid-template-columns: 1fr; }
-      header { padding: 64px 0 40px; }
+      .wrap { padding: 0 20px; }
+      header { padding: 56px 0 36px; }
+      .mark { font-size: 66px; }
+      h1 { font-size: 36px; }
+      .tagline { font-size: 17px; line-height: 1.6; }
+      .cta { display: block; width: 100%; padding: 18px 24px; font-size: 17px; margin-top: 26px; }
+      .cta-sub { font-size: 15px; line-height: 1.55; margin-top: 16px; }
+      .shots { gap: 14px; padding: 14px 0 4px; }
+      .shots img { width: 100%; max-width: 440px; }
+      section.features { padding: 48px 0 64px; }
+      section.features h2 { font-size: 26px; margin-bottom: 24px; }
+      ul { grid-template-columns: 1fr; gap: 12px; }
+      li { font-size: 16px; padding: 16px 18px; line-height: 1.5; }
+      footer { padding: 28px 0; line-height: 1.6; }
     }
   </style>
 </head>
@@ -228,15 +240,15 @@
       <h1>Mylarium</h1>
       <p class="tagline">A premium, cover-forward comics and manga reader for Android, backed by your self-hosted Komga or Kavita server with always-on offline reading.</p>
       <a class="cta" href="https://github.com/vshvedov/mylarium/releases/latest">Download latest release</a>
-      <span class="cta-sub">Android APK - free and open source</span>
+      <span class="cta-sub">Download Android APK, build iOS yourself from <a href="https://github.com/vshvedov/mylarium">source code</a></span>
     </div>
   </header>
 
   <div class="wrap">
     <div class="shots">
       <img src="img/home.jpg" alt="Mylarium dark home screen with comic covers">
-      <img src="img/detail.jpg" alt="Series detail page with the full issue grid">
       <img src="img/reader.jpg" alt="Full-screen comic reader">
+      <img src="img/detail.jpg" alt="Series detail page with the full issue grid">
     </div>
   </div>
 
