@@ -1,17 +1,24 @@
-# mylarium
+[![Latest release](https://img.shields.io/github/v/release/vshvedov/mylarium?label=download&style=for-the-badge)](https://github.com/vshvedov/mylarium/releases/latest)
 
-A new Flutter project.
+# Mylarium
 
-## Getting Started
+A premium, cover-forward comics and manga reader for iOS and Android, backed by your self-hosted Komga server with always-on offline reading.
 
-This project is a starting point for a Flutter application.
+<p align="center">
+  <img src=".github/screenshots/home-dark.png" width="320" alt="Mylarium dark home screen">
+</p>
 
-A few resources to get you started if this is your first Flutter project:
+## Features
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Connects to your self-hosted **Komga** server (local files too)
+- Always-on **offline**: download once, read anywhere, survives app restarts
+- Two-way **reading progress sync** with Komga
+- **Reader**: paged left-to-right and right-to-left, gapless webtoon, and double-page spreads
+- Pinch-zoom and per-page **color correction**
+- Cover-forward design with **dark**, **light**, and **auto** themes
+- Adaptive **tablet** layout with a two-pane browser
+- **Reading stats** kept on your device
+- **CBZ**, **CBR**, and **CBT** archives (CB7 best-effort)
+- **Privacy first**: no telemetry, nothing leaves your device
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Built with Flutter for iOS, iPadOS, and Android.
