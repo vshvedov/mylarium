@@ -5,6 +5,101 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mylarium - comics and manga reader</title>
   <meta name="description" content="A premium, cover-forward comics and manga reader for Android, backed by your self-hosted Komga or Kavita server with always-on offline reading.">
+  <link rel="canonical" href="https://mylarium.1hr.pw/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#0b0b0f">
+  <meta name="keywords" content="comics reader, manga reader, Komga, Kavita, Android comic app, offline manga, CBZ, CBR, self-hosted comics, webtoon reader">
+  <meta name="author" content="Vladyslav Shvedov">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mylarium">
+  <meta property="og:title" content="Mylarium - comics and manga reader for Android">
+  <meta property="og:description" content="A premium, cover-forward comics and manga reader for Android, backed by your self-hosted Komga or Kavita server with always-on offline reading.">
+  <meta property="og:url" content="https://mylarium.1hr.pw/">
+  <meta property="og:image" content="https://mylarium.1hr.pw/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="750">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Mylarium - comics and manga reader for Android">
+  <meta name="twitter:description" content="A premium comics and manga reader backed by your self-hosted Komga or Kavita server, with always-on offline reading.">
+  <meta name="twitter:image" content="https://mylarium.1hr.pw/img/og.jpg">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MobileApplication",
+        "name": "Mylarium",
+        "operatingSystem": "Android",
+        "applicationCategory": "BookApplication",
+        "description": "A premium, cover-forward comics and manga reader for Android, backed by your self-hosted Komga or Kavita server with always-on offline reading.",
+        "url": "https://mylarium.1hr.pw/",
+        "downloadUrl": "https://github.com/vshvedov/mylarium/releases/latest",
+        "image": "https://mylarium.1hr.pw/img/og.jpg",
+        "screenshot": [
+          "https://mylarium.1hr.pw/img/home.jpg",
+          "https://mylarium.1hr.pw/img/detail.jpg",
+          "https://mylarium.1hr.pw/img/reader.jpg"
+        ],
+        "featureList": [
+          "Connects to self-hosted Komga or Kavita servers and local files",
+          "Always-on offline reading that survives app restarts",
+          "Two-way reading progress sync",
+          "Left-to-right, right-to-left manga, webtoon, and double-page reading",
+          "Pinch-zoom and per-page color correction",
+          "Capture favorite panels and moments to a built-in gallery",
+          "Optional Comic Vine integration for richer series metadata",
+          "Dark, light, auto, and e-ink themes",
+          "Adaptive tablet two-pane layout",
+          "On-device reading stats",
+          "CBZ, CBR, and CBT archive support",
+          "Privacy first with no telemetry"
+        ],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Vladyslav Shvedov" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is Mylarium?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Mylarium is a premium, cover-forward comics and manga reader for Android that connects to your self-hosted Komga or Kavita server with always-on offline reading." }
+          },
+          {
+            "@type": "Question",
+            "name": "Which servers does Mylarium support?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Mylarium connects to self-hosted Komga and Kavita servers, and can also read local comic files on the device." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Mylarium free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Mylarium is free and open source, distributed as an Android APK." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I read offline?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Downloaded comics are cached and kept, so they remain readable offline and survive app restarts." }
+          },
+          {
+            "@type": "Question",
+            "name": "Which comic formats does Mylarium support?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Mylarium reads CBZ, CBR, and CBT archives, with CB7 support on a best-effort basis." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Mylarium support manga reading?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. It supports right-to-left manga paging, left-to-right, gapless webtoon, and double-page spreads." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -155,6 +250,7 @@
         <li><b>Reader</b>: left-to-right and right-to-left for <b>manga</b>, webtoon, and double-page</li>
         <li>Pinch-zoom and per-page <b>color correction</b></li>
         <li><b>Capture</b> favorite panels and moments to a built-in <b>gallery</b></li>
+        <li>Optional <b>Comic Vine</b> integration for richer series metadata</li>
         <li>Cover-forward design with <b>dark</b>, <b>light</b>, <b>auto</b>, and <b>e-ink</b> themes</li>
         <li>Adaptive <b>tablet</b> layout with a two-pane browser</li>
         <li><b>Reading stats</b> kept on your device</li>
@@ -166,7 +262,7 @@
 
   <footer>
     <div class="wrap">
-      Built with Flutter - <a href="https://github.com/vshvedov/mylarium">View on GitHub</a>
+      Private, offline-first comics and manga - <a href="https://github.com/vshvedov/mylarium">View on GitHub</a>
     </div>
   </footer>
 </body>
