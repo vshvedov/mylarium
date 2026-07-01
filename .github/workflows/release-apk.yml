@@ -97,7 +97,12 @@ jobs:
           cd build/app/outputs/flutter-apk
           for f in app-*-release.apk; do
             abi="${f#app-}"; abi="${abi%-release.apk}"
+            # Versioned name: human-friendly on the releases page.
             cp "$f" "$GITHUB_WORKSPACE/dist/mylarium-${GITHUB_REF_NAME}-${abi}.apk"
+            # Stable, version-independent name: enables permanent links via
+            # releases/latest/download/mylarium-<abi>.apk (used by the landing page,
+            # so plain <a> links work with no JavaScript).
+            cp "$f" "$GITHUB_WORKSPACE/dist/mylarium-${abi}.apk"
           done
           ls -la "$GITHUB_WORKSPACE/dist"
 
