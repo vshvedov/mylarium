@@ -32,6 +32,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Render with Skia, not Impeller. Impeller (Flutter's default Android
+             renderer) does not push the small incremental frames - per-keystroke
+             text edits, the blinking text cursor - to the panel on low-power
+             e-ink Android readers (e.g. Moaan/Boox on Android 8), so typing looks
+             frozen until a full refresh. Skia updates those regions correctly.
+             The app uses no fragment shaders, so nothing depends on Impeller. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
