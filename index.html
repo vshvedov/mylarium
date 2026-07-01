@@ -182,6 +182,41 @@
     .btn-github:hover { border-color: var(--accent); background: #1d1d26; }
     .btn-github svg { width: 20px; height: 20px; }
 
+    .downloads { margin-top: 26px; }
+    .downloads-label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .downloads-grid {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .downloads a {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 150px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 18px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 15px;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    .downloads a small { color: var(--muted); font-weight: 400; font-size: 12px; }
+    .downloads a:hover { border-color: var(--accent); background: #1d1d26; }
+    .downloads a.primary { border-color: var(--accent); }
+
     .shots {
       display: flex;
       gap: 20px;
@@ -242,6 +277,8 @@
       .cta { display: block; width: 100%; padding: 18px 24px; font-size: 17px; margin-top: 26px; }
       .btn-github { display: flex; width: 100%; justify-content: center; padding: 15px; font-size: 16px; }
       .cta-sub { font-size: 15px; line-height: 1.55; margin-top: 16px; }
+      .downloads-grid { flex-direction: column; }
+      .downloads a { width: 100%; padding: 15px 18px; font-size: 16px; }
       .shots { gap: 14px; padding: 14px 0 4px; }
       .shots img { width: 100%; max-width: 440px; }
       section.features { padding: 48px 0 64px; }
@@ -249,6 +286,39 @@
       ul { grid-template-columns: 1fr; gap: 12px; }
       li { font-size: 16px; padding: 16px 18px; line-height: 1.5; }
       footer { padding: 28px 0; line-height: 1.6; }
+    }
+
+    /* E-ink friendly: greyscale, low-refresh displays (Kindle, Boox, Kobo, etc.)
+       report as monochrome or slow-update. Drop to pure black-on-white, kill every
+       glow/gradient/shadow/animation (they ghost and smear on e-paper), and use
+       solid high-contrast borders so structure survives without color. */
+    @media (monochrome), (update: slow) {
+      :root {
+        --bg: #ffffff;
+        --surface: #ffffff;
+        --text: #000000;
+        --muted: #222222;
+        --accent: #000000;
+        --accent-2: #000000;
+        --border: #000000;
+      }
+      html { scroll-behavior: auto; }
+      body { -webkit-font-smoothing: auto; }
+      * { transition: none !important; box-shadow: none !important; text-shadow: none !important; }
+      .mark { color: #000000; }
+      .cta {
+        background: #000000;
+        color: #ffffff;
+        border: 2px solid #000000;
+      }
+      .cta:hover { transform: none; }
+      .btn-github { border: 2px solid #000000; background: #ffffff; }
+      .btn-github:hover { background: #ffffff; }
+      .cta-sub a, footer a { color: #000000; }
+      .shots img { border: 2px solid #000000; }
+      li { border: 2px solid #000000; color: #000000; }
+      .downloads a { border: 2px solid #000000; color: #000000; background: #ffffff; }
+      .downloads a.primary { background: #000000; color: #ffffff; }
     }
   </style>
 </head>
@@ -266,6 +336,14 @@
         </a>
       </div>
       <span class="cta-sub">Download Android APK, build iOS yourself from <a href="https://github.com/vshvedov/mylarium">source code</a></span>
+      <div class="downloads">
+        <span class="downloads-label">Direct APK download</span>
+        <div class="downloads-grid">
+          <a class="primary" href="https://github.com/vshvedov/mylarium/releases/latest/download/mylarium-arm64-v8a.apk">arm64-v8a<small>most phones and tablets</small></a>
+          <a href="https://github.com/vshvedov/mylarium/releases/latest/download/mylarium-armeabi-v7a.apk">armeabi-v7a<small>older 32-bit devices</small></a>
+          <a href="https://github.com/vshvedov/mylarium/releases/latest/download/mylarium-x86_64.apk">x86_64<small>emulators, x86 tablets</small></a>
+        </div>
+      </div>
     </div>
   </header>
 
